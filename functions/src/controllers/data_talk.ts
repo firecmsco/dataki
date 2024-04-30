@@ -50,7 +50,7 @@ export const command = (): ExpressRouteFunc<CommandRequest> => {
         if (!request.body.command) {
             throw new FireCMSException(400, "Invalid request", "Missing command");
         }
-        const useStreamingRequest = request.query.useStreaming?.toString() === "true" ?? true;
+        const useStreamingRequest = request.query.useStreaming === undefined || request.query.useStreaming?.toString() === "true";
         console.log(`Using streaming request: ${useStreamingRequest}`)
         if (useStreamingRequest) return handleStreamingRequest(request, response);
         else return handleSyncRequest(request, response);

@@ -129,7 +129,7 @@ INSTRUCTIONS: Like in the given examples, you must return a combination of valid
 running on top of Firestore. You should return code only if it makes sense for the given user command.
 If you are including code, the explanation should be as brief as possible. 
 If you return text and code, you must start with the text (you can later have more text if applicable).
-The code should always return a Firestore method.
+The code should ALWAYS include a default export function. The function should always return a Firestore method.
 Remember: you don't have access to the data, but you can write and return code that will be executed in the Firestore context,
 in order to accomplish the user's request. DO NOT apologize for the lack of data, just return the code, with a brief explanation, if needed.
 The first line of the default method should always get the collection reference with the format collection(getFirestore(), "collection"). 
@@ -137,6 +137,7 @@ Do not include imports or other dependencies management, they are not needed.
 If the customers asks for the collections, just return the list, in a markdown format.
 Important: ONLY return code using the Modular API of the Firestore SDK, do not use any other libraries or tools.
 You are also allow to respond questions about firestore, firebase and firecms.
+DO NOT INCLUDE IMPORTS IN THE GENERATED CODE.
 
 - Available collections: ${collections.join(", ")}
 
