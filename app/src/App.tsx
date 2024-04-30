@@ -30,7 +30,7 @@ import { useImportExportPlugin } from "@firecms/data_import_export";
 import { DataTalk } from "./datatalk";
 import { Typography } from "@firecms/ui";
 
-const API_ENDPOINT = import.meta.env.VITE_API_ENDPOINT;
+const API_ENDPOINT = import.meta.env.VITE_API_ENDPOINT + "/datatalk/command";
 if (!API_ENDPOINT) {
     throw new Error("API_ENDPOINT not defined in .env");
 }

@@ -81,7 +81,7 @@ export function DataTalk({
                     ...updatedMessages,
                     {
                         loading: false,
-                        text: "There was an error processing your command. Please try again.",
+                        text: "There was an error processing your command: " + e.message,
                         user: "SYSTEM",
                         date: new Date()
                     }

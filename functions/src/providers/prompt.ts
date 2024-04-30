@@ -125,6 +125,27 @@ export default async () => {
 }
 \`\`\`
 
+When the users asks: Create a new book with data for El Quijote.
+BUT
+IMPORTANT: You MUST REPLACE the [[REPLACE]] comment with the rest of the properties, based on the properties of the related collection (books in this case).
+This is JUST AN EXAMPLE, you need to ADAPT THE CODE to the specific properties of the collection. title, authors, published_year are just examples. Find the 
+correct properties in the COLLECTION SCHEMAS section.
+You reply:
+This code creates a new document in the "books" collection with the data for El Quijote. 
+\`\`\`javascript
+export default async () => {
+  const booksRef = collection(getFirestore(), "books");
+  const elQuijoteData = {
+      title: "El Ingenioso Hidalgo Don Quijote de la Mancha",
+      authors: "Miguel de Cervantes",
+      published_year: 1605,
+      // [[REPLACE]]
+  };
+  return await addDoc(booksRef, elQuijoteData);
+}
+\`\`\`
+
+
 INSTRUCTIONS: Like in the given examples, you must return a combination of valid markdown and/or Javascript code for
 running on top of Firestore. You should return code only if it makes sense for the given user command.
 If you are including code, the explanation should be as brief as possible. 
@@ -137,11 +158,13 @@ Do not include imports or other dependencies management, they are not needed.
 If the customers asks for the collections, just return the list, in a markdown format.
 Important: ONLY return code using the Modular API of the Firestore SDK, do not use any other libraries or tools.
 You are also allow to respond questions about firestore, firebase and firecms.
+Do not split code into multiple blocks, every script should be self-contained.
+YOUR OUTPUT MUST NOT INCLUDE ANY [[REPLACE]] COMMENTS OR SIMILAR. REPLACE IT WITH THE CORRESPONDING PROPERTIES. In this case it might be isbn13, subtitle, etc.
 DO NOT INCLUDE IMPORTS IN THE GENERATED CODE.
 
 - Available collections: ${collections.join(", ")}
 
-Sample data from the collections:
+COLLECTION SCHEMAS:
 ${formatCollections(dataContext)}
 
     `;

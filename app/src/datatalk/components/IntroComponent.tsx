@@ -21,7 +21,9 @@ export function IntroComponent({ onPromptSuggestionClick }: { onPromptSuggestion
                 <PromptSuggestion onClick={onPromptSuggestionClick}
                                   prompt={"Show me all products under 50 euros"}/>
                 <PromptSuggestion onClick={onPromptSuggestionClick}
-                                  prompt={"How many users were added in the last month?"}/>
+                                  prompt={"Create a new book with data for El Quijote."}/>
+                <PromptSuggestion onClick={onPromptSuggestionClick}
+                                  prompt={"Show me the 10 cars with the most horsepower."}/>
             </div>
             <Typography variant={"caption"} color={"secondary"} paragraph={true} className={"ml-4 my-2"}>
                 Note that these sample prompts are generic and may not work with your specific data.
