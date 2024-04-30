@@ -1,11 +1,5 @@
 import FireCMSException from "./exceptions";
 
-export const serviceAccountMissing = new FireCMSException(
-  401,
-  "The project doesn't have a service account associated",
-  "service-account-missing"
-);
-
 export const tokenExpired = new FireCMSException(
   401,
   "Firebase ID token has expired",

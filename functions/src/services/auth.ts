@@ -2,7 +2,7 @@ import { Request } from "express";
 import { GoogleAuth } from "google-auth-library";
 import { firebaseTokenInvalid, firebaseTokenMissing, tokenExpired } from "../models/errors";
 import { firebaseAuth } from "../firebase";
-import { DecodedToken, ServiceAccount } from "../models/auth";
+import { DecodedToken } from "../models/auth";
 import { FirebaseError } from "firebase-admin"
 
 const isFirebaseError = (error: unknown): error is FirebaseError => {
@@ -41,36 +41,17 @@ export const verifyFirebaseToken = async (request: Request) => {
   }
 }
 
-export const getServiceAccount = async (): Promise<ServiceAccount | undefined> => {
-  console.log("Getting service account");
-  // Read from env
-  const serviceAccount = process.env.GOOGLE_APPLICATION_CREDENTIALS;
-  if (!serviceAccount) {
-    console.error("Service account not found in env");
-    return;
-  }
-   return JSON.parse(serviceAccount);
-}
-
 
 export const getGoogleProjectId = async (): Promise<string> => {
   const googleAuth = new GoogleAuth({
-    scopes: "https://www.googleapis.com/auth/cloud-platform",
+    scopes: "https://www.googleapis.com/auth/cloud-platform"
   });
-  const {credential} = await googleAuth.getApplicationDefault();
-  if (!credential.projectId) {
-    throw new Error("Failed to get project id");
+  const { credential } = await googleAuth.getApplicationDefault();
+  if (credential.projectId) {
+    return credential.projectId;
   }
-  return credential.projectId;
-}
-
-
-export const getTokenFromServiceAccountInContext = async(): Promise<string> =>{
-  const googleAuth = new GoogleAuth({
-    scopes: "https://www.googleapis.com/auth/cloud-platform",
-  });
-  const {credential} = await googleAuth.getApplicationDefault();
-  const accessToken = await credential.getAccessToken();
-  if(!accessToken || !accessToken.token) throw new Error("Failed to get access token");
-  return accessToken.token;
+  if (process.env.GCLOUD_PROJECT) {
+    return process.env.GCLOUD_PROJECT;
+  }
+  throw new Error("Failed to get project id");
 }

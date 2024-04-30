@@ -1,4 +1,3 @@
-import { ServiceAccount } from "../models/auth";
 import { DataContext } from "../models/command";
 import { getDataContextFromServiceAccount } from "./data_context";
 import { getGoogleProjectId } from "./auth";
@@ -10,12 +9,12 @@ export const getProjectContextData = async (): Promise<DataContext> => {
     if (projectContextDataCache[projectId]) {
         console.log("CACHE HIT: Returning cached data for project", projectId);
         // refresh data async
-        getDataContextFromServiceAccount(projectId)
+        getDataContextFromServiceAccount()
             .then((data) => projectContextDataCache[projectId] = data);
         return projectContextDataCache[projectId];
     }
     console.log("CACHE MISS: Fetching data for project", projectId);
-    const projectContextData = await getDataContextFromServiceAccount(projectId);
+    const projectContextData = await getDataContextFromServiceAccount();
     projectContextDataCache[projectId] = projectContextData;
     return projectContextData;
 }

@@ -1,5 +1,5 @@
-import {GenerativeModelPreview, VertexAI} from "@google-cloud/vertexai";
-import {getGoogleProjectId} from "../services/auth";
+import { GenerativeModelPreview, VertexAI } from "@google-cloud/vertexai";
+import { getGoogleProjectId } from "../services/auth";
 
 export const getVertexAI = async (): Promise<GenerativeModelPreview> => {
     const projectId = await getGoogleProjectId();

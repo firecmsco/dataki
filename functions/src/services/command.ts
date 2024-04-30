@@ -1,6 +1,6 @@
 import { buildSystemInstruction } from "../providers/prompt";
 import { CommandMessage, DataContext } from "../models/command";
-import {getVertexAI} from "../providers/llm";
+import { getVertexAI } from "../providers/llm";
 
 export const generateCodeForCommand = async (command: string,
                                              history: Array<CommandMessage>,
@@ -36,7 +36,7 @@ export const generateCodeForCommand = async (command: string,
         }
         return totalDelta;
     }
-    else  {
+    else {
         const llmResult = await chat.sendMessage(command);
         const candidates = llmResult.response.candidates;
         console.log(`Got a total of ${candidates?.length} candidates`);
