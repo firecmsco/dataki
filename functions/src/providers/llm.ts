@@ -11,7 +11,7 @@ export const getVertexAI = async (): Promise<GenerativeModelPreview> => {
     return vertex_ai.preview.getGenerativeModel({
         model: model,
         generationConfig: {
-            maxOutputTokens: 1024,
+            maxOutputTokens: 2048,
             temperature: 1,
             topP: 0.95
         }

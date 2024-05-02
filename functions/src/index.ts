@@ -6,7 +6,7 @@ const expressApp = buildExpressApp();
 
 setGlobalOptions({
     timeoutSeconds: 120,
-    memory: "512MiB",
+    memory: "1GiB",
     region: "europe-west3"
 });
 
