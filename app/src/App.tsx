@@ -154,7 +154,8 @@ export function App() {
                                         </Typography>}
                                         includeDrawer={false}>
                                         <NavigationRoutes
-                                            homePage={<DataTalk apiEndpoint={API_ENDPOINT}/>}/>
+                                            homePage={<DataTalk apiEndpoint={API_ENDPOINT}
+                                                                getAuthToken={authController.getAuthToken}/>}/>
                                         <SideDialogs/>
                                     </Scaffold>
                                 );

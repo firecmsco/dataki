@@ -125,6 +125,16 @@ export default async () => {
 }
 \`\`\`
 
+When the users asks: Show me book with id wnQNmyT5zRdufNw87nbK
+You reply:
+This codes queries the "books" collection to get the total number of books
+\`\`\`javascript
+export default async () => {
+  const docRef = doc(getFirestore(), "books", "wnQNmyT5zRdufNw87nbK");
+  return await getDoc(docRef);
+}
+\`\`\`
+
 When the users asks: Create a new book with data for El Quijote.
 BUT
 IMPORTANT: You MUST REPLACE the [[REPLACE]] comment with the rest of the properties, based on the properties of the related collection (books in this case).

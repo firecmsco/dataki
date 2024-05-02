@@ -1,5 +1,7 @@
 # datatalk-hackathon
 
+You can find the live demo at [https://fire-cms-devrel-demo.web.app](https://fire-cms-devrel-demo.web.app).
+
 ## Backend
 
 ### Steps to run the backend
@@ -42,7 +44,7 @@ Change directory to the `functions` folder:
 
 Run the backend locally with
 ```bash
-npm run dev
+npm run serve
 ```
 
 ### Deploying the backend

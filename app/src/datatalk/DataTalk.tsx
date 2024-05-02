@@ -8,12 +8,13 @@ import { useAuthController } from "@firecms/core";
 import { FirebaseUserWrapper } from "@firecms/firebase";
 
 export function DataTalk({
-                             apiEndpoint
+                             apiEndpoint,
+                             getAuthToken
                          }: {
-    apiEndpoint: string
+    apiEndpoint: string,
+    getAuthToken: () => Promise<string>
 }) {
 
-    const authController = useAuthController<FirebaseUserWrapper>();
     const [textInput, setTextInput] = useState<string>("");
 
     const [autoRunCode, setAutoRunCode] = useState<boolean>(false);
@@ -49,7 +50,7 @@ export function DataTalk({
 
         setTextInput("");
 
-        const firebaseToken = await authController.getAuthToken();
+        const firebaseToken = await getAuthToken();
         let currentMessageResponse = "";
         streamDataTalkCommand(firebaseToken, message, apiEndpoint, messages, (newDelta) => {
             currentMessageResponse += newDelta;
