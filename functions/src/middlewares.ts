@@ -1,5 +1,5 @@
 import { NextFunction, Request, RequestHandler, Response } from "express";
-import FireCMSException from "./models/exceptions";
+import FireCMSException from "./types/exceptions";
 import { ErrorReporting } from "@google-cloud/error-reporting";
 import { verifyFirebaseToken } from "./services/auth";
 

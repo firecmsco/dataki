@@ -1,9 +1,18 @@
 import { Request } from "express";
 import { GoogleAuth } from "google-auth-library";
-import { firebaseTokenInvalid, firebaseTokenMissing, tokenExpired } from "../models/errors";
+import { firebaseTokenInvalid, firebaseTokenMissing, tokenExpired } from "../types/errors";
 import { firebaseAuth } from "../firebase";
-import { DecodedToken } from "../models/auth";
+import { DecodedToken } from "../types/auth";
 import { FirebaseError } from "firebase-admin"
+
+declare global {
+    // eslint-disable-next-line @typescript-eslint/no-namespace
+    namespace Express {
+        export interface Request {
+            firebaseTokenInfo?: DecodedToken
+        }
+    }
+}
 
 const isFirebaseError = (error: unknown): error is FirebaseError => {
   return error instanceof Error && "code" in error;

@@ -1,6 +1,5 @@
 export interface CommandRequest {
   command: string;
-  useStreaming?: boolean;
   history?: Array<CommandMessage>;
 }
 

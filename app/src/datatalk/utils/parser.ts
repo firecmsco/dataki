@@ -5,6 +5,7 @@ const md = new MarkdownIt({ html: true });
 
 export type MarkdownElement = {
     type: "html" | "code";
+    loading?: boolean;
     content: string;
 };
 
@@ -16,7 +17,7 @@ export function parseMarkdown(text: string): MarkdownElement[] {
 
     for (const line of lines) {
         // Check if we encounter the start or end of a code block
-        if (line.trim().startsWith("```javascript") || (line.startsWith("```") && !inCodeBlock)) {
+        if (line.trim().toLowerCase().startsWith("```json") || line.trim().toLowerCase().startsWith("```json5") || (line.startsWith("```") && !inCodeBlock)) {
             // If buffer has content, add it as markdown element
             if (buffer.length) {
                 elements.push({
@@ -32,6 +33,7 @@ export function parseMarkdown(text: string): MarkdownElement[] {
         else if (line.trim().startsWith("```") && inCodeBlock) {
             elements.push({
                 type: "code",
+                loading: true,
                 content: buffer.join("\n")
             });
             buffer = [];
@@ -47,7 +49,8 @@ export function parseMarkdown(text: string): MarkdownElement[] {
     if (buffer.length) {
         elements.push({
             type: inCodeBlock ? "code" : "html",
-            content: inCodeBlock ? buffer.join("\n") : md.render(buffer.join("\n"))
+            content: inCodeBlock ? buffer.join("\n") : md.render(buffer.join("\n")),
+            loading: false
         });
     }
 

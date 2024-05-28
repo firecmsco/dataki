@@ -1,46 +1,12 @@
-export type Session = {
-    id: string;
-    name?: string;
-    created_at: Date;
-    messages: ChatMessage[];
-};
+import { DataRow } from "./sql";
 
-export type LLMOutput = {
-    items: Item[];
-    text: string;
-}
-
-export type DataRow = {
-    [key: string]: any;
-};
-
-export type ChatMessage = {
-    id: string;
-    text: string;
-    // items: Item[];
-    user: "USER" | "SYSTEM";
-    date: Date;
-    loading?: boolean;
-    negative_feedback?: {
-        reason?: FeedbackSlug;
-        message?: string;
-    };
-};
-
-export type FeedbackSlug = "not_helpful"
-    | "not_factually_correct"
-    | "incorrect_code"
-    | "unsafe_or_problematic"
-    | "other"
-    | null;
-
-export type Item = LoadingItem | ChartConfigItem | MardownTextItem;
+export type Item = LoadingItem | ChartConfigItem | MarkdownTextItem;
 
 export type LoadingItem = {
     type: "loading";
 }
 
-export type MardownTextItem = {
+export type MarkdownTextItem = {
     type: "text";
     text: string;
 }
@@ -60,7 +26,6 @@ export type ChartConfigItem = {
         }
     };
 }
-
 
 export type EnrichedChartConfigItem = {
     sql: string;

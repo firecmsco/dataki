@@ -1,22 +1,10 @@
 import React, { useEffect, useState } from "react";
-import * as firestoreLibrary from "firebase/firestore";
-import { doc, DocumentReference, getFirestore, setDoc } from "firebase/firestore";
-import { cmsToFirestoreModel, firestoreToCMSModel } from "@firecms/firebase";
-import {
-    CircularProgressCenter,
-    Entity,
-    EntityCollectionTable,
-    OnCellValueChange,
-    Properties,
-    useSelectionController
-} from "@firecms/core";
-import { setIn } from "@firecms/formex";
-import { Button, cn, Paper, Typography } from "@firecms/ui";
-import { buildPropertiesOrder } from "@firecms/schema_inference";
+import * as firestoreLibrary from "@firebase/firestore";
+import { CircularProgressCenter, EntityCollection } from "@firecms/core";
+import { Button, cn, Paper, useDebounceValue } from "@firecms/ui";
 import { AutoHeightEditor } from "./AutoHeightEditor";
-import { getPropertiesFromData } from "@firecms/collection_editor_firebase";
-import { BasicExportAction } from "@firecms/data_import_export";
 import { extractStringLiterals } from "../utils/extract_literals";
+import { TableResults } from "./TableResults";
 
 // @ts-ignore
 window.firestoreLibrary = firestoreLibrary
@@ -37,24 +25,30 @@ function ExecutionErrorView(props: { executionError: Error }) {
 export function CodeBlock({
                               initialCode,
                               maxWidth,
+                              loading,
                               sourceLoading,
+                              onCodeModified,
                               autoRunCode,
-                              onCodeRun
+                              onCodeRun,
+                              collections
                           }: {
     initialCode?: string,
     sourceLoading?: boolean,
+    loading?: boolean,
     maxWidth?: number,
     autoRunCode?: boolean,
-    onCodeRun?: () => void
+    onCodeModified?: (code: string) => void,
+    onCodeRun?: () => void,
+    collections?: EntityCollection[]
 }) {
 
     const textAreaRef = React.useRef<HTMLDivElement>(null);
-    const [inputCode, setInputCode] = useState<string | undefined>(initialCode);
+    const [code, setCode] = useState<string | undefined>(initialCode);
 
-    const [loading, setLoading] = useState<boolean>(false);
-    const [queryResults, setQueryResults] = useState<Entity<any>[] | null>(null);
-    const [properties, setProperties] = useState<Properties | null>(null);
-    const [propertiesOrder, setPropertiesOrder] = useState<string[] | null>(null);
+    const [loadingQuery, setLoadingQuery] = useState<boolean>(false);
+    const [querySnapshot, setQuerySnapshot] = useState<firestoreLibrary.QuerySnapshot | null>(null);
+    const [codePriorityKeys, setCodePriorityKeys] = useState<string[] | undefined>();
+
     const [executionResult, setExecutionResult] = useState<any | null>();
     const [codeHasBeenRun, setCodeHasBeenRun] = useState<boolean>(false);
     const [consoleOutput, setConsoleOutput] = useState<string>("");
@@ -62,8 +56,15 @@ export function CodeBlock({
     const [executionError, setExecutionError] = useState<Error | null>(null);
     const mounted = React.useRef(false);
 
+    const deferredCode = useDebounceValue(code, 500);
     useEffect(() => {
-        setInputCode(initialCode);
+        if (onCodeModified) {
+            onCodeModified(deferredCode ?? "");
+        }
+    }, [deferredCode]);
+
+    useEffect(() => {
+        setCode(initialCode);
         if (autoRunCode && !mounted.current && initialCode && !sourceLoading) {
             executeQuery();
         }
@@ -71,41 +72,37 @@ export function CodeBlock({
     }, [sourceLoading, initialCode, autoRunCode]);
 
     const handleCodeChange = (value?: string) => {
-        setInputCode(value);
+        setCode(value);
     };
 
     async function displayQuerySnapshotData(querySnapshot: firestoreLibrary.QuerySnapshot, priorityKeys?: string[]) {
-        const docs = querySnapshot.docs.map((doc: any) => doc.data());
-        const inferredProperties = await getPropertiesFromData(docs);
-        const inferredPropertiesOrder = buildPropertiesOrder(inferredProperties, priorityKeys);
-        const entities = querySnapshot.docs.map((doc) => ({
-            id: doc.id,
-            path: doc.ref.path,
-            values: firestoreToCMSModel(doc.data())
-        }));
-        setQueryResults(entities);
-        setProperties(inferredProperties);
-        setPropertiesOrder(inferredPropertiesOrder)
+        if (querySnapshot.empty) {
+            setQuerySnapshot(null);
+            setExecutionResult("No documents found");
+            return;
+        }
+        setQuerySnapshot(querySnapshot);
+        setCodePriorityKeys(priorityKeys);
     }
 
     const executeQuery = async () => {
 
-        if (!inputCode) {
+        if (!code) {
             return;
         }
 
-        console.log("Executing code", inputCode);
+        originalConsoleLog("Executing code", code);
 
         setCodeHasBeenRun(true);
 
-        setLoading(true);
+        setLoadingQuery(true);
         setExecutionError(null);
 
         try {
             pipeConsoleLog((...args) => {
                 setConsoleOutput((prev) => prev + Array.from(args).join(" ") + "\n");
             });
-            const encodedJs = encodeURIComponent(inputCode);
+            const encodedJs = encodeURIComponent(code);
             const dataUri = "data:text/javascript;charset=utf-8," + buildAuxScript() + encodedJs;
             const promise = import(/* @vite-ignore */dataUri);
             promise.then((module) => {
@@ -113,23 +110,23 @@ export function CodeBlock({
                 setConsoleOutput("");
                 if (!module.default) {
                     setExecutionError(new Error("No default export found. Make sure your code is exporting a default function."));
-                    setLoading(false);
+                    setLoadingQuery(false);
                     return;
                 }
                 module.default()
-                    .then(async (codeExport: any) => {
-                        originalConsoleLog("Code loaded", codeExport, typeof codeExport);
+                    .then(async (codeOutput: any) => {
+                        originalConsoleLog("Code loaded", codeOutput, typeof codeOutput);
                         let codeResult;
-                        if (codeExport instanceof Promise) {
-                            codeResult = await codeExport;
-                        } else if (typeof codeExport === "function") {
-                            codeResult = await codeExport();
+                        if (codeOutput instanceof Promise) {
+                            codeResult = await codeOutput;
+                        } else if (typeof codeOutput === "function") {
+                            codeResult = await codeOutput();
                         } else {
-                            codeResult = codeExport;
+                            codeResult = codeOutput;
                         }
 
                         if (codeResult instanceof firestoreLibrary.QuerySnapshot) {
-                            const priorityKeys = extractStringLiterals(inputCode);
+                            const priorityKeys = extractStringLiterals(code);
                             return displayQuerySnapshotData(codeResult, priorityKeys);
                         } else if (codeResult instanceof firestoreLibrary.DocumentReference) {
                             return setExecutionResult("Document added successfully with reference: " + codeResult.path);
@@ -137,7 +134,7 @@ export function CodeBlock({
                             const res = JSON.stringify(codeResult.data(), null, 2);
                             originalConsoleLog("Document data", res);
                             return setExecutionResult(res);
-                        } else if (typeof codeExport === "undefined") {
+                        } else if (typeof codeOutput === "undefined") {
                             return setExecutionResult("Code executed successfully");
                         } else {
                             return setExecutionResult(codeResult);
@@ -145,61 +142,26 @@ export function CodeBlock({
                     })
                     .catch((error: any) => {
                         setExecutionError(error);
-                        console.error("Error executing query:", error);
+                        originalConsoleError("Error executing query:", error);
                     })
                     .finally(() => {
-                        setLoading(false);
+                        setLoadingQuery(false);
                         onCodeRun?.();
                         resetConsolePipe();
                     });
             })
                 .catch((error) => {
                     setExecutionError(error);
-                    console.error("Error loading module:", error);
-                    setLoading(false);
+                    originalConsoleError("Error loading module:", error);
+                    setLoadingQuery(false);
                     resetConsolePipe();
                 });
         } catch (error: any) {
-            setLoading(false);
+            setLoadingQuery(false);
             setExecutionError(error);
             console.error("Error executing query:", error);
         }
     };
-
-    const onValueChange: OnCellValueChange<any, any> = ({
-                                                            value,
-                                                            propertyKey,
-                                                            onValueUpdated,
-                                                            setError,
-                                                            data: entity
-                                                        }) => {
-
-        const updatedValues = setIn({ ...entity.values }, propertyKey, value);
-
-        const firestore = getFirestore();
-        const firebaseValues = cmsToFirestoreModel(updatedValues, firestore);
-        console.log("Saving", firebaseValues, entity);
-        console.log("Firestore", firestore);
-        const documentReference: DocumentReference = doc(firestore, entity.path);
-        console.log("Document reference", documentReference)
-        return setDoc(documentReference, firebaseValues, { merge: true })
-            .then((res) => {
-                console.log("Document updated", res);
-                onValueUpdated();
-            })
-            .catch((error) => {
-                console.error("Error updating document", error);
-                setError(error);
-            });
-
-    };
-
-    const selectionController = useSelectionController();
-    const displayedColumnIds = (propertiesOrder ?? Object.keys(properties ?? {}))
-        .map((key) => ({
-            key,
-            disabled: false
-        }));
 
     return (
         <div className={"flex flex-col my-4 gap-2"}
@@ -210,61 +172,43 @@ export function CodeBlock({
             <div className={"flex flex-row w-full gap-4"}
                  ref={textAreaRef}>
                 <AutoHeightEditor
-                    value={inputCode}
+                    value={code}
+                    loading={loading}
                     maxWidth={maxWidth ? maxWidth - 96 : undefined}
                     onChange={handleCodeChange}
                 />
                 <Button size="small"
                         variant={codeHasBeenRun ? "outlined" : "filled"}
                         onClick={executeQuery}
-                        disabled={!inputCode}>Run Code</Button>
+                        disabled={!code}>Run Code</Button>
             </div>
 
             {executionError && (
                 <ExecutionErrorView executionError={executionError}/>
             )}
 
-            {(queryResults || loading || consoleOutput || executionResult) && (
+            {(querySnapshot || loadingQuery || consoleOutput || executionResult) && (
                 <div
                     style={{
-                        marginLeft: queryResults ? "-64px" : undefined,
-                        width: queryResults ? "calc(100% + 64px)" : undefined
+                        marginLeft: querySnapshot ? "-64px" : undefined,
+                        width: querySnapshot ? "calc(100% + 64px)" : undefined
                     }}
                     className={cn("w-full rounded-lg shadow-sm overflow-hidden transition-all", {
-                        "h-[480px]": queryResults,
-                        "h-[92px]": !queryResults && loading
+                        "h-[480px]": querySnapshot,
+                        "h-[92px]": !querySnapshot && loadingQuery
                     })}>
-                    {loading && <CircularProgressCenter/>}
+                    {loadingQuery && <CircularProgressCenter/>}
 
-                    {queryResults && properties && <EntityCollectionTable
-                        inlineEditing={true}
-                        defaultSize={"s"}
-                        selectionController={selectionController}
-                        onValueChange={onValueChange}
-                        filterable={false}
-                        actionsStart={<Typography
-                            variant={"caption"}>{(queryResults ?? []).length} results</Typography>}
-                        actions={<BasicExportAction
-                            data={queryResults}
-                            properties={properties}
-                            propertiesOrder={propertiesOrder ?? undefined}
-                        />}
-                        enablePopupIcon={false}
-                        sortable={false}
-                        tableController={{
-                            data: queryResults,
-                            dataLoading: false,
-                            noMoreToLoad: true
-                        }}
-                        displayedColumnIds={displayedColumnIds}
-                        properties={properties}/>}
+                    {querySnapshot && <TableResults querySnapshot={querySnapshot}
+                                                    priorityKeys={codePriorityKeys}
+                                                    collections={collections}/>}
 
                     {(consoleOutput || executionResult) && (
                         <Paper className={"w-full p-4 min-h-[92px] font-mono text-xs overflow-auto rounded-lg"}>
-                            {consoleOutput && <pre className={"text-sm font-mono text-gray-700 dark:text-gray-300"}>
+                            {consoleOutput && <pre className={"text-sm font-mono text-gray-700 dark:text-gray-200"}>
                                 {consoleOutput}
                             </pre>}
-                            {executionResult && <pre className={"text-xs font-mono text-gray-700 dark:text-gray-300"}>
+                            {executionResult && <pre className={"text-xs font-mono text-gray-700 dark:text-gray-200"}>
                                     {typeof executionResult === "string" ? executionResult : JSON.stringify(executionResult, null, 2)}
                             </pre>}
                         </Paper>

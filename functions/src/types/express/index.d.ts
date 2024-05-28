@@ -1,6 +1,6 @@
 // to make the file a module and avoid the TypeScript error
 
-import { DecodedToken } from "../../models/auth";
+import { DecodedToken } from "../auth";
 
 export {}
 
