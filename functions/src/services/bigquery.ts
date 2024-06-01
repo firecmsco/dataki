@@ -5,8 +5,11 @@ import { Big } from "big.js";
 const bigquery = new BigQuery();
 
 export async function runSQLQuery(sql: string) {
+    const cleanSQL = sql.replaceAll("\\n", " ").replaceAll("\\\\n", " ").replaceAll("\n", " ").replace(/\n/g, "").replace(/\\\\/g, '');
+    console.log(`Running query: ${sql}`);
+    console.log(`Running clean query: ${cleanSQL}`);
     const options = {
-        query: sql,
+        query: cleanSQL,
         parseJson: true
     };
     const [rows] = await bigquery.query(options);

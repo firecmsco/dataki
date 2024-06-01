@@ -44,7 +44,7 @@ export function DataTalkDrawer() {
                                 "font-medium text-sm",
                                 isActive ? "bg-slate-200 bg-opacity-60 dark:bg-gray-800 dark:bg-opacity-30" : ""
                             )}
-                            to={navigation.homeUrl + "/datatalk/" + session.id}
+                            to={navigation.homeUrl + session.id}
                         >
                             <Typography variant={"label"}
                                         className={"whitespace-nowrap"}>{firstChars}{(firstMessage?.text ?? "").length > charsLimit ? "..." : ""}</Typography>

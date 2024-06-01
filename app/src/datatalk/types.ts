@@ -34,7 +34,7 @@ export type FeedbackSlug = "not_helpful"
     | "other"
     | null;
 
-export type Item = LoadingItem | ChartConfigItem | MardownTextItem;
+export type Item = LoadingItem | DryChartConfigItem | MardownTextItem;
 
 export type LoadingItem = {
     type: "loading";
@@ -45,7 +45,7 @@ export type MardownTextItem = {
     text: string;
 }
 
-export type ChartConfigItem = {
+export type DryChartConfigItem = {
     sql: string;
     type: "chart" | "table";
     chart?: {
@@ -62,7 +62,7 @@ export type ChartConfigItem = {
 }
 
 
-export type EnrichedChartConfigItem = {
+export type ChartConfigItem = {
     sql: string;
     type: "chart" | "table";
     data: DataRow[];
@@ -75,6 +75,15 @@ export type EnrichedChartConfigItem = {
                 data: string[];
                 backgroundColor: string[];
             }>;
+        },
+        options?: {
+            plugins?: {
+                legend?: {
+                    position: string;
+                }
+            },
+            scales?: {
+            }
         }
     };
 }

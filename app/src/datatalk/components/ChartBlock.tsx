@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { CircularProgressCenter } from "@firecms/core";
-import { cn, Paper, useDebounceValue } from "@firecms/ui";
-import { AutoHeightEditor } from "./AutoHeightEditor";
+import { Button, cn, Paper, useDebounceValue } from "@firecms/ui";
 import { enrichDataTalkItem } from "../api";
 import { useDataTalk } from "../DataTalkProvider";
 import JSON5 from "json5";
-import { EnrichedChartConfigItem } from "../types";
+import { ChartConfigItem, DryChartConfigItem } from "../types";
 import { ChartView } from "./Chart";
+import { AutoHeightEditor } from "./AutoHeightEditor";
 
 
 function ExecutionErrorView(props: { executionError: Error }) {
@@ -36,11 +36,10 @@ export function ChartBlock({
 
 
     const { apiEndpoint, getAuthToken } = useDataTalk();
-    const textAreaRef = React.useRef<HTMLDivElement>(null);
     const [code, setCode] = useState<string | undefined>(initialCode);
-    const [enrichedData, setEnrichedData] = useState<EnrichedChartConfigItem | null>(null);
-
-    const [loadingQuery, setLoadingQuery] = useState<boolean>(false);
+    const [dryConfig, setDryConfig] = useState<DryChartConfigItem | null>(null);
+    const [config, setConfig] = useState<ChartConfigItem | null>(null);
+    const [loadingData, setLoadingData] = useState<boolean>(false);
 
     const [consoleOutput, setConsoleOutput] = useState<string>("");
 
@@ -73,8 +72,14 @@ export function ChartBlock({
         if (!code) {
             throw Error("No code provided");
         }
+        setLoadingData(true);
+        setDryConfig(JSON5.parse(code));
         enrichDataTalkItem(firebaseToken, apiEndpoint, JSON5.parse(code))
-            .then(setEnrichedData);
+            .then((config)  => {
+                console.log("Config", config);
+                setConfig(config);
+            })
+            .finally(() => setLoadingData(false));
     };
 
     return (
@@ -83,30 +88,39 @@ export function ChartBlock({
                  maxWidth: maxWidth ? maxWidth + "px" : undefined
              }}>
 
-            <div className={"flex flex-row w-full gap-4"}
-                 ref={textAreaRef}>
+            {loading || loadingData && (
+                <CircularProgressCenter/>
+            )}
+            <div className={"flex flex-row w-full gap-4"}>
                 <AutoHeightEditor
                     value={code}
                     loading={loading}
                     maxWidth={maxWidth ? maxWidth - 96 : undefined}
                     onChange={handleCodeChange}
                 />
-                {/*<Button size="small"*/}
-                {/*        variant={codeHasBeenRun ? "outlined" : "filled"}*/}
-                {/*        onClick={executeQuery}*/}
-                {/*        disabled={!code}>Run Code</Button>*/}
+                <Button size="small"
+                        variant={"outlined"}
+                        onClick={executeQuery}
+                        disabled={!code}>Update</Button>
             </div>
 
-            {enrichedData && (<ChartView {...enrichedData}/>)}
+            {dryConfig?.sql && (
+                <pre
+                    className={" w-full p-4 bg-gray-50 dark:bg-gray-800 rounded-lg text-xs text-gray-600 dark:text-gray-300 overflow-auto"}>
+                        {dryConfig.sql}
+                    </pre>
+            )}
+
+            {config && (<ChartView {...config}/>)}
 
             {executionError && (
                 <ExecutionErrorView executionError={executionError}/>
             )}
 
-            {(loadingQuery || consoleOutput) && (
+            {(loadingData || consoleOutput) && (
                 <div
                     className={cn("w-full rounded-lg shadow-sm overflow-hidden transition-all")}>
-                    {loadingQuery && <CircularProgressCenter/>}
+                    {loadingData && <CircularProgressCenter/>}
 
                     {(consoleOutput) && (
                         <Paper className={"w-full p-4 min-h-[92px] font-mono text-xs overflow-auto rounded-lg"}>

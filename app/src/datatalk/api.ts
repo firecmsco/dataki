@@ -1,4 +1,4 @@
-import { ChartConfigItem, ChatMessage, EnrichedChartConfigItem, Item } from "./types";
+import { DryChartConfigItem, ChatMessage, ChartConfigItem, Item } from "./types";
 import { LLMOutputParser } from "./utils/llm_parser";
 
 export async function streamDataTalkCommand(firebaseAccessToken: string,
@@ -101,8 +101,8 @@ export async function streamDataTalkCommand(firebaseAccessToken: string,
 // make simple POST http request to the API
 export function enrichDataTalkItem(firebaseAccessToken: string,
                                    apiEndpoint: string,
-                                   config: ChartConfigItem
-): Promise<EnrichedChartConfigItem> {
+                                   config: DryChartConfigItem
+): Promise<ChartConfigItem> {
     return fetch(apiEndpoint + "/datatalk/enrich", {
         method: "POST",
         headers: {

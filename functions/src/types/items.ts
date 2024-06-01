@@ -1,6 +1,6 @@
 import { DataRow } from "./sql";
 
-export type Item = LoadingItem | ChartConfigItem | MarkdownTextItem;
+export type Item = LoadingItem | DryChartConfigItem | MarkdownTextItem;
 
 export type LoadingItem = {
     type: "loading";
@@ -11,7 +11,7 @@ export type MarkdownTextItem = {
     text: string;
 }
 
-export type ChartConfigItem = {
+export type DryChartConfigItem = {
     sql: string;
     type: "chart" | "table";
     chart?: {
@@ -27,10 +27,10 @@ export type ChartConfigItem = {
     };
 }
 
-export type EnrichedChartConfigItem = {
+export type ChartConfigItem = {
     sql: string;
     type: "chart" | "table";
-    data: DataRow[];
+    data?: DataRow[];
     chart?: {
         type: string;
         data: {

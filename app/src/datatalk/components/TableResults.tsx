@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { doc, DocumentReference, getFirestore, QuerySnapshot, setDoc } from "@firebase/firestore";
 import {
     CollectionSize,
     copyEntityAction,
@@ -10,65 +9,36 @@ import {
     EntityCollection,
     EntityCollectionRowActions,
     EntityCollectionTable,
-    OnCellValueChange,
     PropertiesOrBuilders,
     resolveCollection,
-    useCustomizationController,
-    useNavigationController,
     useSelectionController
 } from "@firecms/core";
-import { setIn } from "@firecms/formex";
-import { cmsToFirestoreModel, firestoreToCMSModel } from "@firecms/firebase";
+import { firestoreToCMSModel } from "@firecms/firebase";
 import { Typography } from "@firecms/ui";
 import { BasicExportAction } from "@firecms/data_import_export";
 import { getPropertiesFromData } from "@firecms/collection_editor_firebase";
 import { buildPropertiesOrder } from "@firecms/schema_inference";
 
 export function TableResults({
-                                 querySnapshot,
+                                 data,
                                  priorityKeys,
                                  collections
                              }: {
-    querySnapshot: QuerySnapshot,
+    data: object[],
     priorityKeys?: string[],
     collections?: EntityCollection[]
 }) {
 
-    const navigation = useNavigationController();
-    const customizationController = useCustomizationController();
-
     async function inferProperties() {
-        if (querySnapshot.docs.length === 0) {
+        if (data.length === 0) {
             return;
         }
-        const pathAndId = querySnapshot.docs[0].ref.path;
-        const resultsPath = pathAndId.split("/").slice(0, -1).join("/");
         let foundProperties = null;
         let foundPropertiesOrder;
 
-        const entities = querySnapshot.docs.map((doc) => ({
-            id: doc.id,
-            path: doc.ref.path,
-            values: firestoreToCMSModel(doc.data())
-        }));
-
-        setPath(resultsPath);
-
-        if (resultsPath) {
-            const collection = navigation.getCollection(resultsPath, true);
-            setCollection(collection);
-            if (collection) {
-                // foundProperties = collection.properties;
-                foundPropertiesOrder = collection.propertiesOrder;
-            }
-        }
-
-        const docs = querySnapshot.docs.map((doc: any) => doc.data());
-        foundProperties = await getPropertiesFromData(docs);
-
+        foundProperties = await getPropertiesFromData(data);
         foundPropertiesOrder = buildPropertiesOrder(foundProperties, foundPropertiesOrder, priorityKeys);
 
-        setQueryResults(entities);
         setProperties(foundProperties);
         setPropertiesOrder(foundPropertiesOrder)
     }
@@ -77,7 +47,6 @@ export function TableResults({
         inferProperties();
     }, []);
 
-    const [queryResults, setQueryResults] = useState<Entity<any>[] | null>(null);
     const [properties, setProperties] = useState<PropertiesOrBuilders | null>(null);
     const [propertiesOrder, setPropertiesOrder] = useState<string[] | null>(null);
     const [path, setPath] = useState<string | null>(null);
@@ -87,7 +56,6 @@ export function TableResults({
         return collection && path ? resolveCollection<any>({
                 collection,
                 path,
-                fields: customizationController.propertyConfigs
             })
             : undefined;
     }, [collection, path]);
@@ -99,35 +67,8 @@ export function TableResults({
             disabled: false
         }));
 
-    const onValueChange: OnCellValueChange<any, any> = ({
-                                                            value,
-                                                            propertyKey,
-                                                            onValueUpdated,
-                                                            setError,
-                                                            data: entity
-                                                        }) => {
 
-        const updatedValues = setIn({ ...entity.values }, propertyKey, value);
-
-        const firestore = getFirestore();
-        const firebaseValues = cmsToFirestoreModel(updatedValues, firestore);
-        console.log("Saving", firebaseValues, entity);
-        console.log("Firestore", firestore);
-        const documentReference: DocumentReference = doc(firestore, entity.path);
-        console.log("Document reference", documentReference)
-        return setDoc(documentReference, firebaseValues, { merge: true })
-            .then((res) => {
-                console.log("Document updated", res);
-                onValueUpdated();
-            })
-            .catch((error) => {
-                console.error("Error updating document", error);
-                setError(error);
-            });
-
-    };
-
-    if (!queryResults || !properties) return null;
+    if (!data || !properties) return null;
 
     const getActionsForEntity = ({
                                      entity,
@@ -182,14 +123,13 @@ export function TableResults({
         inlineEditing={true}
         defaultSize={"s"}
         selectionController={selectionController}
-        onValueChange={onValueChange}
         filterable={false}
         actionsStart={<Typography
             variant={"caption"}>
-            {(queryResults ?? []).length} results
+            {(data ?? []).length} results
         </Typography>}
         actions={<BasicExportAction
-            data={queryResults}
+            data={data}
             properties={properties}
             propertiesOrder={propertiesOrder ?? undefined}
         />}
@@ -197,7 +137,7 @@ export function TableResults({
         sortable={false}
         tableRowActionsBuilder={tableRowActionsBuilder}
         tableController={{
-            data: queryResults,
+            data: data,
             dataLoading: false,
             noMoreToLoad: true
         }}

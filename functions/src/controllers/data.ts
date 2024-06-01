@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import FireCMSException from "../types/exceptions";
-import { ChartConfigItem } from "../types/items";
+import { DryChartConfigItem } from "../types/items";
 import { runSQLQuery } from "../services/bigquery";
 import { mapDataToJSON } from "../services/data";
 
@@ -9,7 +9,7 @@ export const enrichChartOrTable = async (request: Request, response: Response) =
         throw new FireCMSException(400, "Missing config param in the body", "Invalid request");
     }
 
-    const config: ChartConfigItem = request.body.config;
+    const config: DryChartConfigItem = request.body.config;
 
     if (!config.sql) {
         throw new FireCMSException(400, "Missing sql in the config", "Invalid request");

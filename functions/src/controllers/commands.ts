@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import FireCMSException from "../types/exceptions";
-import { makeGeminiRequest } from "../services/command";
+import { makeGeminiRequest } from "../services/gemini";
 
 export const processUserCommand = async (request: Request, response: Response) => {
 

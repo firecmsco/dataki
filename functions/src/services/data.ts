@@ -1,7 +1,7 @@
-import { ChartConfigItem, EnrichedChartConfigItem } from "../types/items";
+import { DryChartConfigItem, ChartConfigItem } from "../types/items";
 import { DataRow } from "../types/sql";
 
-export function mapDataToJSON(config: ChartConfigItem, data: DataRow[]): EnrichedChartConfigItem {
+export function mapDataToJSON(config: DryChartConfigItem, data: DataRow[]): ChartConfigItem {
     // Extract the keys for labels and data from the LLM output
     const labelKey = config.chart?.data.labels.replace(/{{|}}/g, '');
 
