@@ -1,12 +1,14 @@
 // @ts-ignore
 import MarkdownIt from "markdown-it";
+import { WidgetSize } from "../types";
 
 const md = new MarkdownIt({ html: true });
 
 export type MarkdownElement = {
-    type: "html" | "code";
+    type: "html" | "widget";
     loading?: boolean;
     content: string;
+    size?: WidgetSize;
 };
 
 export function parseMarkdown(text: string): MarkdownElement[] {
@@ -32,7 +34,7 @@ export function parseMarkdown(text: string): MarkdownElement[] {
         // Check if we encounter the end of a code block
         else if (line.trim().startsWith("```") && inCodeBlock) {
             elements.push({
-                type: "code",
+                type: "widget",
                 loading: true,
                 content: buffer.join("\n")
             });
@@ -48,7 +50,7 @@ export function parseMarkdown(text: string): MarkdownElement[] {
     // Check if there's any remaining markdown content outside of code blocks
     if (buffer.length) {
         elements.push({
-            type: inCodeBlock ? "code" : "html",
+            type: inCodeBlock ? "widget" : "html",
             content: inCodeBlock ? buffer.join("\n") : md.render(buffer.join("\n")),
             loading: false
         });

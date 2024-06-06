@@ -17,7 +17,6 @@ export type DataRow = {
 export type ChatMessage = {
     id: string;
     text: string;
-    // items: Item[];
     user: "USER" | "SYSTEM";
     date: Date;
     loading?: boolean;
@@ -34,7 +33,7 @@ export type FeedbackSlug = "not_helpful"
     | "other"
     | null;
 
-export type Item = LoadingItem | DryChartConfigItem | MardownTextItem;
+export type Item = LoadingItem | DryWidgetConfig | MardownTextItem;
 
 export type LoadingItem = {
     type: "loading";
@@ -45,45 +44,52 @@ export type MardownTextItem = {
     text: string;
 }
 
-export type DryChartConfigItem = {
+export type DryWidgetConfig = {
+    title: string;
+    description: string;
     sql: string;
     type: "chart" | "table";
-    chart?: {
-        type: string;
-        data: {
-            labels: string;
-            datasets: Array<{
-                label: string;
-                data: string;
-                backgroundColor: string[];
-            }>;
-        }
-    };
+    size?: WidgetSize
 }
 
-
-export type ChartConfigItem = {
+export type WidgetConfig = {
+    title: string;
+    description: string;
     sql: string;
     type: "chart" | "table";
-    data: DataRow[];
-    chart?: {
-        type: string;
-        data: {
-            labels: string[];
-            datasets: Array<{
-                label: string;
-                data: string[];
-                backgroundColor: string[];
-            }>;
-        },
-        options?: {
-            plugins?: {
-                legend?: {
-                    position: string;
-                }
-            },
-            scales?: {
+    chart?: ChartConfig,
+    table?: TableConfig,
+    size?: WidgetSize
+}
+
+export type WidgetSize = { width: number, height: number };
+
+export type ChartConfig = {
+    type: string;
+    data: {
+        labels: string[];
+        datasets: Array<{
+            label: string;
+            data: string[];
+            backgroundColor: string[];
+        }>;
+    },
+    options?: {
+        plugins?: {
+            legend?: {
+                position: string;
             }
-        }
-    };
-}
+        },
+        scales?: {}
+    }
+};
+
+export type TableConfig = {
+    data: DataRow[];
+    columns: TableColumn[]
+};
+
+export type TableColumn = { key: string, name: string, dataType: DataType };
+
+export type DataType = "string" | "number" | "date" | "object" | "array";
+

@@ -18,7 +18,7 @@ import {
     Tooltip
 } from "@firecms/ui";
 import { FeedbackSlug } from "../types";
-import { ChartBlock } from "./ChartBlock";
+import { WidgetView } from "./WidgetView";
 
 export function SystemMessage({
                                   text,
@@ -55,8 +55,8 @@ export function SystemMessage({
         const markdown = elements.map((element) => {
             if (element.type === "html") {
                 return element.content;
-            } else if (element.type === "code") {
-                return "```javascript\n" + element.content + "\n```";
+            } else if (element.type === "widget") {
+                return "```json\n" + element.content + "\n```";
             }
             throw new Error("Unknown element type");
         }).join("\n");
@@ -71,11 +71,22 @@ export function SystemMessage({
                     className={"max-w-full prose dark:prose-invert prose-headings:font-title text-base text-gray-700 dark:text-gray-200"}
                     dangerouslySetInnerHTML={{ __html: element.content }}
                     key={index}/>;
-            } else if (element.type === "code") {
-                return <ChartBlock key={index}
+            } else if (element.type === "widget") {
+                return <WidgetView key={index}
                                    loading={loading}
                                    initialCode={element.content}
-                                   maxWidth={containerWidth ? containerWidth - 90 : undefined}/>;
+                                   maxWidth={containerWidth ? containerWidth - 90 : undefined}
+                                   onContentModified={(updatedContent) => {
+                                       console.log("Updated content", updatedContent);
+                                       const updatedElements = [...parsedElements];
+                                       updatedElements[index] = {
+                                           type: "widget",
+                                           content: updatedContent
+                                       };
+                                       setParsedElements(updatedElements);
+                                       onUpdatedElements(updatedElements);
+                                   }}
+                />;
             } else {
                 console.error("Unknown element type", element);
                 return null;

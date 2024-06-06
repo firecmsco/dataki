@@ -1,6 +1,6 @@
 import { DataRow } from "./sql";
 
-export type Item = LoadingItem | DryChartConfigItem | MarkdownTextItem;
+export type Item = LoadingItem | DryWidgetConfig | MarkdownTextItem;
 
 export type LoadingItem = {
     type: "loading";
@@ -11,9 +11,11 @@ export type MarkdownTextItem = {
     text: string;
 }
 
-export type DryChartConfigItem = {
+export type DryWidgetConfig = {
     sql: string;
     type: "chart" | "table";
+    title: string;
+    description: string;
     chart?: {
         type: string;
         data: {
@@ -25,12 +27,16 @@ export type DryChartConfigItem = {
             }>;
         }
     };
+    table?: {
+        columns: TableColumn[]
+    }
 }
 
-export type ChartConfigItem = {
+export type WidgetConfig = {
+    title: string;
+    description: string;
     sql: string;
     type: "chart" | "table";
-    data?: DataRow[];
     chart?: {
         type: string;
         data: {
@@ -40,6 +46,23 @@ export type ChartConfigItem = {
                 data: string[];
                 backgroundColor: string[];
             }>;
+        },
+        options?: {
+            plugins?: {
+                legend?: {
+                    position: string;
+                }
+            },
+            scales?: {}
         }
-    };
+    },
+    table?: {
+        data: DataRow[];
+        columns: TableColumn[]
+    }
 }
+
+export type TableColumn = { key: string, name: string, dataType: DataType };
+
+export type DataType = "string" | "number" | "date" | "object" | "array";
+

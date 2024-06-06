@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { EntityCollection, randomString } from "@firecms/core";
 import { Button, Checkbox, Label, SendIcon, TextareaAutosize, Tooltip } from "@firecms/ui";
-import { MessageLayout } from "./components/MessageLayout";
+import { MessageView } from "./components/MessageView";
 import { streamDataTalkCommand } from "./api";
 import { ChatMessage, FeedbackSlug, Session } from "./types";
 import { IntroComponent } from "./components/IntroComponent";
@@ -48,7 +48,7 @@ export function DataTalkSession({
     const scrollToBottom = () => {
         setTimeout(() => {
             messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-        }, 100);
+        }, 50);
     };
 
     const handleScroll = () => {
@@ -95,6 +95,7 @@ export function DataTalkSession({
 
     const submitMessage = async (messageText: string, baseMessages: ChatMessage[] = messages) => {
         if (!messageText) return;
+        if (messageLoading) return;
 
         if (onAnalyticsEvent) {
             onAnalyticsEvent("message_sent", { message: messageText });
@@ -262,23 +263,23 @@ export function DataTalkSession({
                         <IntroComponent onPromptSuggestionClick={(prompt) => submitMessage(prompt)}/>}
 
                     {messages.map((message, index) => {
-                        return <MessageLayout key={message.date.toISOString() + index}
-                                              onRemove={() => {
-                                                  const newMessages = [...messages];
-                                                  newMessages.splice(index, 1);
-                                                  setMessages(newMessages);
-                                              }}
-                                              onFeedback={(reason, feedbackMessage) => {
-                                                  saveFeedback(message, reason, feedbackMessage, index);
-                                              }}
-                                              onUpdatedMessage={(message) => {
-                                                  updateMessage(message, index);
-                                              }}
-                                              collections={collections}
-                                              message={message}
-                                              canRegenerate={index === messages.length - 1 && message.user === "SYSTEM"}
-                                              onRegenerate={() => onRegenerate(message, index)}
-                                              autoRunCode={autoRunCode}/>;
+                        return <MessageView key={message.date.toISOString() + index}
+                                            onRemove={() => {
+                                                const newMessages = [...messages];
+                                                newMessages.splice(index, 1);
+                                                setMessages(newMessages);
+                                            }}
+                                            onFeedback={(reason, feedbackMessage) => {
+                                                saveFeedback(message, reason, feedbackMessage, index);
+                                            }}
+                                            onUpdatedMessage={(message) => {
+                                                updateMessage(message, index);
+                                            }}
+                                            collections={collections}
+                                            message={message}
+                                            canRegenerate={index === messages.length - 1 && message.user === "SYSTEM"}
+                                            onRegenerate={() => onRegenerate(message, index)}
+                                            autoRunCode={autoRunCode}/>;
                     })}
 
                 </div>
@@ -301,10 +302,10 @@ export function DataTalkSession({
                         autoFocus={true}
                         onKeyDown={handleKeyDown}
                         onChange={(e) => setTextInput(e.target.value)}
-                        className="flex-1 resize-none rounded-full p-4 border-none focus:ring-0 dark:bg-gray-800 dark:text-gray-200 pr-[80px] pl-8"
+                        className="flex-1 resize-none rounded-3xl p-4 border-none focus:ring-0 dark:bg-gray-800 dark:text-gray-200 pr-[80px] pl-8"
                         placeholder="Type your message..."
                     />
-                    <Button className={"absolute right-0 top-0 m-1.5"} variant="text" type={"submit"}
+                    <Button className={"rounded-3xl absolute right-0 top-0 m-1.5"} variant="text" type={"submit"}
                             disabled={!textInput || messageLoading}>
                         <SendIcon color={"primary"}/>
                     </Button>

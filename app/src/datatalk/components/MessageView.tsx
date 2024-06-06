@@ -4,7 +4,7 @@ import { ChatMessage, FeedbackSlug } from "../types";
 import { SystemMessage } from "./SystemMessage";
 import { EntityCollection } from "@firecms/core";
 
-export function MessageLayout({
+export function MessageView({
                                   message,
                                   autoRunCode,
                                   onRemove,

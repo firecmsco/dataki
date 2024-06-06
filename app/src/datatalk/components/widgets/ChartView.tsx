@@ -1,11 +1,28 @@
 import Chart from 'chart.js/auto'
 import React, { useEffect } from "react";
-import { ChartConfigItem } from "../types";
 // @ts-ignore
-import { Resizable, ResizableBox } from 'react-resizable';
+import { ResizableBox } from 'react-resizable';
 import { useInjectStyles } from "@firecms/ui";
+import { ChartConfig, WidgetSize } from '../../types';
 
-export function ChartView(config: ChartConfigItem) {
+export function ResizableChartView({ config, size, onResize }: {
+    config: ChartConfig,
+    size?: WidgetSize,
+    onResize?: (size: WidgetSize) => void
+}) {
+    return <ResizableBox width={size?.width ?? 500}
+                         height={size?.height ?? 400}
+                         onResize={(event: any, { node, size, handle }: any) => {
+                             onResize?.(size);
+                         }}
+                         minConstraints={[200, 200]}
+                         maxConstraints={[1200, 500]}
+                         className={"bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-4"}>
+        <ChartView config={config}/>
+    </ResizableBox>;
+}
+
+export function ChartView({ config }: { config: ChartConfig }) {
     const ref = React.useRef<HTMLCanvasElement>(null);
 
     useInjectStyles("chart", `.react-resizable {
@@ -29,20 +46,19 @@ export function ChartView(config: ChartConfigItem) {
     useEffect(() => {
         const current = ref.current;
         if (!current) return;
-        if (!config.chart) {
-            return ;
-            throw new Error("No chart configuration provided");
+        if (!config) {
+            return;
         }
-        console.log("config", config.chart);
+        console.log("config", config);
         const chartConfig = {
-            ...config.chart,
+            ...config,
             options: {
-                ...config.chart?.options,
+                ...config?.options,
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
                     legend: {
-                        position: config.chart.options?.plugins?.legend?.position || "right"
+                        position: config.options?.plugins?.legend?.position || "right"
                     }
                 }
             }
@@ -56,20 +72,8 @@ export function ChartView(config: ChartConfigItem) {
         };
     }, []);
 
-    // return <canvas id="my-canvas"
-    //                className={"max-w-xl"}
-    //                ref={ref}>Test Chart
-    // </canvas>;
-    return <ResizableBox width={500}
-                         height={400}
-                         minConstraints={[200, 200]}
-                         maxConstraints={[1200, 500]}
-                         className={"bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-4"}
-    >
-        <canvas id="my-canvas"
-                className={"w-full h-full"}
-                ref={ref}>Test Chart
-        </canvas>
-    </ResizableBox>
+    return <canvas className={"w-full h-full"}
+                   ref={ref}>Test Chart
+    </canvas>;
 }
 
