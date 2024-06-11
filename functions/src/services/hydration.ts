@@ -6,44 +6,85 @@ export function hydrateWidgetConfig(config: DryWidgetConfig, data: DataRow[]): W
 
     console.log("Hydrating widget config", util.inspect(config, false, null, true /* enable colors */) + "\n\n", data);
 
-    // Extract the keys for labels and data from the LLM output
-    const labelKey = config.chart?.data?.labels?.replace(/\[\[|]]/g, "");
-
-    // Map the data to the corresponding keys
-    const labels = labelKey
-        ? data.map(row => getIn(row, labelKey))
-        : [];
-
-    // Map data for each dataset
-    const datasets = config.chart?.data.datasets.map(dataset => {
-        const dataKey = dataset.data.replace(/\[\[|]]/g, "");
-        return {
-            ...dataset,
-            data: data.map(row => getIn(row, dataKey))
-        };
-    }) || [];
-
-    // Create the final JSON with the mapped data
-    return {
-        ...config,
-        chart: config.chart
-            ? {
-                ...config.chart,
-                data: {
-                    ...config.chart.data,
-                    labels,
-                    datasets
-                }
+    function hydrateObject(obj: any, data: DataRow[]): any {
+        if (typeof obj === "string") {
+            // Replace placeholders in strings with mapped array values
+            return replacePlaceholders(obj, data);
+        } else if (Array.isArray(obj)) {
+            return obj.map(item => hydrateObject(item, data));
+        } else if (typeof obj === "object" && obj !== null) {
+            const hydratedObj = {};
+            for (const key in obj) {
+                hydratedObj[key] = hydrateObject(obj[key], data);
             }
-            : undefined,
-        table: config.table
-            ? {
-                ...config.table,
-                data
-            }
-            : undefined
-    };
+            return hydratedObj;
+        } else {
+            return obj;
+        }
+    }
+
+    function replacePlaceholders(str: string, data: DataRow[]): string | string[] {
+        const replaced = str.replace(/\[\[|]]/g, "");
+        if (replaced === str) return str; // No placeholders found
+        return data.map(row => getIn(row, replaced));
+        // return str.replace(/\[\[(.+?)\]\]/g, (match, path) => {
+        //     const value = getIn(data, path.replace(/\[|\]/g, "")); // Remove brackets for clarity
+        //     return Array.isArray(value)
+        //         ? JSON.stringify(value)
+        //         : value; // Handle arrays for charts
+        // });
+    }
+
+    const res = hydrateObject(config, data);
+    if (res.table) {
+        res.table.data = data;
+    }
+    return res;
 }
+
+
+// export function hydrateWidgetConfig(config: DryWidgetConfig, data: DataRow[]): WidgetConfig {
+//
+//     console.log("Hydrating widget config", util.inspect(config, false, null, true /* enable colors */) + "\n\n", data);
+//
+//     // Extract the keys for labels and data from the LLM output
+//     const labelKey = config.chart?.data?.labels?.replace(/\[\[|]]/g, "");
+//
+//     // Map the data to the corresponding keys
+//     const labels = labelKey
+//         ? data.map(row => getIn(row, labelKey))
+//         : [];
+//
+//     // Map data for each dataset
+//     const datasets = config.chart?.data.datasets.map(dataset => {
+//         const dataKey = dataset.data.replace(/\[\[|]]/g, "");
+//         return {
+//             ...dataset,
+//             data: data.map(row => getIn(row, dataKey))
+//         };
+//     }) || [];
+//
+//     // Create the final JSON with the mapped data
+//     return {
+//         ...config,
+//         chart: config.chart
+//             ? {
+//                 ...config.chart,
+//                 data: {
+//                     ...config.chart.data,
+//                     labels,
+//                     datasets
+//                 }
+//             }
+//             : undefined,
+//         table: config.table
+//             ? {
+//                 ...config.table,
+//                 data
+//             }
+//             : undefined
+//     };
+// }
 
 
 function toPath(value: string | string[]) {
@@ -72,7 +113,9 @@ export function getIn(
         return def;
     }
 
-    return obj === undefined ? def : obj;
+    return obj === undefined
+        ? def
+        : obj;
 }
 
 

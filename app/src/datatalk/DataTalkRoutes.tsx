@@ -1,16 +1,15 @@
-import React, { useEffect, useState } from "react";
-import { Route, Routes, useLocation, useNavigate, useParams } from "react-router-dom";
-import { CircularProgressCenter, EntityCollection } from "@firecms/core";
+import React, { useEffect } from "react";
+import { Route, Routes, useLocation, useNavigate } from "react-router-dom";
+import { CircularProgressCenter } from "@firecms/core";
 import { DataTalkConfig, useDataTalk } from "./DataTalkProvider";
-import { DataTalkSession } from "./DataTalkSession";
-import { Session } from "./types";
+import { HomePage } from "./components/HomePage";
+import { ChatSessionRoute } from "./routes/ChatSessionRoute";
+import { DashboardRoute } from "./routes/DashboardRoute";
 
 export function DataTalkRoutes({
                                    onAnalyticsEvent,
-                                   collections
                                }: {
     onAnalyticsEvent?: (event: string, params?: any) => void,
-    collections?: EntityCollection[]
 }) {
 
     const dataTalkConfig = useDataTalk();
@@ -23,19 +22,27 @@ export function DataTalkRoutes({
         <Routes>
             <Route path="/"
                    element={
-                       <CreateSessionAdnRedirect dataTalkConfig={dataTalkConfig}/>
+                       <HomePage/>
                    }/>
-            <Route path="/:sessionId"
+            <Route path="/dashboards/:dashboardId"
                    element={
-                       <DataTalkSessionRoute dataTalkConfig={dataTalkConfig}
-                                             onAnalyticsEvent={onAnalyticsEvent}
-                                             collections={collections}/>
+                       <DashboardRoute dataTalkConfig={dataTalkConfig}
+                                       onAnalyticsEvent={onAnalyticsEvent}/>
+                   }/>
+            <Route path="/chat"
+                   element={
+                       <CreateSessionAndRedirect dataTalkConfig={dataTalkConfig}/>
+                   }/>
+            <Route path="/chat/:sessionId"
+                   element={
+                       <ChatSessionRoute dataTalkConfig={dataTalkConfig}
+                                         onAnalyticsEvent={onAnalyticsEvent}/>
                    }/>
         </Routes>
     )
 }
 
-function CreateSessionAdnRedirect({ dataTalkConfig }: { dataTalkConfig: DataTalkConfig }) {
+function CreateSessionAndRedirect({ dataTalkConfig }: { dataTalkConfig: DataTalkConfig }) {
     const location = useLocation();
     const navigate = useNavigate();
 
@@ -44,104 +51,13 @@ function CreateSessionAdnRedirect({ dataTalkConfig }: { dataTalkConfig: DataTalk
 
     useEffect(() => {
         dataTalkConfig.createSessionId().then(sessionId => {
-            console.log("location", location);
             if (initialPrompt) {
-                navigate(`./${sessionId}?prompt=${initialPrompt}`, { replace: true });
+                navigate(`/chat/${sessionId}?prompt=${initialPrompt}`, { replace: true });
             } else {
-                navigate(`./${sessionId}`, { replace: true });
+                navigate(`/chat/${sessionId}`, { replace: true });
             }
         });
     }, []);
 
     return <CircularProgressCenter/>;
-}
-
-function DataTalkSessionRoute({
-                                  dataTalkConfig,
-                                  onAnalyticsEvent,
-                                  collections
-                              }: {
-    dataTalkConfig: DataTalkConfig,
-    onAnalyticsEvent?: (event: string, params?: any) => void,
-    collections?: EntityCollection[]
-}) {
-
-    const [autoRunCode, setAutoRunCode] = useState<boolean>(false);
-
-    const { sessionId } = useParams();
-    if (!sessionId) throw Error("Session id not found");
-
-    return <DataTalkRouteInner
-        key={sessionId}
-        sessionId={sessionId}
-        dataTalkConfig={dataTalkConfig}
-        onAnalyticsEvent={onAnalyticsEvent}
-        collections={collections}
-        autoRunCode={autoRunCode}
-        setAutoRunCode={setAutoRunCode}/>
-}
-
-interface DataTalkRouteInnerProps {
-    sessionId: any;
-    dataTalkConfig: DataTalkConfig;
-    onAnalyticsEvent?: (event: string, params?: any) => void,
-    collections?: EntityCollection[]
-    autoRunCode: any;
-    setAutoRunCode: any;
-}
-
-function DataTalkRouteInner({
-                                sessionId,
-                                dataTalkConfig,
-                                onAnalyticsEvent,
-                                collections,
-                                autoRunCode,
-                                setAutoRunCode
-                            }: DataTalkRouteInnerProps) {
-
-    const location = useLocation();
-
-    const params = new URLSearchParams(location.search);
-    const initialPrompt = params.get("prompt");
-
-    const [session, setSession] = React.useState<Session | undefined>(undefined);
-    const [loading, setLoading] = React.useState(true);
-
-    useEffect(() => {
-        setLoading(true);
-        dataTalkConfig.getSession(sessionId)
-            .then(session => {
-                setSession(session);
-                setLoading(false);
-            });
-    }, [sessionId]);
-
-    if (loading) {
-        return <CircularProgressCenter/>
-    }
-
-    const usedSession = session ?? {
-        id: sessionId,
-        created_at: new Date(),
-        messages: []
-    } satisfies Session;
-
-    return (
-        <DataTalkSession
-            onAnalyticsEvent={onAnalyticsEvent}
-            collections={collections}
-            session={usedSession}
-            autoRunCode={autoRunCode}
-            setAutoRunCode={setAutoRunCode}
-            initialPrompt={initialPrompt ?? undefined}
-            onMessagesChange={(messages) => {
-                const newSession = {
-                    ...usedSession,
-                    messages
-                };
-                setSession(newSession);
-                dataTalkConfig.saveSession(newSession);
-            }}
-        />
-    )
 }

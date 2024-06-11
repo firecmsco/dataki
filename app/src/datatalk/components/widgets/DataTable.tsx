@@ -1,37 +1,28 @@
 import React, { useRef } from "react";
 import { CellRendererParams, VirtualTable, VirtualTableColumn } from "@firecms/core";
 import { getIn } from "@firecms/formex";
-import { DataType, TableConfig, WidgetSize } from "../../types";
-// @ts-ignore
-import { ResizableBox } from "react-resizable";
+import { DataType, TableConfig } from "../../types";
+import { useResizeObserver } from "../../utils/useResizeObserver";
 
 export type DataTableProps = {
     config: TableConfig;
-    size?: WidgetSize,
-    onResize?: (size: WidgetSize) => void
+    zoom?: number;
+    maxWidth?: number;
+    ref?: React.RefObject<HTMLDivElement | null>,
 }
 
-export function ResizableDataTable({ config, size, onResize }: DataTableProps) {
-    return <ResizableBox width={size?.width ?? 800}
-                         height={size?.height ?? 400}
-                         onResize={(event: any, { node, size, handle }: any) => {
-                             onResize?.(size);
-                         }}
-                         minConstraints={[300, 300]}
-                         maxConstraints={[1200, 700]}
-                         className={"bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-4"}>
-        <DataTable config={config}/>
-    </ResizableBox>;
-}
+export function DataTable({
+                              config: {
+                                  data,
+                                  columns
+                              },
+                              ref: refProp,
+                              zoom = 1,
+                              maxWidth
+                          }: DataTableProps) {
 
-export const DataTable = function DataTable({
-                                                config: {
-                                                    data,
-                                                    columns
-                                                }
-                                            }: DataTableProps) {
-
-    const ref = useRef<HTMLDivElement>(null);
+    const ref = refProp ?? useRef<HTMLDivElement>(null);
+    const size = useResizeObserver(ref);
 
     function cellRenderer({
                               columns,
@@ -44,7 +35,7 @@ export const DataTable = function DataTable({
 
         const entry = getIn(rowData, column.key);
         return (
-            <div className="px-4 py-2 flex items-center" style={{ width: column.width }}>
+            <div className="px-3 py-1 flex items-center max-h-full overflow-scroll" style={{ width: column.width }}>
                 {entry}
             </div>
         );
@@ -59,32 +50,42 @@ export const DataTable = function DataTable({
     })
 
     return (
-        <div className="h-full w-full flex flex-col bg-white dark:bg-gray-950"
-             ref={ref}>
+        <>
+            <div className="nowheel nodrag flex h-full w-full flex-col bg-white dark:bg-gray-950"
+                 style={{
+                     maxWidth
+                 }}
+                 ref={ref}>
 
-            <VirtualTable
-                data={data}
-                columns={tableColumns}
-                cellRenderer={cellRenderer}
-                // onEndReached={loadNextPage}
-                // onResetPagination={resetPagination}
-                // error={dataLoadingError}
-                // paginationEnabled={paginationEnabled}
-                // onColumnResize={onColumnResize}
-                size={"xs"}
-                // loading={dataLoading}
-                // filter={filterValues}
-                // sortBy={sortBy}
-                // onSortByUpdate={setSortBy as ((sortBy?: [string, "asc" | "desc"]) => void)}
-                // hoverRow={hoverRow}
-                // checkFilterCombination={checkFilterCombination}
-                className="flex-grow"
-                // emptyComponent={emptyComponent}
-                // endAdornment={endAdornment}
-                // AddColumnComponent={AddColumnComponent}
-            />
+                <VirtualTable
+                    data={data}
+                    columns={tableColumns}
+                    cellRenderer={cellRenderer}
+                    // rowHeight={40}
+                    // style={{
+                    //     width: size.width / zoom,
+                    //     height: size.height / zoom
+                    // }}
+                    // onEndReached={loadNextPage}
+                    // onResetPagination={resetPagination}
+                    // error={dataLoadingError}
+                    // paginationEnabled={paginationEnabled}
+                    // onColumnResize={onColumnResize}
+                    // loading={dataLoading}
+                    // filter={filterValues}
+                    // sortBy={sortBy}
+                    // onSortByUpdate={setSortBy as ((sortBy?: [string, "asc" | "desc"]) => void)}
+                    // hoverRow={hoverRow}
+                    // checkFilterCombination={checkFilterCombination}
+                    // className="flex-grow "
+                    // emptyComponent={emptyComponent}
+                    // endAdornment={endAdornment}
+                    // AddColumnComponent={AddColumnComponent}
+                />
 
-        </div>
+            </div>
+
+        </>
     );
 
 };

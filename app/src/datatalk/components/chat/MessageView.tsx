@@ -1,23 +1,19 @@
 import { AutoAwesomeIcon, Avatar, Menu, MenuItem, PersonIcon } from "@firecms/ui";
 import React, { useEffect, useRef, useState } from "react";
-import { ChatMessage, FeedbackSlug } from "../types";
+import { ChatMessage, FeedbackSlug } from "../../types";
 import { SystemMessage } from "./SystemMessage";
 import { EntityCollection } from "@firecms/core";
 
 export function MessageView({
                                   message,
-                                  autoRunCode,
                                   onRemove,
-                                  collections,
                                   onRegenerate,
                                   canRegenerate,
                                   onFeedback,
                                   onUpdatedMessage,
                               }: {
     message?: ChatMessage,
-    autoRunCode?: boolean,
     onRemove?: () => void,
-    collections?: EntityCollection[],
     onRegenerate?: () => void,
     canRegenerate?: boolean,
     onFeedback?: (reason?: FeedbackSlug, feedbackMessage?: string) => void,
@@ -67,8 +63,6 @@ export function MessageView({
                         ? <UserMessage text={message.text}/>
                         : <SystemMessage text={message.text}
                                          loading={message.loading}
-                                         autoRunCode={autoRunCode}
-                                         collections={collections}
                                          canRegenerate={canRegenerate}
                                          containerWidth={containerWidth ?? undefined}
                                          onRegenerate={onRegenerate}

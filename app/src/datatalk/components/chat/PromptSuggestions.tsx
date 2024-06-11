@@ -1,7 +1,7 @@
-import { Alert, Card, Typography } from "@firecms/ui";
-import { useDataTalk } from "../DataTalkProvider";
+import { Card, Typography } from "@firecms/ui";
+import { useDataTalk } from "../../DataTalkProvider";
 
-export function IntroComponent({ onPromptSuggestionClick }: { onPromptSuggestionClick: (prompt: string) => void }) {
+export function PromptSuggestions({ onPromptSuggestionClick }: { onPromptSuggestionClick: (prompt: string) => void }) {
 
     const dataTalk = useDataTalk();
 
@@ -16,13 +16,7 @@ export function IntroComponent({ onPromptSuggestionClick }: { onPromptSuggestion
         ];
 
     return (
-        <div className={"my-8"}>
-            <Typography variant={"h3"} gutterBottom={true} className={"font-mono ml-4 my-2"}>
-                Welcome to DATATALK
-            </Typography>
-            <Alert>
-                DATATALK is FREE during the beta period.
-            </Alert>
+        <div>
             <Typography paragraph={true} className={"ml-4 my-2"}>
                 DataTalk is a conversational interface to your data. You can ask questions, run commands and explore
                 your data in a natural way.

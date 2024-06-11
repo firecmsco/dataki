@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { EntityCollection } from "@firecms/core";
-import { MarkdownElement, parseMarkdown } from "../utils/parser";
+import { MarkdownElement, parseMarkdown } from "../../utils/parser";
 import {
     Button,
     CheckIcon,
@@ -17,15 +16,13 @@ import {
     ThumbDownOffAltIcon,
     Tooltip
 } from "@firecms/ui";
-import { FeedbackSlug } from "../types";
-import { WidgetView } from "./WidgetView";
+import { FeedbackSlug } from "../../types";
+import { WidgetMessageView } from "./WidgetMessageView";
 
 export function SystemMessage({
                                   text,
                                   loading,
                                   containerWidth,
-                                  autoRunCode,
-                                  collections,
                                   onRegenerate,
                                   canRegenerate,
                                   onFeedback,
@@ -34,8 +31,6 @@ export function SystemMessage({
     text?: string,
     loading?: boolean,
     containerWidth?: number,
-    autoRunCode?: boolean,
-    collections?: EntityCollection[],
     onRegenerate?: () => void,
     canRegenerate?: boolean,
     onFeedback?: (reason?: FeedbackSlug, feedbackMessage?: string) => void,
@@ -68,24 +63,24 @@ export function SystemMessage({
         {parsedElements && parsedElements.map((element, index) => {
             if (element.type === "html") {
                 return <div
-                    className={"max-w-full prose dark:prose-invert prose-headings:font-title text-base text-gray-700 dark:text-gray-200"}
+                    className={"max-w-full prose dark:prose-invert prose-headings:font-title text-base text-gray-700 dark:text-gray-200 mb-2"}
                     dangerouslySetInnerHTML={{ __html: element.content }}
                     key={index}/>;
             } else if (element.type === "widget") {
-                return <WidgetView key={index}
-                                   loading={loading}
-                                   initialCode={element.content}
-                                   maxWidth={containerWidth ? containerWidth - 90 : undefined}
-                                   onContentModified={(updatedContent) => {
-                                       console.log("Updated content", updatedContent);
-                                       const updatedElements = [...parsedElements];
-                                       updatedElements[index] = {
-                                           type: "widget",
-                                           content: updatedContent
-                                       };
-                                       setParsedElements(updatedElements);
-                                       onUpdatedElements(updatedElements);
-                                   }}
+                return <WidgetMessageView key={index}
+                                          loading={loading}
+                                          rawDryConfig={element.content}
+                                          maxWidth={containerWidth ? containerWidth - 90 : undefined}
+                                          onContentModified={(updatedContent) => {
+                                              console.log("Updated content", updatedContent);
+                                              const updatedElements = [...parsedElements];
+                                              updatedElements[index] = {
+                                                  type: "widget",
+                                                  content: updatedContent
+                                              };
+                                              setParsedElements(updatedElements);
+                                              onUpdatedElements(updatedElements);
+                                          }}
                 />;
             } else {
                 console.error("Unknown element type", element);
@@ -162,12 +157,12 @@ function BadMessageIcon({
                 <ThumbDownOffAltIcon size={"smallest"}/>
             </IconButton>
         </Tooltip>
+
         <Dialog
             maxWidth={"xl"}
             open={dialogOpen}
             onOpenChange={setDialogOpen}
             onOpenAutoFocus={(e) => {
-                console.log("onOpenAutoFocus", e);
                 e.preventDefault();
             }}>
             <DialogContent className={"flex flex-col gap-4"}>

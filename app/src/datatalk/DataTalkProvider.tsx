@@ -8,11 +8,15 @@ import {
     orderBy,
     query,
     setDoc,
-    Timestamp
+    Timestamp,
+    where
 } from "@firebase/firestore";
 import { FirebaseApp } from "@firebase/app";
-import { Session } from "./types";
+import { Dashboard, DashboardPage, DashboardWidgetConfig, Position, Session, WidgetConfig, WidgetSize } from "./types";
 import { getDataTalkSamplePrompts } from "./api";
+import { DEFAULT_WIDGET_SIZE } from "./utils/widgets";
+import { randomString } from "@firecms/core";
+import equal from "react-fast-compare"
 
 export type DataTalkConfig = {
     loading: boolean;
@@ -23,11 +27,24 @@ export type DataTalkConfig = {
     saveSession: (session: Session) => Promise<void>;
     getSession: (sessionId: string) => Promise<Session | undefined>;
     rootPromptsSuggestions?: string[];
+    dashboards: Dashboard[];
+    createDashboard: () => Promise<string>;
+    saveDashboard: (dashboard: Dashboard) => Promise<void>;
+    updateDashboard: (id: string, dashboardData: Partial<Dashboard>) => Promise<void>;
+    deleteDashboard: (id: string) => Promise<void>;
+    listenDashboard: (dashboardId: string, onDashboardUpdate: (dashboard: Dashboard) => void) => () => void;
+    addDashboardWidget(dashboardId: string, widgetConfig: WidgetConfig): void;
+    onWidgetResize: (dashboardId: string, pageId: string, id: string, size: WidgetSize) => void;
+    onWidgetUpdate: (dashboardId: string, pageId: string, id: string, widgetConfig: DashboardWidgetConfig) => void;
+    onWidgetMove: (dashboardId: string, pageId: string, id: string, position: Position) => void;
+    onWidgetRemove: (dashboardId: string, pageId: string, id: string) => void;
+    updateDashboardPage(id: string, pageId: string, dashboard: Partial<DashboardPage>): void;
 };
 
 interface DataTalkConfigParams {
     enabled?: boolean;
     firebaseApp?: FirebaseApp;
+    dashboardsPath?: string;
     userSessionsPath?: string;
     getAuthToken: () => Promise<string>;
     apiEndpoint: string;
@@ -39,13 +56,17 @@ export function useBuildDataTalkConfig({
                                            enabled = true,
                                            firebaseApp,
                                            userSessionsPath,
+                                           dashboardsPath,
                                            getAuthToken,
                                            apiEndpoint
                                        }: DataTalkConfigParams): DataTalkConfig {
 
-    const [loading, setLoading] = useState<boolean>(true);
     const [sessions, setSessions] = useState<Session[]>([]);
+    const [sessionsLoading, setSessionsLoading] = useState<boolean>(true);
     const [samplePrompts, setSamplePrompts] = useState<string[]>([]);
+
+    const [dashboards, setDashboards] = useState<Dashboard[]>([]);
+    const [dashboardsLoading, setDashboardsLoading] = useState<boolean>(true);
 
     useEffect(() => {
         if (!enabled) return;
@@ -77,15 +98,126 @@ export function useBuildDataTalkConfig({
         return sessions.find(s => s.id === sessionId);
     }, [sessions])
 
+    const saveDashboard = useCallback(async (dashBoard: Dashboard) => {
+        if (!firebaseApp) throw Error("useBuildDataTalkConfig Firebase not initialised");
+        const firestore = getFirestore(firebaseApp);
+        if (!firestore || !dashboardsPath) throw Error("useFirestoreConfigurationPersistence Firestore not initialised");
+        const {
+            id,
+            ...dashboardData
+        } = dashBoard;
+        const dashboardDoc = doc(firestore, dashboardsPath, id);
+        return setDoc(dashboardDoc, dashboardData);
+    }, [firebaseApp, userSessionsPath]);
+
+    const listenDashboard = useCallback((id: string, onDashboardUpdate: (dashboard: Dashboard) => void) => {
+        if (!firebaseApp) throw Error("useBuildDataTalkConfig Firebase not initialised");
+        const firestore = getFirestore(firebaseApp);
+        if (!firestore || !dashboardsPath) throw Error("useFirestoreConfigurationPersistence Firestore not initialised");
+        return onSnapshot(doc(firestore, dashboardsPath, id).withConverter(timestampToDateConverter), {
+            next: (snapshot) => {
+                const dashboard = {
+                    id: snapshot.id,
+                    ...snapshot.data()
+                } as Dashboard;
+                if (!dashboard) throw Error("listenDashboard: Dashboard not found");
+                onDashboardUpdate(dashboard);
+            },
+            error: (e) => {
+                console.error(e);
+            }
+        });
+    }, [firebaseApp, dashboardsPath]);
+
+    const createDashboard = useCallback(async (): Promise<string> => {
+        if (!firebaseApp) throw Error("useBuildDataTalkConfig Firebase not initialised");
+        const firestore = getFirestore(firebaseApp);
+        if (!firestore || !dashboardsPath) throw Error("useFirestoreConfigurationPersistence Firestore not initialised");
+        const documentReference = doc(collection(firestore, dashboardsPath));
+        await setDoc(documentReference, initializeDashboard(documentReference.id));
+        return documentReference.id;
+    }, [firebaseApp, dashboardsPath]);
+
+    const deleteDashboard = useCallback(async (id: string) => {
+        if (!firebaseApp) throw Error("useBuildDataTalkConfig Firebase not initialised");
+        const firestore = getFirestore(firebaseApp);
+        if (!firestore || !dashboardsPath) throw Error("useFirestoreConfigurationPersistence Firestore not initialised");
+        const dashboard = dashboards.find(d => d.id === id);
+        if (!dashboard) throw Error("deleteDashboard: Dashboard not found");
+        dashboard.deleted = true;
+        return saveDashboard(dashboard);
+    }, [firebaseApp, dashboardsPath, dashboards])
+
+    const addDashboardWidget = useCallback((id: string, widgetConfig: WidgetConfig) => {
+        const dashboard = dashboards.find(d => d.id === id);
+        if (!dashboard) throw Error("addDashboardWidget: Dashboard not found");
+        const dashboardPage = dashboard.pages[0];
+        dashboardPage.widgets.push(convertWidgetToDashboardWidget(widgetConfig));
+        return saveDashboard(dashboard);
+    }, [saveDashboard, dashboards]);
+
+    const onWidgetResize = useCallback((dashboardId: string, pageId: string, id: string, size: WidgetSize) => {
+        console.log("onWidgetResize", dashboardId, pageId, id, size)
+        const dashboard = dashboards.find(d => d.id === dashboardId);
+        if (!dashboard) throw Error("addDashboardWidget: Dashboard not found");
+        const page = dashboard.pages.find(p => p.id === pageId);
+        if (!page) throw Error("addDashboardWidget: Page not found");
+        const widget = page.widgets.find(w => w.id === id);
+        if (!widget) throw Error("addDashboardWidget: Widget not found");
+        widget.size = size;
+        return saveDashboard(dashboard);
+    }, [dashboards, saveDashboard]);
+
+    const onWidgetMove = useCallback((dashboardId: string, pageId: string, id: string, position: Position) => {
+        const dashboard = dashboards.find(d => d.id === dashboardId);
+        if (!dashboard) throw Error("addDashboardWidget: Dashboard not found");
+        const page = dashboard.pages.find(p => p.id === pageId);
+        if (!page) throw Error("addDashboardWidget: Page not found");
+        const widget = page.widgets.find(w => w.id === id);
+        if (!widget) throw Error("addDashboardWidget: Widget not found");
+        if (equal(widget.position, position)) return;
+        console.log("onWidgetMove", dashboardId, pageId, id, position)
+        widget.position = position;
+        return saveDashboard(dashboard);
+    }, [dashboards, saveDashboard]);
+
+    const onWidgetRemove = useCallback((dashboardId: string, pageId: string, id: string) => {
+        console.log("onWidgetRemove", dashboardId, pageId, id)
+        const dashboard = dashboards.find(d => d.id === dashboardId);
+        if (!dashboard) throw Error("addDashboardWidget: Dashboard not found");
+        const page = dashboard.pages.find(p => p.id === pageId);
+        if (!page) throw Error("addDashboardWidget: Page not found");
+        const widgetIndex = page.widgets.findIndex(w => w.id === id);
+        if (widgetIndex === -1) throw Error("addDashboardWidget: Widget not found");
+        page.widgets.splice(widgetIndex, 1);
+        return saveDashboard(dashboard);
+    }, [dashboards, saveDashboard]);
+
+    const onWidgetUpdate = useCallback((dashboardId: string, pageId: string, id: string, widgetConfig: DashboardWidgetConfig) => {
+        const dashboard = dashboards.find(d => d.id === dashboardId);
+        if (!dashboard) throw Error("addDashboardWidget: Dashboard not found");
+        const page = dashboard.pages.find(p => p.id === pageId);
+        if (!page) throw Error("addDashboardWidget: Page not found");
+        const widget = page.widgets.find(w => w.id === id);
+        if (!widget) throw Error("addDashboardWidget: Widget not found");
+        const widgetIndex = page.widgets.findIndex(w => w.id === id);
+        if (widgetIndex === -1) throw Error("addDashboardWidget: Widget not found");
+        const currentWidget = page.widgets[widgetIndex];
+        if (equal(currentWidget, widgetConfig)) return;
+        page.widgets.splice(widgetIndex, 1, widgetConfig);
+        console.log("onWidgetUpdate", dashboardId, pageId, id, widgetConfig)
+        return saveDashboard(dashboard);
+    }, [dashboards, saveDashboard]);
+
     useEffect(() => {
         if (!enabled) return;
         if (!firebaseApp) throw Error("useBuildDataTalkConfig Firebase not initialised");
         const firestore = getFirestore(firebaseApp);
         if (!firestore || !userSessionsPath) return;
-
+        const collectionReference = collection(firestore, userSessionsPath);
         return onSnapshot(
             query(
-                collection(firestore, userSessionsPath).withConverter(timestampToDateConverter),
+                collectionReference.withConverter(timestampToDateConverter),
                 orderBy("created_at", "desc"),
                 limit(50)
             ),
@@ -98,24 +230,101 @@ export function useBuildDataTalkConfig({
                         } as Session;
                     });
                     setSessions(updatedSessions);
-                    setLoading(false);
+                    setSessionsLoading(false);
                 },
                 error: (e) => {
                     console.error(e);
                 }
             }
         );
-    }, [firebaseApp, userSessionsPath]);
+    }, [enabled, firebaseApp, userSessionsPath]);
+
+    useEffect(() => {
+        if (!enabled) return;
+        if (!firebaseApp) throw Error("useBuildDataTalkConfig Firebase not initialised");
+        const firestore = getFirestore(firebaseApp);
+        if (!firestore || !dashboardsPath) return;
+
+        return onSnapshot(
+            query(
+                collection(firestore, dashboardsPath).withConverter(timestampToDateConverter),
+                where("deleted", "==", false),
+                orderBy("created_at", "desc")
+            ),
+            {
+                next: (snapshot) => {
+                    const updatedDashboards = snapshot.docs.map(doc => {
+                        return {
+                            id: doc.id,
+                            ...doc.data()
+                        } as Dashboard;
+                    });
+                    console.log("Dashboards snapshot", updatedDashboards);
+                    setDashboards(updatedDashboards);
+                    setDashboardsLoading(false);
+                },
+                error: (e) => {
+                    console.error(e);
+                }
+            }
+        );
+    }, [enabled, firebaseApp, dashboardsPath]);
+
+    const updateDashboard = useCallback((dashboardId: string, dashboardData: Partial<Dashboard>) => {
+        console.log("updateDashboard", dashboardId, dashboardData)
+        if (!firebaseApp) throw Error("useBuildDataTalkConfig Firebase not initialised");
+        const firestore = getFirestore(firebaseApp);
+        if (!firestore || !dashboardsPath) throw Error("useFirestoreConfigurationPersistence Firestore not initialised");
+        const dashboard = dashboards.find(d => d.id === dashboardId);
+        if (!dashboard) throw Error("addDashboardWidget: Dashboard not found");
+        const updatedDashboard = {
+            ...dashboard,
+            ...dashboardData
+        };
+        return saveDashboard(updatedDashboard);
+    }, [dashboards]);
+
+    const updateDashboardPage = useCallback((dashboardId: string, pageId: string, pageData: Partial<DashboardPage>) => {
+        console.log("updateDashboardPage", dashboardId, pageId, pageData)
+        if (!firebaseApp) throw Error("useBuildDataTalkConfig Firebase not initialised");
+        const firestore = getFirestore(firebaseApp);
+        if (!firestore || !dashboardsPath) throw Error("useFirestoreConfigurationPersistence Firestore not initialised");
+        const dashboard = dashboards.find(d => d.id === dashboardId);
+        if (!dashboard) throw Error("addDashboardWidget: Dashboard not found");
+        const page = dashboard.pages.find(p => p.id === pageId);
+        if (!page) throw Error("addDashboardWidget: Page not found");
+        const updatedPage = {
+            ...page,
+            ...pageData
+        };
+        const updatedDashboard = {
+            ...dashboard,
+            pages: dashboard.pages.map(p => p.id === pageId ? updatedPage : p)
+        };
+        return saveDashboard(updatedDashboard);
+    }, [dashboards]);
 
     return {
-        loading,
+        loading: sessionsLoading || dashboardsLoading,
         apiEndpoint,
         getAuthToken,
         sessions,
         saveSession,
         getSession,
         createSessionId,
-        rootPromptsSuggestions: samplePrompts
+        rootPromptsSuggestions: samplePrompts,
+        dashboards,
+        createDashboard,
+        deleteDashboard,
+        saveDashboard,
+        updateDashboard,
+        updateDashboardPage,
+        listenDashboard,
+        addDashboardWidget,
+        onWidgetResize,
+        onWidgetUpdate,
+        onWidgetMove,
+        onWidgetRemove
     };
 }
 
@@ -153,4 +362,27 @@ function convertTimestamps(data: any): any {
         return data;
     }
     return data; // Return the data if it is neither a Timestamp nor a complex object/array
+}
+
+function initializeDashboard(dashboardId: string): Omit<Dashboard, "id"> {
+    return {
+        created_at: new Date(),
+        pages: [{
+            id: randomString(20),
+            widgets: []
+        }],
+        deleted: false
+    };
+}
+
+function convertWidgetToDashboardWidget(config: WidgetConfig, position?: Position,): DashboardWidgetConfig {
+    return {
+        ...config,
+        size: config.size ?? DEFAULT_WIDGET_SIZE,
+        id: randomString(20),
+        position: position ?? {
+            x: 0,
+            y: 0
+        }
+    }
 }

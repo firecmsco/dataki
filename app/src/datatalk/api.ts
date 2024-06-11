@@ -1,4 +1,4 @@
-import { DryWidgetConfig, ChatMessage, WidgetConfig, Item } from "./types";
+import { ChatMessage, DryWidgetConfig, Item, WidgetConfig } from "./types";
 import { LLMOutputParser } from "./utils/llm_parser";
 
 export async function streamDataTalkCommand(firebaseAccessToken: string,
@@ -10,7 +10,6 @@ export async function streamDataTalkCommand(firebaseAccessToken: string,
                                             messages: ChatMessage[],
                                             onDelta: (delta: string) => void
 ): Promise<string> {
-
 
     const parser = new LLMOutputParser((v) => console.log("Delta:", v));
     // eslint-disable-next-line no-async-promise-executor
@@ -25,8 +24,10 @@ export async function streamDataTalkCommand(firebaseAccessToken: string,
                 body: JSON.stringify({
                     sessionId,
                     command,
-                    projectId,
-                    datasetId,
+                    sources: [{
+                        projectId,
+                        datasetId
+                    }],
                     history: messages
                 })
             });
@@ -42,7 +43,7 @@ export async function streamDataTalkCommand(firebaseAccessToken: string,
                 const reader = response.body.getReader();
                 const decoder = new TextDecoder();
                 let buffer = "";
-                let result: Item[] = [];
+                const result: Item[] = [];
                 const processChunk = (chunk: ReadableStreamReadResult<Uint8Array>): void | Promise<void> => {
                     if (chunk.done) {
                         console.log("Stream completed", { result });
@@ -99,11 +100,11 @@ export async function streamDataTalkCommand(firebaseAccessToken: string,
 }
 
 // make simple POST http request to the API
-export function enrichWidgetConfig(firebaseAccessToken: string,
-                                   apiEndpoint: string,
-                                   config: DryWidgetConfig
+export function hydrateWidgetConfig(firebaseAccessToken: string,
+                                    apiEndpoint: string,
+                                    config: DryWidgetConfig
 ): Promise<WidgetConfig> {
-    return fetch(apiEndpoint + "/datatalk/enrich", {
+    return fetch(apiEndpoint + "/datatalk/hydrate", {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
@@ -145,6 +146,26 @@ export function getDataTalkSamplePrompts(firebaseAccessToken: string,
             return response.json();
         })
         .then(data => data.data);
+}
+
+export function getDatasets(firebaseAccessToken: string, apiEndpoint: string, projectId: string) {
+    return fetch(apiEndpoint + "/projects/" + projectId + "/datasets",
+        {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${firebaseAccessToken}`
+            }
+        }).then(response => {
+        if (!response.ok) {
+            return response.json().then(data => {
+                throw new ApiError(data.message, data.code);
+            });
+        }
+        return response.json();
+    })
+        .then(data => data.data);
+
 }
 
 export class ApiError extends Error {

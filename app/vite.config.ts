@@ -1,7 +1,12 @@
 import { defineConfig } from "vite"
 import react from "@vitejs/plugin-react"
-// @ts-ignore
-import path from "path";
+
+const ReactCompilerConfig = {
+    sources: (filename) => {
+        return true;
+        // return filename.indexOf('src/path/to/dir') !== -1;
+    },
+};
 
 export default defineConfig({
     esbuild: {
@@ -14,6 +19,12 @@ export default defineConfig({
     },
     optimizeDeps: { include: ["react/jsx-runtime"] },
     plugins: [
-        react({})
+        react({
+            babel: {
+                plugins: [
+                    ["babel-plugin-react-compiler", ReactCompilerConfig],
+                ],
+            },
+        })
     ]
 })

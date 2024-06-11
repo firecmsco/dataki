@@ -1,7 +1,18 @@
 import { useModeController } from "@firecms/core";
 
-import Editor from "@monaco-editor/react";
+import Editor, { loader } from "@monaco-editor/react";
 import { useEffect, useRef } from "react";
+
+loader.init().then((monaco) => {
+    monaco.editor.defineTheme("vs-dark-custom", {
+        base: "vs-dark",
+        inherit: true,
+        rules: [],
+        colors: {
+            "editor.background": "#18181c"
+        }
+    });
+});
 
 export type AutoHeightEditorProps = {
     value?: string;
@@ -9,6 +20,7 @@ export type AutoHeightEditorProps = {
     onMount?: (editor: any) => void;
     maxWidth?: number;
     loading?: boolean;
+    defaultLanguage: string;
 };
 
 export function AutoHeightEditor({
@@ -16,8 +28,9 @@ export function AutoHeightEditor({
                                      onChange,
                                      maxWidth,
                                      loading,
+                                     defaultLanguage = "sql",
                                      ...props
-                                 }: AutoHeightEditorProps): JSX.Element {
+                                 }: AutoHeightEditorProps) {
     const editorRef = useRef<any>(null);
 
     function handleEditorDidMount(editor: any, monaco: any) {
@@ -26,23 +39,22 @@ export function AutoHeightEditor({
 
     const { mode } = useModeController();
     const lines = (value ?? "").split("\n").length;
-    const height = Math.max(lines * 18, 72) + 4;
+    const height = Math.max(lines * 18, 72) + 8;
 
     useEffect(() => {
         if (editorRef.current && maxWidth) {
             editorRef.current.layout({
                 width: maxWidth,
-                height: height
+                height
             })
         }
     }, [maxWidth, height]);
 
-
     return <Editor
         height={height + "px"}
-        theme={mode === "dark" ? "vs-dark" : "light"}
-        className={"rounded-lg flex-1 border dark:border-gray-800"}
-        defaultLanguage="javascript"
+        theme={mode === "dark" ? "vs-dark-custom" : "light"}
+        className={"rounded-lg flex-1 border border-gray-100 dark:border-gray-800 dark:border-opacity-80 overflow-hidden"}
+        defaultLanguage={defaultLanguage}
         value={value}
         onChange={onChange}
         onMount={handleEditorDidMount}
@@ -54,7 +66,7 @@ export function AutoHeightEditor({
             scrollbar: {
                 vertical: "hidden",
                 alwaysConsumeMouseWheel: false
-            },
+            }
         }}
         {...props}
     />;

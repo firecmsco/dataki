@@ -1,18 +1,18 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
 
-import { useDrawer, useNavigationController } from "@firecms/core";
+import { DrawerLogo, useApp, useNavigationController } from "@firecms/core";
 import { useDataTalk } from "../DataTalkProvider";
 import { cn, ManageSearchIcon, Typography } from "@firecms/ui";
 
 export function DataTalkDrawer() {
 
     const {
-        hovered,
+        drawerHovered,
         drawerOpen,
         openDrawer,
         closeDrawer
-    } = useDrawer();
+    } = useApp();
 
     const navigation = useNavigationController();
 
@@ -20,6 +20,8 @@ export function DataTalkDrawer() {
     return (
 
         <>
+
+            <DrawerLogo/>
             <div className={"flex-grow overflow-scroll no-scrollbar my-8"}>
                 {!drawerOpen && <div className={"flex justify-center p-4 h-full cursor-pointer"} onClick={openDrawer}>
                     <ManageSearchIcon/>
@@ -44,7 +46,7 @@ export function DataTalkDrawer() {
                                 "font-medium text-sm",
                                 isActive ? "bg-slate-200 bg-opacity-60 dark:bg-gray-800 dark:bg-opacity-30" : ""
                             )}
-                            to={navigation.homeUrl + session.id}
+                            to={navigation.homeUrl + "chat/" + session.id}
                         >
                             <Typography variant={"label"}
                                         className={"whitespace-nowrap"}>{firstChars}{(firstMessage?.text ?? "").length > charsLimit ? "..." : ""}</Typography>

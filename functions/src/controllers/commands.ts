@@ -9,12 +9,8 @@ export const processUserCommand = async (request: Request, response: Response) =
         throw new FireCMSException(400, "Missing command param in the body", "Invalid request");
     }
 
-    if (!request.body.projectId) {
-        throw new FireCMSException(400, "You must specify a projectId in the body", "Invalid request");
-    }
-
-    if (!request.body.datasetId) {
-        throw new FireCMSException(400, "You must specify a datasetId in the body", "Invalid request");
+    if (!request.body.sources) {
+        throw new FireCMSException(400, "You must specify data sources in the body", "Invalid request");
     }
 
     response.writeHead(200, {
@@ -24,8 +20,7 @@ export const processUserCommand = async (request: Request, response: Response) =
 
     const output = await makeGeminiRequest({
         userQuery: request.body.command,
-        projectId: request.body.projectId,
-        datasetId: request.body.datasetId,
+        sources: request.body.sources,
         history: request.body.history || [],
         onDelta: (delta) => {
             console.log("Got delta", delta);

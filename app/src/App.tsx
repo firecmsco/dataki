@@ -1,12 +1,13 @@
-import React from "react";
+import React, { useEffect } from "react";
 
 import "typeface-rubik";
 import "@fontsource/jetbrains-mono";
 import {
+    AppBar,
     CircularProgressCenter,
+    Drawer,
     FireCMS,
     ModeControllerProvider,
-    NavigationRoutes,
     Scaffold,
     SideDialogs,
     SnackbarProvider,
@@ -27,8 +28,11 @@ import {
 
 import { firebaseConfig } from "./firebase_config";
 import { useImportExportPlugin } from "@firecms/data_import_export";
-import { Typography } from "@firecms/ui";
+import { Button, ForumIcon, Tooltip, Typography } from "@firecms/ui";
 import { DataTalkDrawer, DataTalkProvider, DataTalkRoutes, useBuildDataTalkConfig } from "./datatalk";
+import { Link } from "react-router-dom";
+import { getNewChatPath } from "./datatalk/navigation";
+import { getDatasets } from "./datatalk/api";
 
 const API_ENDPOINT = import.meta.env.VITE_API_ENDPOINT;
 if (!API_ENDPOINT) {
@@ -36,7 +40,7 @@ if (!API_ENDPOINT) {
 }
 
 export function App() {
-
+    "use memo";
     const {
         firebaseApp,
         firebaseConfigLoading,
@@ -102,13 +106,22 @@ export function App() {
     });
 
     const dataTalkConfig = useBuildDataTalkConfig({
-        enabled : authController.user !== null,
+        enabled: authController.user !== null,
         firebaseApp: firebaseApp,
         userSessionsPath: `/users/${authController.user?.uid}/datatalk_sessions`,
+        dashboardsPath: `/dashboards`,
         getAuthToken: authController.getAuthToken,
         apiEndpoint: API_ENDPOINT
     });
 
+    useEffect(() => {
+        if (dataTalkConfig.loading) return;
+        dataTalkConfig.getAuthToken()
+            .then(async firebaseToken => {
+                const datasets = await getDatasets(firebaseToken, API_ENDPOINT, "bigquery-public-data");
+                console.log("datasets", datasets);
+            });
+    }, [dataTalkConfig]);
     /**
      * Allow import and export data plugin
      */
@@ -141,6 +154,7 @@ export function App() {
                           }) => {
 
                             let component;
+
                             if (loading || authLoading) {
                                 component = <CircularProgressCenter size={"large"}/>;
                             } else {
@@ -156,13 +170,21 @@ export function App() {
                                     );
                                 } else {
                                     component = (
-                                        <Scaffold
-                                            name={<Typography variant="subtitle1"
-                                                              className={"ml-2 !font-sm uppercase font-mono"}>
+                                        <Scaffold>
+                                            <AppBar title={<Typography variant="subtitle1"
+                                                                       className={"ml-2 !font-sm uppercase font-mono"}>
                                                 DataTalk
                                             </Typography>}
-                                            drawer={<DataTalkDrawer/>}
-                                            includeDrawer={true}>
+                                                    endAdornment={<Tooltip title={"Start new chat"}>
+                                                        <Link to={getNewChatPath()}>
+                                                            <Button variant={"outlined"}>
+                                                                <ForumIcon size="small"/>
+                                                            </Button>
+                                                        </Link>
+                                                    </Tooltip>}/>
+                                            <Drawer>
+                                                <DataTalkDrawer/>
+                                            </Drawer>
                                             <DataTalkRoutes
                                                 onAnalyticsEvent={(event, params) => {
                                                     console.log("DataTalk event", event, params);
@@ -176,7 +198,6 @@ export function App() {
                                     );
                                 }
                             }
-
                             return component;
                         }}
                     </FireCMS>

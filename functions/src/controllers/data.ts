@@ -4,7 +4,7 @@ import { DryWidgetConfig } from "../types/items";
 import { runSQLQuery } from "../services/bigquery";
 import { hydrateWidgetConfig } from "../services/hydration";
 
-export const enrichChartOrTable = async (request: Request, response: Response) => {
+export const hydrateChartOrTable = async (request: Request, response: Response) => {
     if (!request.body.config) {
         throw new FireCMSException(400, "Missing config param in the body", "Invalid request");
     }

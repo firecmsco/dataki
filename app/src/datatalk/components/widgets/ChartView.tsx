@@ -1,66 +1,49 @@
-import Chart from 'chart.js/auto'
+import Chart from "chart.js/auto"
 import React, { useEffect } from "react";
-// @ts-ignore
-import { ResizableBox } from 'react-resizable';
-import { useInjectStyles } from "@firecms/ui";
-import { ChartConfig, WidgetSize } from '../../types';
+import { ChartConfig, WidgetSize } from "../../types";
+import { useModeController } from "@firecms/core";
 
-export function ResizableChartView({ config, size, onResize }: {
+export function ChartView({
+                              config,
+                              size,
+                              ref
+                          }: {
+    ref?: React.RefObject<HTMLDivElement | null>,
     config: ChartConfig,
-    size?: WidgetSize,
-    onResize?: (size: WidgetSize) => void
+    size: WidgetSize
 }) {
-    return <ResizableBox width={size?.width ?? 500}
-                         height={size?.height ?? 400}
-                         onResize={(event: any, { node, size, handle }: any) => {
-                             onResize?.(size);
-                         }}
-                         minConstraints={[200, 200]}
-                         maxConstraints={[1200, 500]}
-                         className={"bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-4"}>
-        <ChartView config={config}/>
-    </ResizableBox>;
-}
 
-export function ChartView({ config }: { config: ChartConfig }) {
-    const ref = React.useRef<HTMLCanvasElement>(null);
-
-    useInjectStyles("chart", `.react-resizable {
-  position: relative;
-}
-.react-resizable-handle {
-  position: absolute;
-  width: 20px;
-  height: 20px;
-  bottom: 0;
-  right: 0;
-  background: url('data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBzdGFuZGFsb25lPSJubyI/Pg08IS0tIEdlbmVyYXRvcjogQWRvYmUgRmlyZXdvcmtzIENTNiwgRXhwb3J0IFNWRyBFeHRlbnNpb24gYnkgQWFyb24gQmVhbGwgKGh0dHA6Ly9maXJld29ya3MuYWJlYWxsLmNvbSkgLiBWZXJzaW9uOiAwLjYuMSAgLS0+DTwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+DTxzdmcgaWQ9IlVudGl0bGVkLVBhZ2UlMjAxIiB2aWV3Qm94PSIwIDAgNiA2IiBzdHlsZT0iYmFja2dyb3VuZC1jb2xvcjojZmZmZmZmMDAiIHZlcnNpb249IjEuMSINCXhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHhtbDpzcGFjZT0icHJlc2VydmUiDQl4PSIwcHgiIHk9IjBweCIgd2lkdGg9IjZweCIgaGVpZ2h0PSI2cHgiDT4NCTxnIG9wYWNpdHk9IjAuMzAyIj4NCQk8cGF0aCBkPSJNIDYgNiBMIDAgNiBMIDAgNC4yIEwgNCA0LjIgTCA0LjIgNC4yIEwgNC4yIDAgTCA2IDAgTCA2IDYgTCA2IDYgWiIgZmlsbD0iIzAwMDAwMCIvPg0JPC9nPg08L3N2Zz4=');
-  background-position: bottom right;
-  padding: 0 3px 3px 0;
-  background-repeat: no-repeat;
-  background-origin: content-box;
-  box-sizing: border-box;
-  cursor: se-resize;
-}`);
-
+    const modeController = useModeController();
+    const canvasRef = React.useRef<HTMLCanvasElement>(null);
     useEffect(() => {
-        const current = ref.current;
+        Chart.defaults.font.family = "'Rubik', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif";
+        if (modeController.mode === "dark")
+            Chart.defaults.color = "#ccc";
+        else if (modeController.mode === "light")
+            Chart.defaults.color = "#333";
+
+        const current = canvasRef.current;
         if (!current) return;
         if (!config) {
             return;
         }
-        console.log("config", config);
         const chartConfig = {
             ...config,
             options: {
-                ...config?.options,
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: {
-                        position: config.options?.plugins?.legend?.position || "right"
-                    }
-                }
+                    legend: {},
+                    // legend: {
+                    //     position: config.options?.plugins?.legend?.position || "bottom"
+                    // },
+                    // title: {
+                    //     display: true,
+                    //     text: title
+                    // },
+                    ...config?.options?.plugins
+                },
+                ...config?.options
             }
         };
         const chart = new Chart(
@@ -70,10 +53,13 @@ export function ChartView({ config }: { config: ChartConfig }) {
         return () => {
             chart.destroy();
         };
-    }, []);
+    }, [config, modeController.mode]);
 
-    return <canvas className={"w-full h-full"}
-                   ref={ref}>Test Chart
-    </canvas>;
+    return <div ref={ref} className={"relative flex-grow p-4 bg-white dark:bg-gray-950"}>
+        <canvas className={"absolute"} style={{
+            top: 16,
+            width: size.width
+        }}
+                ref={canvasRef}/>
+    </div>;
 }
-

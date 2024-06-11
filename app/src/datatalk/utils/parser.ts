@@ -19,7 +19,7 @@ export function parseMarkdown(text: string): MarkdownElement[] {
 
     for (const line of lines) {
         // Check if we encounter the start or end of a code block
-        if (line.trim().toLowerCase().startsWith("```json") || line.trim().toLowerCase().startsWith("```json5") || (line.startsWith("```") && !inCodeBlock)) {
+        if (line.trim().toLowerCase().startsWith("```json") || line.trim().toLowerCase().startsWith("```json5")) {
             // If buffer has content, add it as markdown element
             if (buffer.length) {
                 elements.push({

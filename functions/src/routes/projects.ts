@@ -3,10 +3,9 @@ import { processUserCommand } from "../controllers/commands";
 import { firebaseAuthorization } from "../middlewares";
 import { check } from "../controllers/health";
 import { hydrateChartOrTable } from "../controllers/data";
+import { getDatasets } from "../controllers/projects";
 
-export const dataTalkRouter = express.Router();
+export const projectsRouter = express.Router();
 
-dataTalkRouter.get("/health", check());
-dataTalkRouter.post("/command", firebaseAuthorization(), processUserCommand);
-dataTalkRouter.post("/hydrate", firebaseAuthorization(), hydrateChartOrTable);
+projectsRouter.get("/:projectId/datasets", firebaseAuthorization(), getDatasets);
 
