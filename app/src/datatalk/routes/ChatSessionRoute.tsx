@@ -3,7 +3,7 @@ import { DataTalkConfig } from "../DataTalkProvider";
 import { CircularProgressCenter } from "@firecms/core";
 import { useLocation, useParams } from "react-router-dom";
 import { DataTalkChatSession } from "../components/chat/DataTalkChatSession";
-import { DataSource, Session } from "../types";
+import { Session } from "../types";
 
 export function ChatSessionRoute({
                                      dataTalkConfig,
@@ -13,7 +13,6 @@ export function ChatSessionRoute({
     onAnalyticsEvent?: (event: string, params?: any) => void,
 }) {
 
-    const [dataSources, setDataSources] = useState<DataSource[]>([]);
     const [autoRunCode, setAutoRunCode] = useState<boolean>(false);
 
     const { sessionId } = useParams();

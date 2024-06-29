@@ -91,7 +91,10 @@ export function useBuildDataTalkConfig({
             ...sessionData
         } = session;
         const sessionDoc = doc(firestore, userSessionsPath, id);
-        return setDoc(sessionDoc, sessionData);
+        return setDoc(sessionDoc, {
+            ...sessionData,
+            updated_at: new Date()
+        });
     }, [firebaseApp, userSessionsPath]);
 
     const getSession = useCallback(async (sessionId: string) => {
@@ -107,7 +110,10 @@ export function useBuildDataTalkConfig({
             ...dashboardData
         } = dashBoard;
         const dashboardDoc = doc(firestore, dashboardsPath, id);
-        return setDoc(dashboardDoc, dashboardData);
+        return setDoc(dashboardDoc, {
+            ...dashboardData,
+            updated_at: new Date()
+        });
     }, [firebaseApp, userSessionsPath]);
 
     const listenDashboard = useCallback((id: string, onDashboardUpdate: (dashboard: Dashboard) => void) => {
@@ -367,6 +373,7 @@ function convertTimestamps(data: any): any {
 function initializeDashboard(dashboardId: string): Omit<Dashboard, "id"> {
     return {
         created_at: new Date(),
+        updated_at: new Date(),
         pages: [{
             id: randomString(20),
             widgets: []

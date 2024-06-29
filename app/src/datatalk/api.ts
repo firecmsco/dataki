@@ -1,12 +1,11 @@
-import { ChatMessage, DryWidgetConfig, Item, WidgetConfig } from "./types";
+import { ChatMessage, DataSource, DryWidgetConfig, Item, WidgetConfig } from "./types";
 import { LLMOutputParser } from "./utils/llm_parser";
 
 export async function streamDataTalkCommand(firebaseAccessToken: string,
                                             command: string,
                                             apiEndpoint: string,
                                             sessionId: string,
-                                            projectId: string,
-                                            datasetId: string,
+                                            sources: DataSource[],
                                             messages: ChatMessage[],
                                             onDelta: (delta: string) => void
 ): Promise<string> {
@@ -24,10 +23,7 @@ export async function streamDataTalkCommand(firebaseAccessToken: string,
                 body: JSON.stringify({
                     sessionId,
                     command,
-                    sources: [{
-                        projectId,
-                        datasetId
-                    }],
+                    sources,
                     history: messages
                 })
             });

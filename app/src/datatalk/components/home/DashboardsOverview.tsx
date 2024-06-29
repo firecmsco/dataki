@@ -41,6 +41,11 @@ export function DashboardsOverview() {
                             navigate(getDashboardPath(dashboard.id));
                         }}/>
                 ))}
+                {dataTalkConfig.dashboards.length === 0 && (
+                    <Typography variant={"body2"} className={"text-gray-500"}>
+                        No dashboards yet
+                    </Typography>
+                )}
             </div>
         </div>
     );

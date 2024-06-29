@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { randomString } from "@firecms/core";
+import { DataSource, randomString } from "@firecms/core";
 import { Button, SendIcon, TextareaAutosize, Typography } from "@firecms/ui";
 import { MessageView } from "./MessageView";
 import { streamDataTalkCommand } from "../../api";
@@ -18,6 +18,8 @@ export function DataTalkChatSession({
     onAnalyticsEvent?: (event: string, params?: any) => void,
     onMessagesChange?: (messages: ChatMessage[]) => void,
 }) {
+
+    const [dataSources, setDataSources] = useState<DataSource[]>([]);
 
     const { apiEndpoint, getAuthToken } = useDataTalk();
     const [textInput, setTextInput] = useState<string>("");
@@ -129,8 +131,10 @@ export function DataTalkChatSession({
             messageText,
             apiEndpoint,
             session.id,
-            "bigquery-public-data",
-            "thelook_ecommerce",
+            [{
+                projectId: "bigquery-public-data",
+                datasetId: "thelook_ecommerce"
+            }],
             baseMessages,
             (newDelta) => {
                 currentMessageResponse += newDelta;

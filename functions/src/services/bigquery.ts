@@ -50,6 +50,7 @@ function convertBQValues(obj: any): any {
     return obj;
 }
 
+
 export async function fetchAllDatasetsAndTablesMetadata(projectId: string): Promise<any[]> {
     const bigquery = new BigQuery({ projectId });
 

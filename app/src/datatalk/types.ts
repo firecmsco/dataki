@@ -2,6 +2,7 @@ export type Session = {
     id: string;
     name?: string;
     created_at: Date;
+    updated_at: Date;
     messages: ChatMessage[];
 };
 
@@ -126,6 +127,7 @@ export type Dashboard = {
         edit: boolean;
     }[],
     created_at: Date,
+    updated_at: Date,
     deleted?: boolean
 }
 

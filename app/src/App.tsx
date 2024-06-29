@@ -28,10 +28,8 @@ import {
 
 import { firebaseConfig } from "./firebase_config";
 import { useImportExportPlugin } from "@firecms/data_import_export";
-import { Button, ForumIcon, Tooltip, Typography } from "@firecms/ui";
+import { Typography } from "@firecms/ui";
 import { DataTalkDrawer, DataTalkProvider, DataTalkRoutes, useBuildDataTalkConfig } from "./datatalk";
-import { Link } from "react-router-dom";
-import { getNewChatPath } from "./datatalk/navigation";
 import { getDatasets } from "./datatalk/api";
 
 const API_ENDPOINT = import.meta.env.VITE_API_ENDPOINT;
@@ -174,14 +172,7 @@ export function App() {
                                             <AppBar title={<Typography variant="subtitle1"
                                                                        className={"ml-2 !font-sm uppercase font-mono"}>
                                                 DataTalk
-                                            </Typography>}
-                                                    endAdornment={<Tooltip title={"Start new chat"}>
-                                                        <Link to={getNewChatPath()}>
-                                                            <Button variant={"outlined"}>
-                                                                <ForumIcon size="small"/>
-                                                            </Button>
-                                                        </Link>
-                                                    </Tooltip>}/>
+                                            </Typography>}/>
                                             <Drawer>
                                                 <DataTalkDrawer/>
                                             </Drawer>

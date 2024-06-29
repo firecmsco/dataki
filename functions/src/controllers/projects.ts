@@ -6,3 +6,4 @@ export const getDatasets = async (request: Request, response: Response) => {
     const data = await fetchAllDatasetsAndTablesMetadata(projectId);
     response.json({ data: data });
 }
+
