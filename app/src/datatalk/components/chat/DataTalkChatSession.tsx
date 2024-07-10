@@ -1,27 +1,57 @@
 import React, { useEffect, useRef, useState } from "react";
-import { DataSource, randomString } from "@firecms/core";
+import { randomString, useSnackbarController } from "@firecms/core";
 import { Button, SendIcon, TextareaAutosize, Typography } from "@firecms/ui";
 import { MessageView } from "./MessageView";
-import { streamDataTalkCommand } from "../../api";
-import { ChatMessage, FeedbackSlug, Session } from "../../types";
+import { getDataTalkSamplePrompts, streamDataTalkCommand } from "../../api";
+import { ChatMessage, DataSource, FeedbackSlug, Session } from "../../types";
 import { PromptSuggestions } from "./PromptSuggestions";
 import { useDataTalk } from "../../DataTalkProvider";
+import { DataSourcesSelection } from "../DataSourcesSelection";
+
+const DEMO_DATA_SOURCES: DataSource[] = [{
+    projectId: "bigquery-public-data",
+    datasetId: "thelook_ecommerce"
+}];
 
 export function DataTalkChatSession({
-                                    session,
-                                    initialPrompt,
-                                    onAnalyticsEvent,
-                                    onMessagesChange,
-                                }: {
+                                        session,
+                                        initialPrompt,
+                                        onAnalyticsEvent,
+                                        onMessagesChange,
+                                        onDataSourcesChange
+                                    }: {
     session: Session,
     initialPrompt?: string,
     onAnalyticsEvent?: (event: string, params?: any) => void,
     onMessagesChange?: (messages: ChatMessage[]) => void,
+    onDataSourcesChange?: (dataSources: DataSource[]) => void
 }) {
 
-    const [dataSources, setDataSources] = useState<DataSource[]>([]);
+    const snackbar = useSnackbarController();
 
-    const { apiEndpoint, getAuthToken } = useDataTalk();
+    const [samplePrompts, setSamplePrompts] = useState<string[]>([]);
+
+    const initialDataSources = session.dataSources ?? DEMO_DATA_SOURCES;
+    const [dataSources, setDataSources] = useState<DataSource[]>(initialDataSources);
+
+    useEffect(() => {
+        console.log("Loading sample prompts");
+        getAuthToken().then((firebaseToken) => {
+            getDataTalkSamplePrompts(firebaseToken, apiEndpoint, dataSources)
+                .then(setSamplePrompts);
+        });
+    }, [dataSources]);
+
+    const updateDataSources = (dataSources: DataSource[]) => {
+        setDataSources(dataSources);
+        onDataSourcesChange?.(dataSources);
+        saveDataSourceLocally(session.id, dataSources);
+    }
+
+    const {
+        apiEndpoint,
+        getAuthToken
+    } = useDataTalk();
     const [textInput, setTextInput] = useState<string>("");
 
     const [messages, setMessages] = useState<ChatMessage[]>(session.messages || []);
@@ -51,7 +81,11 @@ export function DataTalkChatSession({
     const handleScroll = () => {
         if (!scrollContainerRef.current) return;
 
-        const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current;
+        const {
+            scrollTop,
+            scrollHeight,
+            clientHeight
+        } = scrollContainerRef.current;
         // If user is not at the bottom
         if (scrollHeight - scrollTop > clientHeight + 100) {
             setIsUserScrolledUp(true);
@@ -91,8 +125,17 @@ export function DataTalkChatSession({
     }, [isUserScrolledUp]);
 
     const submitMessage = async (messageText: string, baseMessages: ChatMessage[] = messages) => {
+
         if (!messageText) return;
         if (messageLoading) return;
+
+        if (dataSources.length === 0) {
+            snackbar.open({
+                message: "You must specify at least one source",
+                type: "warning"
+            });
+            return;
+        }
 
         if (onAnalyticsEvent) {
             onAnalyticsEvent("message_sent", { message: messageText });
@@ -131,10 +174,7 @@ export function DataTalkChatSession({
             messageText,
             apiEndpoint,
             session.id,
-            [{
-                projectId: "bigquery-public-data",
-                datasetId: "thelook_ecommerce"
-            }],
+            dataSources,
             baseMessages,
             (newDelta) => {
                 currentMessageResponse += newDelta;
@@ -170,7 +210,7 @@ export function DataTalkChatSession({
                     {
                         id: systemMessageId,
                         loading: false,
-                        text: "There was an error processing your command: " + e.message,
+                        text: "There was an **error** processing your command:\n\n" + (typeof e === "string" ? e.replace(/;/g, "\n") : e),
                         user: "SYSTEM",
                         date: new Date()
                     }
@@ -195,14 +235,31 @@ export function DataTalkChatSession({
             onAnalyticsEvent("regenerate", { message });
         }
 
+        console.log("Regenerating message", message, index);
         const newMessages = [...messages];
         newMessages.splice(index);
         const lastUserMessage = newMessages.filter(m => m.user === "USER").pop();
         newMessages.splice(index - 1);
+        console.log("newMessages", newMessages);
+        console.log("lastUserMessage", lastUserMessage);
 
         // get text from the last user message
         if (lastUserMessage) {
             submitMessage(lastUserMessage.text, newMessages);
+        }
+    };
+
+    const onReSend = (message: ChatMessage, index: number) => {
+        if (onAnalyticsEvent) {
+            onAnalyticsEvent("resend", { message });
+        }
+
+        const newMessages = [...messages];
+        newMessages.splice(index - 1);
+        console.log("newMessages", newMessages);
+
+        if (message) {
+            submitMessage(message.text, newMessages);
         }
     };
 
@@ -233,6 +290,8 @@ export function DataTalkChatSession({
         onMessagesChange?.(newMessages);
     }
 
+    const lastMessage = (messages ?? []).length > 0 ? messages[messages.length - 1] : null;
+    const lastMessageByUser = lastMessage?.user === "USER";
 
     return (
 
@@ -243,20 +302,9 @@ export function DataTalkChatSession({
 
                 <div className="container mx-auto px-4 md:px-6 pt-8 flex-1 flex flex-col gap-4">
 
-                    {/*<Tooltip*/}
-                    {/*    className={"self-end"}*/}
-                    {/*    delayDuration={500}*/}
-                    {/*    title={"Run snippets of code generated by DataTalk automatically.\nCaution: This can be risky since scripts may modify your data in ways you don't expect"}>*/}
-                    {/*    <Label*/}
-                    {/*        className="border cursor-pointer rounded-md p-2 flex items-center gap-2 [&:has(:checked)]:bg-gray-100 dark:[&:has(:checked)]:bg-gray-800 w-fit "*/}
-                    {/*        htmlFor="autoRunCode">*/}
-                    {/*        <Checkbox id="autoRunCode"*/}
-                    {/*                  checked={autoRunCode}*/}
-                    {/*                  size={"small"}*/}
-                    {/*                  onCheckedChange={setAutoRunCode}/>*/}
-                    {/*        Run code automatically*/}
-                    {/*    </Label>*/}
-                    {/*</Tooltip>*/}
+                    <DataSourcesSelection dataSources={dataSources}
+                                          setDataSources={updateDataSources}
+                                          className={"self-end"}/>
 
                     {(messages ?? []).length === 0 &&
 
@@ -264,12 +312,14 @@ export function DataTalkChatSession({
                             <Typography variant={"h3"} gutterBottom={true} className={"font-mono ml-4 my-2"}>
                                 Welcome to DATATALK
                             </Typography>
-                            <PromptSuggestions onPromptSuggestionClick={(prompt) => submitMessage(prompt)}/>
+                            <PromptSuggestions
+                                suggestions={samplePrompts}
+                                onPromptSuggestionClick={(prompt) => submitMessage(prompt)}/>
                         </div>}
 
-                            {messages.map((message, index) => {
-                                return <MessageView key={message.date.toISOString() + index}
-                                                    onRemove={() => {
+                    {messages.map((message, index) => {
+                        return <MessageView key={message.date.toISOString() + index}
+                                            onRemove={() => {
                                                 const newMessages = [...messages];
                                                 newMessages.splice(index, 1);
                                                 setMessages(newMessages);
@@ -281,10 +331,17 @@ export function DataTalkChatSession({
                                             onUpdatedMessage={(message) => {
                                                 updateMessage(message, index);
                                             }}
+                                            dataSources={dataSources}
                                             message={message}
                                             canRegenerate={index === messages.length - 1 && message.user === "SYSTEM"}
                                             onRegenerate={() => onRegenerate(message, index)}/>;
                     })}
+
+                    {!messageLoading && lastMessageByUser &&
+                        <Button className={"ml-20"} variant={"outlined"} size={"small"}
+                                onClick={() => onReSend(lastMessage, messages.length - 1)}>
+                            Resend
+                        </Button>}
 
                 </div>
 
@@ -300,7 +357,7 @@ export function DataTalkChatSession({
                             submitMessage(textInput);
                     }}
                     autoComplete="off"
-                    className="relative bg-white dark:bg-gray-800 rounded-full shadow-sm flex items-center gap-2 ">
+                    className="relative bg-white dark:bg-gray-800 rounded-full flex items-center gap-2 ">
                     <TextareaAutosize
                         value={textInput}
                         autoFocus={true}
@@ -316,6 +373,17 @@ export function DataTalkChatSession({
                 </form>
             </div>
         </div>
-
     )
+}
+
+function saveDataSourceLocally(uid: string, dataSources: DataSource[]) {
+    localStorage.setItem("dataSources:" + uid, JSON.stringify(dataSources));
+}
+
+function loadDataSourceLocally(uid: string): DataSource[] | undefined {
+    const data = localStorage.getItem("dataSources:" + uid);
+    if (!data) {
+        return undefined;
+    }
+    return JSON.parse(data);
 }

@@ -29,9 +29,14 @@ function PaperNode(props: NodeProps<PaperNodeProps>) {
                 height: size.height,
             }}
         >
-            <NodeResizer minWidth={200}
-                         minHeight={200}
+            <NodeResizer minWidth={300}
+                         minHeight={300}
                          onResize={(event, params) => {
+
+                             console.log("onResize", {
+                                 params,
+                                 event
+                             });
                              const updatedSize = {
                                  width: params.width,
                                  height: params.height

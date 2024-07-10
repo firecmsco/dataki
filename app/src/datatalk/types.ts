@@ -3,6 +3,7 @@ export type Session = {
     name?: string;
     created_at: Date;
     updated_at: Date;
+    dataSources: DataSource[];
     messages: ChatMessage[];
 };
 
@@ -138,4 +139,22 @@ export type DashboardPage = {
         size?: WidgetSize
     }
     widgets: DashboardWidgetConfig[];
+}
+
+export type GCPProject = {
+    name: string;
+    projectId: string; // Unique identifier for the project
+    projectNumber: string; // Unique number associated with the project
+    createTime: string; // ISO 8601 date string
+    // Using index signature for labels to support various key-value pairs
+    labels: {
+        [key: string]: string;
+    };
+    lifecycleState: "ACTIVE" | "DELETE_REQUESTED" | "DELETE_IN_PROGRESS" | "DELETED" | "PURGING";
+    parent: {
+        type: "organization" | "folder"; // Valid parent types
+        id: string; // Parent ID is typically a string
+    };
+    // is this project linked to DataTalk with a Service Account?
+    linked: boolean;
 }

@@ -15,11 +15,12 @@ export type DataSource = BigQueryDataSource;
 export type BigQueryDataSource = {
     projectId: string;
     datasetId: string;
+    location: string;
 }
 
 export type DryWidgetConfig = {
     sql: string;
-    source: DataSource;
+    dataSource: DataSource;
     type: "chart" | "table";
     title: string;
     description: string;

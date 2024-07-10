@@ -14,15 +14,17 @@ import {
     Skeleton,
     TextField,
     ThumbDownOffAltIcon,
-    Tooltip
+    Tooltip,
+    Typography
 } from "@firecms/ui";
-import { FeedbackSlug } from "../../types";
+import { DataSource, FeedbackSlug } from "../../types";
 import { WidgetMessageView } from "./WidgetMessageView";
 
 export function SystemMessage({
                                   text,
                                   loading,
                                   containerWidth,
+                                  dataSources,
                                   onRegenerate,
                                   canRegenerate,
                                   onFeedback,
@@ -31,6 +33,7 @@ export function SystemMessage({
     text?: string,
     loading?: boolean,
     containerWidth?: number,
+    dataSources: DataSource[],
     onRegenerate?: () => void,
     canRegenerate?: boolean,
     onFeedback?: (reason?: FeedbackSlug, feedbackMessage?: string) => void,
@@ -71,6 +74,7 @@ export function SystemMessage({
                                           loading={loading}
                                           rawDryConfig={element.content}
                                           maxWidth={containerWidth ? containerWidth - 90 : undefined}
+                                          dataSources={dataSources}
                                           onContentModified={(updatedContent) => {
                                               console.log("Updated content", updatedContent);
                                               const updatedElements = [...parsedElements];
@@ -166,7 +170,9 @@ function BadMessageIcon({
                 e.preventDefault();
             }}>
             <DialogContent className={"flex flex-col gap-4"}>
-                What was wrong with the response?
+                <Typography variant={"label"}>
+                    What was wrong with the response?
+                </Typography>
                 <div className={"flex flex-row gap-2 flex-wrap"}>
                     <FeedbackLabel title={"Not helpful"}
                                    value={"not_helpful"}

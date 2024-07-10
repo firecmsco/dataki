@@ -1,26 +1,23 @@
 import { Card, Typography } from "@firecms/ui";
-import { useDataTalk } from "../../DataTalkProvider";
 
-export function PromptSuggestions({ onPromptSuggestionClick }: { onPromptSuggestionClick: (prompt: string) => void }) {
+export function PromptSuggestions({
+                                      suggestions,
+                                      onPromptSuggestionClick
+                                  }: {
+    suggestions: string[],
+    onPromptSuggestionClick: (prompt: string) => void
+}) {
 
-    const dataTalk = useDataTalk();
-
-    const promptSuggestions = (dataTalk.rootPromptsSuggestions ?? []).length > 0
-        ? dataTalk.rootPromptsSuggestions
+    const promptSuggestions = (suggestions ?? []).length > 0
+        ? suggestions
         : [
             "What can you do?",
             "What collections are available?",
-            "Show me all products under 50 euros",
-            "Create a new book with data for El Quijote.",
-            "Show me the 10 cars with the most horsepower."
+            "Show me all products under 50 euros"
         ];
 
     return (
-        <div>
-            <Typography paragraph={true} className={"ml-4 my-2"}>
-                DataTalk is a conversational interface to your data. You can ask questions, run commands and explore
-                your data in a natural way.
-            </Typography>
+        <div className={"my-8"}>
             {promptSuggestions && <>
                 <Typography paragraph={true} className={"ml-4 my-2 mb-6"}>
                     Here are some examples of things you can ask:

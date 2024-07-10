@@ -4,14 +4,14 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@firecms/collection_editor": "3.0.0-canary.67",
-    "@firecms/collection_editor_firebase": "3.0.0-canary.67",
-    "@firecms/core": "3.0.0-canary.67",
-    "@firecms/data_import_export": "3.0.0-canary.67",
-    "@firecms/firebase": "3.0.0-canary.67",
-    "@firecms/formex": "3.0.0-canary.67",
-    "@firecms/schema_inference": "3.0.0-canary.67",
-    "@firecms/ui": "3.0.0-canary.67",
+    "@firecms/collection_editor": "3.0.0-canary.84",
+    "@firecms/collection_editor_firebase": "3.0.0-canary.84",
+    "@firecms/core": "3.0.0-canary.84",
+    "@firecms/data_import_export": "3.0.0-canary.84",
+    "@firecms/firebase": "3.0.0-canary.84",
+    "@firecms/formex": "3.0.0-canary.84",
+    "@firecms/schema_inference": "3.0.0-canary.84",
+    "@firecms/ui": "3.0.0-canary.84",
     "@monaco-editor/react": "^4.6.0",
     "chart.js": "^4.4.3",
     "firebase": "^10.9.0",
@@ -27,7 +27,7 @@
     "dev": "vite --mode development",
     "build": "vite build && tsc",
     "preview": "vite build && vite preview",
-    "deploy": "vite build && firebase deploy --only hosting --project fire-cms-devrel-demo"
+    "deploy": "vite build && firebase deploy --only hosting --project datatalk-443fb"
   },
   "browserslist": {
     "production": [
@@ -43,8 +43,6 @@
   },
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.10",
-    "@types/react": "npm:types-react@rc",
-    "@types/react-dom": "npm:types-react-dom@rc",
     "@typescript-eslint/eslint-plugin": "^5.62.0",
     "@typescript-eslint/parser": "^5.62.0",
     "@vitejs/plugin-react": "^4.2.1",

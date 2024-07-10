@@ -1,16 +1,22 @@
 import { BigQuery } from "@google-cloud/bigquery";
 import { DatasetConfig } from "../types/dataset";
+import { Firestore } from "firebase-admin/firestore";
+import { getStoredServiceAccount } from "./projects";
 
-export async function getProjectDataContext(projectId: string, datasetId: string): Promise<string> {
+export async function getProjectDataContext(firestore: Firestore, projectId: string, datasetId: string): Promise<string> {
     console.log("getting project data context", projectId, datasetId);
     // if (datasetId) {
-    return fetchTablesMetadata(projectId, datasetId).then((res) => generateContextForLLM([res], projectId));
+    return fetchTablesMetadata(firestore, projectId, datasetId).then((res) => generateContextForLLM([res], projectId));
     // }
     // return fetchAllDatasetsAndTablesMetadata(projectId).then(generateContextForLLM);
 }
 
-async function fetchTablesMetadata(projectId: string, datasetId: string): Promise<DatasetConfig> {
-    const bigquery = new BigQuery({ projectId });
+async function fetchTablesMetadata(firestore: Firestore, projectId: string, datasetId: string): Promise<DatasetConfig> {
+    const credentials = await getStoredServiceAccount(firestore, projectId);
+    const bigquery = new BigQuery({
+        projectId,
+        credentials
+    });
 
     try {
         // Get a reference to the dataset
@@ -30,13 +36,15 @@ async function fetchTablesMetadata(projectId: string, datasetId: string): Promis
             })
         );
 
-        return { datasetId, tables: tablesMetadata };
+        return {
+            datasetId,
+            tables: tablesMetadata
+        };
     } catch (error) {
         console.error("Error fetching table metadata:", error);
         throw error;
     }
 }
-
 
 function generateContextForLLM(datasets: Array<DatasetConfig>, projectId: string): string {
     let context = "BigQuery dataset contains the following datasets, tables and their metadata:\n\n";
@@ -50,13 +58,14 @@ function generateContextForLLM(datasets: Array<DatasetConfig>, projectId: string
             context += "Columns:\n";
 
             table.metadata.schema.fields.forEach((field: any) => {
-                context += `  - Name: ${field.name}, Type: ${field.type} ${field.description ? ", Description: " + field.description : ""}\n`;
+                context += `  - Name: ${field.name}, Type: ${field.type} ${field.description
+                    ? ", Description: " + field.description
+                    : ""}\n`;
             });
 
             context += "\n";
         });
     });
-
 
     return context;
 }

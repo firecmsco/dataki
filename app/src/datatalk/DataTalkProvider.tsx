@@ -12,11 +12,20 @@ import {
     where
 } from "@firebase/firestore";
 import { FirebaseApp } from "@firebase/app";
-import { Dashboard, DashboardPage, DashboardWidgetConfig, Position, Session, WidgetConfig, WidgetSize } from "./types";
-import { getDataTalkSamplePrompts } from "./api";
+import {
+    Dashboard,
+    DashboardPage,
+    DashboardWidgetConfig,
+    DryWidgetConfig,
+    Position,
+    Session,
+    WidgetSize
+} from "./types";
 import { DEFAULT_WIDGET_SIZE } from "./utils/widgets";
 import { randomString } from "@firecms/core";
 import equal from "react-fast-compare"
+
+import { OAuthCredential } from "@firebase/auth";
 
 export type DataTalkConfig = {
     loading: boolean;
@@ -26,19 +35,20 @@ export type DataTalkConfig = {
     createSessionId: () => Promise<string>;
     saveSession: (session: Session) => Promise<void>;
     getSession: (sessionId: string) => Promise<Session | undefined>;
-    rootPromptsSuggestions?: string[];
     dashboards: Dashboard[];
-    createDashboard: () => Promise<string>;
+    createDashboard: () => Promise<Dashboard>;
     saveDashboard: (dashboard: Dashboard) => Promise<void>;
     updateDashboard: (id: string, dashboardData: Partial<Dashboard>) => Promise<void>;
     deleteDashboard: (id: string) => Promise<void>;
     listenDashboard: (dashboardId: string, onDashboardUpdate: (dashboard: Dashboard) => void) => () => void;
-    addDashboardWidget(dashboardId: string, widgetConfig: WidgetConfig): void;
+    addDashboardWidget(dashboardId: string, widgetConfig: DryWidgetConfig): void;
     onWidgetResize: (dashboardId: string, pageId: string, id: string, size: WidgetSize) => void;
     onWidgetUpdate: (dashboardId: string, pageId: string, id: string, widgetConfig: DashboardWidgetConfig) => void;
     onWidgetMove: (dashboardId: string, pageId: string, id: string, position: Position) => void;
     onWidgetRemove: (dashboardId: string, pageId: string, id: string) => void;
     updateDashboardPage(id: string, pageId: string, dashboard: Partial<DashboardPage>): void;
+
+    firebaseApp?: FirebaseApp;
 };
 
 interface DataTalkConfigParams {
@@ -63,17 +73,9 @@ export function useBuildDataTalkConfig({
 
     const [sessions, setSessions] = useState<Session[]>([]);
     const [sessionsLoading, setSessionsLoading] = useState<boolean>(true);
-    const [samplePrompts, setSamplePrompts] = useState<string[]>([]);
 
     const [dashboards, setDashboards] = useState<Dashboard[]>([]);
     const [dashboardsLoading, setDashboardsLoading] = useState<boolean>(true);
-
-    useEffect(() => {
-        if (!enabled) return;
-        getAuthToken().then((firebaseToken) => {
-            getDataTalkSamplePrompts(firebaseToken, apiEndpoint).then(setSamplePrompts);
-        });
-    }, []);
 
     const createSessionId = useCallback(async (): Promise<string> => {
         if (!firebaseApp) throw Error("useBuildDataTalkConfig Firebase not initialised");
@@ -114,7 +116,7 @@ export function useBuildDataTalkConfig({
             ...dashboardData,
             updated_at: new Date()
         });
-    }, [firebaseApp, userSessionsPath]);
+    }, [dashboardsPath, firebaseApp]);
 
     const listenDashboard = useCallback((id: string, onDashboardUpdate: (dashboard: Dashboard) => void) => {
         if (!firebaseApp) throw Error("useBuildDataTalkConfig Firebase not initialised");
@@ -135,14 +137,18 @@ export function useBuildDataTalkConfig({
         });
     }, [firebaseApp, dashboardsPath]);
 
-    const createDashboard = useCallback(async (): Promise<string> => {
+    const createDashboard = useCallback(async (): Promise<Dashboard> => {
         if (!firebaseApp) throw Error("useBuildDataTalkConfig Firebase not initialised");
         const firestore = getFirestore(firebaseApp);
         if (!firestore || !dashboardsPath) throw Error("useFirestoreConfigurationPersistence Firestore not initialised");
         const documentReference = doc(collection(firestore, dashboardsPath));
-        await setDoc(documentReference, initializeDashboard(documentReference.id));
-        return documentReference.id;
-    }, [firebaseApp, dashboardsPath]);
+        const id = documentReference.id;
+        const data = initializeDashboard(id);
+        await setDoc(documentReference, data);
+        const newDashboard = { id, ...data };
+        setDashboards([...dashboards, newDashboard]);
+        return newDashboard;
+    }, [firebaseApp, dashboardsPath, dashboards]);
 
     const deleteDashboard = useCallback(async (id: string) => {
         if (!firebaseApp) throw Error("useBuildDataTalkConfig Firebase not initialised");
@@ -152,15 +158,15 @@ export function useBuildDataTalkConfig({
         if (!dashboard) throw Error("deleteDashboard: Dashboard not found");
         dashboard.deleted = true;
         return saveDashboard(dashboard);
-    }, [firebaseApp, dashboardsPath, dashboards])
+    }, [firebaseApp, dashboardsPath, dashboards, saveDashboard])
 
-    const addDashboardWidget = useCallback((id: string, widgetConfig: WidgetConfig) => {
+    const addDashboardWidget = (id: string, widgetConfig: DryWidgetConfig) => {
         const dashboard = dashboards.find(d => d.id === id);
         if (!dashboard) throw Error("addDashboardWidget: Dashboard not found");
         const dashboardPage = dashboard.pages[0];
         dashboardPage.widgets.push(convertWidgetToDashboardWidget(widgetConfig));
         return saveDashboard(dashboard);
-    }, [saveDashboard, dashboards]);
+    };
 
     const onWidgetResize = useCallback((dashboardId: string, pageId: string, id: string, size: WidgetSize) => {
         console.log("onWidgetResize", dashboardId, pageId, id, size)
@@ -265,7 +271,6 @@ export function useBuildDataTalkConfig({
                             ...doc.data()
                         } as Dashboard;
                     });
-                    console.log("Dashboards snapshot", updatedDashboards);
                     setDashboards(updatedDashboards);
                     setDashboardsLoading(false);
                 },
@@ -288,7 +293,7 @@ export function useBuildDataTalkConfig({
             ...dashboardData
         };
         return saveDashboard(updatedDashboard);
-    }, [dashboards]);
+    }, [dashboards, dashboardsPath, firebaseApp, saveDashboard]);
 
     const updateDashboardPage = useCallback((dashboardId: string, pageId: string, pageData: Partial<DashboardPage>) => {
         console.log("updateDashboardPage", dashboardId, pageId, pageData)
@@ -308,7 +313,7 @@ export function useBuildDataTalkConfig({
             pages: dashboard.pages.map(p => p.id === pageId ? updatedPage : p)
         };
         return saveDashboard(updatedDashboard);
-    }, [dashboards]);
+    }, [dashboards, dashboardsPath, firebaseApp, saveDashboard]);
 
     return {
         loading: sessionsLoading || dashboardsLoading,
@@ -318,7 +323,6 @@ export function useBuildDataTalkConfig({
         saveSession,
         getSession,
         createSessionId,
-        rootPromptsSuggestions: samplePrompts,
         dashboards,
         createDashboard,
         deleteDashboard,
@@ -330,7 +334,8 @@ export function useBuildDataTalkConfig({
         onWidgetResize,
         onWidgetUpdate,
         onWidgetMove,
-        onWidgetRemove
+        onWidgetRemove,
+        firebaseApp
     };
 }
 
@@ -382,7 +387,7 @@ function initializeDashboard(dashboardId: string): Omit<Dashboard, "id"> {
     };
 }
 
-function convertWidgetToDashboardWidget(config: WidgetConfig, position?: Position,): DashboardWidgetConfig {
+function convertWidgetToDashboardWidget(config: DryWidgetConfig, position?: Position,): DashboardWidgetConfig {
     return {
         ...config,
         size: config.size ?? DEFAULT_WIDGET_SIZE,
@@ -393,3 +398,41 @@ function convertWidgetToDashboardWidget(config: WidgetConfig, position?: Positio
         }
     }
 }
+
+function saveCredentialInStorage(credential: OAuthCredential | null) {
+    if (!credential) {
+        localStorage.removeItem("googleCredential");
+        return;
+    }
+    const credentialString = JSON.stringify({
+        created_on: new Date(),
+        credential: credential.toJSON()
+    });
+    localStorage.setItem("googleCredential", credentialString);
+}
+
+// function loadCredentialFromStorage(): OAuthCredential | null {
+//     try {
+//         const credentialString = localStorage.getItem("googleCredential");
+//         if (!credentialString)
+//             return null;
+//         const credentialJSON = JSON.parse(credentialString) satisfies {
+//             created_on: string,
+//             credential: any
+//         };
+//         const credential = OAuthCredential.fromJSON(credentialJSON.credential);
+//         const createdOn = new Date(credentialJSON.created_on);
+//         const now = new Date();
+//         const diff = now.getTime() - createdOn.getTime();
+//         // check the credential is valid
+//         if (diff > 1000 * 60 * 60) {
+//             console.debug("Google credential expired credential expired");
+//             saveCredentialInStorage(null);
+//             return null;
+//         }
+//         return credential;
+//     } catch (e) {
+//         console.error(e);
+//         return null;
+//     }
+// }

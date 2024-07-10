@@ -8,4 +8,3 @@ export interface CommandMessage {
   user: "SYSTEM" | "USER";
 }
 
-export type DataContext = Array<{data: object[], collection: string}>;

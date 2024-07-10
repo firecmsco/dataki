@@ -1,7 +1,6 @@
-import { getProjectDataContext } from "./context_data";
 import { ChatMessage } from "../types/chat";
 import { runSQLQuery } from "./bigquery";
-import { getGoogleProjectId } from "./auth";
+import { getGoogleProjectId } from "../auth/auth";
 import {
     FunctionDeclarationSchemaType,
     GenerateContentResponse,
@@ -11,6 +10,11 @@ import {
 } from "@google-cloud/vertexai";
 import { Part } from "@google/generative-ai";
 import * as util from "util";
+import { ServiceAccountKey } from "../types/service_account";
+import { CommandMessage } from "../types/command";
+import { DataSource } from "../types/items";
+import { getProjectDataContext } from "./context_data";
+import DataTalkException from "../types/exceptions";
 
 const PREFERRED_COLORS = ["#ea5545", "#f46a9b", "#ef9b20", "#edbf33", "#ede15b", "#bdcf32", "#87bc45", "#27aeef", "#b33dc6"];
 
@@ -52,28 +56,26 @@ export const getVertexAI = async (): Promise<GenerativeModelPreview> => {
 
 export async function makeGeminiRequest({
                                             userQuery,
-                                            sources,
+                                            dataContexts,
                                             onDelta,
-                                            history
+                                            history,
+                                            credentials
                                         }:
                                             {
                                                 userQuery: string,
-                                                sources: {
-                                                    projectId: string,
-                                                    datasetId: string,
-                                                }[]
+                                                dataContexts: string[],
                                                 onDelta: (delta: string) => void,
-                                                history: ChatMessage[]
+                                                history: ChatMessage[],
+                                                credentials?: ServiceAccountKey
                                             }): Promise<string> {
 
     const geminiModel = await getVertexAI();
 
-    const dataContexts = await Promise.all(sources.map(async ({
-                                                                  projectId,
-                                                                  datasetId
-                                                              }) => {
-        return getProjectDataContext(projectId, datasetId);
-    }));
+    const functions = {
+        makeSQLQuery: ({ sql }: { sql: string }) => {
+            return runSQLQuery(sql, credentials)
+        }
+    };
 
     const dataContext = dataContexts.join("\n\n");
     const instructions = `You are a tool that allows user to query their BigQuery datasets and generate
@@ -105,10 +107,10 @@ ${dataContext}.
 
 Chart and table generation:
 
-You can either generate a chart or a table config in JSON format, or include additional instructions in markdown.
-You can also call the function makeSQLQuery to fetch data from BigQuery. That function allows you to answer
+- You can either generate a chart or a table config in JSON format, or include additional instructions in markdown.
+- You can also call the function makeSQLQuery to fetch data from BigQuery. That function allows you to answer
 questions in natural language, by fetching the data from BigQuery and then generating the response.
-Some data really doesn't make sense to be displayed in a chart, so you should return it in a table format.
+- Some data really doesn't make sense to be displayed in a chart, so you should return it in a table format.
 Do NOT generate "choropleth" charts, as they are not supported by the frontend.
 
 When you are generating chart or table configs, the JSON need to look like this:
@@ -118,7 +120,7 @@ When you are generating chart or table configs, the JSON need to look like this:
     "title": "Sample chart title",
     "description" : "Provide a small description of what this widget displays",
     "type": "chart",
-    "datasource": {
+    "dataSource": {
         "projectId": "your-project-id",
         "datasetId": "your-dataset-id"
     },
@@ -139,12 +141,23 @@ When you are generating chart or table configs, the JSON need to look like this:
 }
 \`\`\`
 
-It is vital that the JSON is CORRECTLY FORMED. Do NOT use triple quotes """
-When generating a chart config, it must ALWAYS be tied to the related SQL via placeholders, you should never 
+- It is vital that the JSON is CORRECTLY FORMED. Do NOT use triple quotes """
+- When generating a chart config, it must ALWAYS be tied to the related SQL via placeholders, you should never 
 include data directly in the chart json. That way the config can be persisted and run in the future 
 with always up to date data. Remember you are a tool for building dashboards.
 NEVER include data in the chart or table configuration. ALWAYS use placeholders that will be replaced with 
 up to date data.
+- There should NEVER be a place holder inside an array. NEVER DO THIS:
+\`\`\`json
+"data": [
+  "[[total_sold]]"
+],
+\`\`\`
+- Placeholders should be ALWAYS added like this:
+\`\`\`json
+"data": "[[total_sold]]",
+\`\`\`
+
 
 ---
 SQL:
@@ -174,6 +187,7 @@ It is very important that the fields that include placeholders are correctly nam
 and they will ALWAYS be replaced with an array mapped to the fetched data. They should not be used for anything else.
 
 Please always use these colors when required: ${PREFERRED_COLORS.join(", ")} (or similar ones if you need more).
+You usually do not need to include the color in the JSON, you only need it for more complex charts.
 
 If you are generating a table, the JSON should look like this:
 \`\`\`json
@@ -181,7 +195,7 @@ If you are generating a table, the JSON should look like this:
     "title": "Sample table title",
     "description" : "Provide a small description of what this widget displays",
     "type": "table",
-    "datasource": {
+    "dataSource": {
         "projectId": "your-project-id",
         "datasetId": "your-dataset-id"
     },
@@ -207,14 +221,7 @@ or a count query to get the number of rows in a table.
 You should not return \`\`\`sql blocks in your response, only \`\`\`json with chart or table configs, or answers in natural language.
 You should proactively make calls to makeSQLQuery to fetch the data you need to answer the user's question.
 `;
-    // console.log(instructions);
-
-//     const _instructions = `You are a tool that can query BigQuery using a function called makeSQLQuery. You must always make a call to this function to fetch the data and then answer the user question in natural language.
-//
-// The dataset you need to query is ${projectId}.${datasetId}.
-// This is the context of the data you are working with:
-//
-//     ${dataContext}`;
+    console.log(instructions);
 
     const chat = geminiModel.startChat({
         systemInstruction: {
@@ -306,10 +313,89 @@ const makeSQLQueryFunctionDeclaration: Tool = {
     }]
 };
 
-// Executable function code. Put it in a map keyed by the function name
-// so that you can call it once you get the name string from the model.
-const functions = {
-    makeSQLQuery: ({ sql }: { sql: string }) => {
-        return runSQLQuery(sql)
+export const generateSamplePrompts = async (
+    {
+        firestore,
+        history,
+        dataSources
+    }: {
+        firestore: FirebaseFirestore.Firestore,
+        history: Array<CommandMessage> | undefined,
+        dataSources: DataSource[]
     }
-};
+): Promise<string[]> => {
+
+    const dataContexts = await Promise.all(dataSources.map(async ({
+                                                                      projectId,
+                                                                      datasetId
+                                                                  }) => {
+        return getProjectDataContext(firestore, projectId, datasetId);
+    })).catch((error: any) => {
+        throw new DataTalkException(error.code, error.message, "internal");
+    });
+
+    const systemInstruction = buildSamplePromptsSystemInstructions(dataContexts)
+    console.log("Result prompt");
+    console.log(systemInstruction);
+    const geminiModel = await getVertexAI();
+    const chat = geminiModel.startChat({
+        systemInstruction: {
+            parts: [{ text: systemInstruction }],
+            role: "user"
+        },
+        history: history?.map((message) => ({
+            parts: [{ text: message.text }],
+            role: message.user === "SYSTEM"
+                ? "model"
+                : "user"
+        }))
+    });
+    const llmResult = await chat.sendMessage("Give me 5 prompts based on the data you have in the BigQuery datasets, and the chat history. Your outcome MUST be a JSON with an array of 5 prompts.");
+    const candidates = llmResult.response.candidates;
+    if (candidates && candidates.length > 0) {
+        const firstCandidate = candidates[0];
+        if (!firstCandidate.content.parts) return [];
+        console.log(firstCandidate.content.parts);
+        const result = firstCandidate.content.parts?.map((part) => part.text).join("");
+        const cleanedResult = result
+            .replace(/```JSON/g, "")
+            .replace(/```json/g, "")
+            .replace(/```JSON5/g, "")
+            .replace(/```json5/g, "")
+            .replace(/```/g, "");
+        console.log({
+            result,
+            cleanedResult
+        });
+        return JSON.parse(cleanedResult);
+    }
+    throw new Error("No prompts found");
+}
+
+export const buildSamplePromptsSystemInstructions = (dataContexts: string[]): string => {
+    return `I need you to give me 5 sample prompts for a ChatBot named DATATALK.
+DATATALK allows users to make questions to their BigQuery datasets in natural language.
+
+You ALWAYS return a JSON with an array of 5 sample prompts like:
+\`\`\`JSON
+["Give me the products with a price bigger than 500 dollars",
+"Books of travel and fiction",
+"Show me the books that are in stock",
+"Create a chart with the sales of the last month",
+"Show me all posts from the last month"]
+\`\`\`
+
+You may also receive the current chat history in the request. You can use this information to generate the prompts.
+
+You need to adapt the prompts to the data you have in the given BigQuery tables. 
+Here is a summary of the collections and fields you have in your database:
+
+
+BIGQUERY DATASETS:
+
+${dataContexts.join("\n\n")}
+
+
+Your output will be parsed by a script so it MUST always be in the same format.
+`;
+}

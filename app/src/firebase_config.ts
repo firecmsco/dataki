@@ -1,8 +1,9 @@
 export const firebaseConfig = {
-    apiKey: "AIzaSyDAns486OwbjsVoMsZiYIzkxpy4XFvDrxE",
-    authDomain: "fire-cms-devrel-demo.firebaseapp.com",
-    projectId: "fire-cms-devrel-demo",
-    storageBucket: "fire-cms-devrel-demo.appspot.com",
-    messagingSenderId: "513464601173",
-    appId: "1:513464601173:web:0495ec94ca9d015a0de2dc"
+    apiKey: "AIzaSyCnIqyRpO25YcNzG02Kc66QQoloDfboHOM",
+    authDomain: "datatalk-443fb.firebaseapp.com",
+    projectId: "datatalk-443fb",
+    storageBucket: "datatalk-443fb.appspot.com",
+    messagingSenderId: "160814491038",
+    appId: "1:160814491038:web:7c9ee5344a79fdc78e228f",
+    measurementId: "G-VTPDH0JLF9"
 };

@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 
 import "typeface-rubik";
 import "@fontsource/jetbrains-mono";
@@ -16,21 +16,14 @@ import {
     useBuildNavigationController,
     useValidateAuthenticator
 } from "@firecms/core";
-import {
-    FirebaseAuthController,
-    FirebaseLoginView,
-    FirebaseSignInProvider,
-    useFirebaseAuthController,
-    useFirebaseStorageSource,
-    useFirestoreDelegate,
-    useInitialiseFirebase
-} from "@firecms/firebase";
+import { useFirebaseStorageSource, useFirestoreDelegate, useInitialiseFirebase } from "@firecms/firebase";
 
 import { firebaseConfig } from "./firebase_config";
 import { useImportExportPlugin } from "@firecms/data_import_export";
 import { Typography } from "@firecms/ui";
 import { DataTalkDrawer, DataTalkProvider, DataTalkRoutes, useBuildDataTalkConfig } from "./datatalk";
-import { getDatasets } from "./datatalk/api";
+import { useDataTalkAuthController } from "./datatalk/useDataTalkAuthController";
+import { DataTalkLogin } from "./datatalk/DataTalkLogin";
 
 const API_ENDPOINT = import.meta.env.VITE_API_ENDPOINT;
 if (!API_ENDPOINT) {
@@ -46,9 +39,6 @@ export function App() {
     } = useInitialiseFirebase({
         firebaseConfig
     });
-
-    const signInOptions: FirebaseSignInProvider[] = ["google.com", "password"];
-
     /**
      * Controller used to manage the dark or light color mode
      */
@@ -57,9 +47,9 @@ export function App() {
     /**
      * Controller for managing authentication
      */
-    const authController: FirebaseAuthController = useFirebaseAuthController({
+    const authController = useDataTalkAuthController({
         firebaseApp,
-        signInOptions,
+        apiEndpoint: API_ENDPOINT,
     });
 
     /**
@@ -105,21 +95,13 @@ export function App() {
 
     const dataTalkConfig = useBuildDataTalkConfig({
         enabled: authController.user !== null,
-        firebaseApp: firebaseApp,
+        firebaseApp,
         userSessionsPath: `/users/${authController.user?.uid}/datatalk_sessions`,
         dashboardsPath: `/dashboards`,
         getAuthToken: authController.getAuthToken,
         apiEndpoint: API_ENDPOINT
     });
 
-    useEffect(() => {
-        if (dataTalkConfig.loading) return;
-        dataTalkConfig.getAuthToken()
-            .then(async firebaseToken => {
-                const datasets = await getDatasets(firebaseToken, API_ENDPOINT, "bigquery-public-data");
-                console.log("datasets", datasets);
-            });
-    }, [dataTalkConfig]);
     /**
      * Allow import and export data plugin
      */
@@ -157,14 +139,9 @@ export function App() {
                                 component = <CircularProgressCenter size={"large"}/>;
                             } else {
                                 if (!canAccessMainView) {
-                                    const LoginViewUsed = FirebaseLoginView;
                                     component = (
-                                        <LoginViewUsed
-                                            allowSkipLogin={false}
-                                            signInOptions={signInOptions}
-                                            firebaseApp={firebaseApp}
-                                            authController={authController}
-                                            notAllowedError={notAllowedError}/>
+                                        <DataTalkLogin authController={authController}
+                                                       dataTalk={dataTalkConfig}/>
                                     );
                                 } else {
                                     component = (
@@ -179,7 +156,6 @@ export function App() {
                                             <DataTalkRoutes
                                                 onAnalyticsEvent={(event, params) => {
                                                     console.log("DataTalk event", event, params);
-                                                    // onAnalyticsEvent?.("datatalk:" + event, params);
                                                 }}/>
                                             {/*<NavigationRoutes*/}
                                             {/*    homePage={<DataTalk apiEndpoint={API_ENDPOINT}*/}
@@ -197,4 +173,3 @@ export function App() {
         </SnackbarProvider>
     );
 }
-

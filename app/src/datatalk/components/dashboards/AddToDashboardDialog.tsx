@@ -4,7 +4,7 @@ import { useDataTalk } from "../../DataTalkProvider";
 import { DashboardPreviewCard, NewDashboardCard } from "./DashboardPreviewCard";
 import { useNavigate } from "react-router-dom";
 import { getDashboardPath } from "../../navigation";
-import { WidgetConfig } from "../../types";
+import { DryWidgetConfig } from "../../types";
 
 export function AddToDashboardDialog({
                                          open,
@@ -13,7 +13,7 @@ export function AddToDashboardDialog({
                                      }: {
     open: boolean;
     setOpen: (open: boolean) => void;
-    widgetConfig: WidgetConfig;
+    widgetConfig: DryWidgetConfig;
 }) {
 
     const navigate = useNavigate();
@@ -30,10 +30,10 @@ export function AddToDashboardDialog({
             <Typography variant={"label"}>Select a dashboard to add this widget to</Typography>
 
             <NewDashboardCard
-                onClick={(id) => {
-                    dataTalkConfig.addDashboardWidget(id, widgetConfig);
+                onClick={(dashboard) => {
+                    dataTalkConfig.addDashboardWidget(dashboard.id, widgetConfig);
                     setOpen(false);
-                    navigate(getDashboardPath(id));
+                    navigate(getDashboardPath(dashboard.id));
                 }}/>
 
             <div className={"flex flex-row gap-2 flex-wrap"}>
@@ -44,8 +44,8 @@ export function AddToDashboardDialog({
                         onClick={() => {
                             console.log("Navigate to dashboard", dashboard.id);
                             dataTalkConfig.addDashboardWidget(dashboard.id, widgetConfig);
-                            setOpen(false);
                             navigate(getDashboardPath(dashboard.id));
+                            setOpen(false);
                         }}/>
                 ))}
             </div>

@@ -1,6 +1,6 @@
 import { DryWidgetConfig } from "../../types";
 import React, { useMemo } from "react";
-import { Button, Dialog, DialogActions, DialogContent, TextField, Typography } from "@firecms/ui";
+import { Button, Container, DialogActions, Sheet, TextField, Typography } from "@firecms/ui";
 import { AutoHeightEditor } from "../AutoHeightEditor";
 import { useSnackbarController } from "@firecms/core";
 
@@ -71,44 +71,52 @@ export function ConfigViewDialog({
         setTitle(event.target.value);
     }
 
-    return <Dialog
-        maxWidth={"6xl"}
+    return <Sheet
+        side={"bottom"}
         open={open}
         onOpenChange={setOpen}
     >
-        <DialogContent className="p-8 flex flex-col space-y-4">
-            <TextField invisible
-                       value={title}
-                       onChange={onTitleChange}
-                       className={"text-lg font-semibold"}
-                       placeholder={"Widget config"}/>
-            <div>
-                <Typography gutterBottom variant={"label"}>
-                    SQL code
-                </Typography>
-                {sqlCode && <AutoHeightEditor value={sqlCode ?? ""}
-                                              defaultLanguage={"sql"}
-                                              onChange={(updatedSQL) => {
-                                                  setSqlCode(updatedSQL ?? "");
-                                              }}/>}
-            </div>
-            <div>
-                <Typography gutterBottom variant={"label"}>
-                    Widget config
-                </Typography>
-                <AutoHeightEditor value={chartOrTableConfig ?? ""}
-                                  defaultLanguage={"json"}
-                                  onChange={(value) => {
-                                      updateChartConfig(value ?? "");
-                                  }}/>
-            </div>
+        <div
+            className={"max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-950"}>
 
-        </DialogContent>
-        <DialogActions>
-            <Button onClick={onUpdate}
-                    variant={"outlined"}>
-                Update
-            </Button>
-        </DialogActions>
-    </Dialog>
+            <Container
+                className="p-8 flex flex-col space-y-4 h-full"
+                maxWidth={"7xl"}>
+                <TextField value={title}
+                           onChange={onTitleChange}
+                           className={"text-lg font-semibold"}
+                           placeholder={"Widget config"}/>
+                <div className={"h-full flex-grow flex flex-col w-full gap-4"}>
+
+                    <div className={"flex flex-col flex-grow"}>
+                        <Typography gutterBottom variant={"label"}>
+                            SQL code
+                        </Typography>
+                        {sqlCode && <AutoHeightEditor value={sqlCode ?? ""}
+                                                      defaultLanguage={"sql"}
+                                                      onChange={(updatedSQL) => {
+                                                          setSqlCode(updatedSQL ?? "");
+                                                      }}/>}
+                    </div>
+                    <div className={"flex flex-col flex-grow"}>
+                        <Typography gutterBottom variant={"label"}>
+                            Widget config
+                        </Typography>
+                        <AutoHeightEditor value={chartOrTableConfig ?? ""}
+                                          defaultLanguage={"json"}
+                                          onChange={(value) => {
+                                              updateChartConfig(value ?? "");
+                                          }}/>
+                    </div>
+
+                </div>
+            </Container>
+            <DialogActions>
+                <Button onClick={onUpdate}
+                        variant={"outlined"}>
+                    Update
+                </Button>
+            </DialogActions>
+        </div>
+    </Sheet>
 }

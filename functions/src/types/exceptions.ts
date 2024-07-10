@@ -1,4 +1,4 @@
-export default class FireCMSException extends Error {
+export default class DataTalkException extends Error {
     status: number;
     message: string;
     code?: string;

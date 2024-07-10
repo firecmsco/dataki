@@ -1,4 +1,4 @@
-import { ChatMessage, DataSource, DryWidgetConfig, Item, WidgetConfig } from "./types";
+import { ChatMessage, DataSource, DryWidgetConfig, GCPProject, Item, WidgetConfig } from "./types";
 import { LLMOutputParser } from "./utils/llm_parser";
 
 export async function streamDataTalkCommand(firebaseAccessToken: string,
@@ -121,6 +121,7 @@ export function hydrateWidgetConfig(firebaseAccessToken: string,
 
 export function getDataTalkSamplePrompts(firebaseAccessToken: string,
                                          apiEndpoint: string,
+                                         dataSources: DataSource[],
                                          messages?: ChatMessage[]
 ): Promise<string[]> {
     return fetch(apiEndpoint + "/datatalk/sample_prompts", {
@@ -130,6 +131,7 @@ export function getDataTalkSamplePrompts(firebaseAccessToken: string,
             Authorization: `Bearer ${firebaseAccessToken}`
         },
         body: JSON.stringify({
+            dataSources,
             history: messages ?? []
         })
     })
@@ -144,10 +146,29 @@ export function getDataTalkSamplePrompts(firebaseAccessToken: string,
         .then(data => data.data);
 }
 
-export function getDatasets(firebaseAccessToken: string, apiEndpoint: string, projectId: string) {
+export function fetchDataSourcesForProject(firebaseAccessToken: string, apiEndpoint: string, projectId: string): Promise<DataSource[]> {
     return fetch(apiEndpoint + "/projects/" + projectId + "/datasets",
         {
             method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${firebaseAccessToken}`
+            }
+        }).then(response => {
+        if (!response.ok) {
+            return response.json().then(data => {
+                throw new ApiError(data.message, data.code);
+            });
+        }
+        return response.json();
+    })
+        .then(data => data.data);
+
+}
+export function createServiceAccountLink(firebaseAccessToken: string, apiEndpoint: string, projectId: string): Promise<boolean> {
+    return fetch(apiEndpoint + "/projects/" + projectId + "/service_accounts",
+        {
+            method: "POST",
             headers: {
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${firebaseAccessToken}`
@@ -172,4 +193,92 @@ export class ApiError extends Error {
         super(message);
         this.code = code;
     }
+}
+
+export function fetchGCPProjects(firebaseAccessToken: string, apiEndpoint: string): Promise<GCPProject[]> {
+    return fetch(apiEndpoint + "/projects",
+        {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${firebaseAccessToken}`
+            }
+        }).then(response => {
+        if (!response.ok) {
+            return response.json().then(data => {
+                throw new ApiError(data.message, data.code);
+            });
+        }
+        return response.json();
+    })
+        .then(data => data.data);
+}
+
+/**
+ * Generate the authorization URL for the OAuth2 flow
+ *
+ */
+export async function generateAuthUrl(redirectUri: string, apiEndpoint: string) {
+    const url = new URL(`${apiEndpoint}/oauth/generate_auth_url`);
+    url.searchParams.append("redirect_uri", redirectUri);
+
+    const response = await fetch(url.toString(), {
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json"
+        }
+    });
+
+    if (!response.ok) {
+        throw new Error(`Error: ${response.status}`);
+    }
+
+    return response.json();
+}
+
+/**
+ * Exchange the authorization code for an access token
+ *
+ */
+export async function exchangeCodeForToken(redirectUri: string, code: string, apiEndpoint: string): Promise<Record<string, string>> {
+    const url = new URL(`${apiEndpoint}/oauth/exchange_code_for_token`);
+    url.searchParams.append("redirect_uri", redirectUri);
+    url.searchParams.append("code", code);
+
+    const response = await fetch(url.toString(), {
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json"
+        }
+    });
+
+    if (!response.ok) {
+        throw new Error(`Error: ${response.status}`);
+    }
+
+    const json = await response.json();
+    return json.data;
+}
+
+/**
+ * Refresh the access token
+ *
+ */
+export async function postUserCredentials(credentials: object, firebaseAccessToken: string, apiEndpoint: string) {
+    const url = `${apiEndpoint}/oauth/credentials`;
+
+    const response = await fetch(url, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${firebaseAccessToken}`
+        },
+        body: JSON.stringify(credentials)
+    });
+
+    if (!response.ok) {
+        throw new Error(`Error: ${response.status}`);
+    }
+
+    return response.json();
 }

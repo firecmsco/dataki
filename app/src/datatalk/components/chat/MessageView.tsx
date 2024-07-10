@@ -1,23 +1,24 @@
-import { AutoAwesomeIcon, Avatar, Menu, MenuItem, PersonIcon } from "@firecms/ui";
+import { AutoAwesomeIcon, Avatar, cls, Menu, MenuItem, PersonIcon } from "@firecms/ui";
 import React, { useEffect, useRef, useState } from "react";
-import { ChatMessage, FeedbackSlug } from "../../types";
+import { ChatMessage, DataSource, FeedbackSlug } from "../../types";
 import { SystemMessage } from "./SystemMessage";
-import { EntityCollection } from "@firecms/core";
 
 export function MessageView({
-                                  message,
-                                  onRemove,
-                                  onRegenerate,
-                                  canRegenerate,
-                                  onFeedback,
-                                  onUpdatedMessage,
-                              }: {
+                                message,
+                                onRemove,
+                                onRegenerate,
+                                canRegenerate,
+                                onFeedback,
+                                onUpdatedMessage,
+                                dataSources
+                            }: {
     message?: ChatMessage,
     onRemove?: () => void,
     onRegenerate?: () => void,
     canRegenerate?: boolean,
     onFeedback?: (reason?: FeedbackSlug, feedbackMessage?: string) => void,
     onUpdatedMessage?: (message: ChatMessage) => void,
+    dataSources: DataSource[]
 }) {
 
     const ref = useRef<HTMLDivElement>(null);
@@ -48,7 +49,7 @@ export function MessageView({
     }, [ref]);
 
     return <div ref={ref}
-                className="flex flex-col gap-2 bg-white dark:bg-gray-800 dark:bg-opacity-10 rounded-lg p-4 shadow-sm">
+                className={cls("flex flex-col gap-2 bg-white dark:bg-gray-800 dark:bg-opacity-10 rounded-lg p-4")}>
         <div className="flex items-start gap-3 justify-center">
             <Menu trigger={<Avatar className="w-10 h-10 shrink-0">
                 {message?.user === "USER" ? <PersonIcon/> : <AutoAwesomeIcon/>}
@@ -63,6 +64,7 @@ export function MessageView({
                         ? <UserMessage text={message.text}/>
                         : <SystemMessage text={message.text}
                                          loading={message.loading}
+                                         dataSources={dataSources}
                                          canRegenerate={canRegenerate}
                                          containerWidth={containerWidth ?? undefined}
                                          onRegenerate={onRegenerate}

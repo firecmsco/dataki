@@ -3,7 +3,7 @@ import { DataTalkConfig } from "../DataTalkProvider";
 import { CircularProgressCenter } from "@firecms/core";
 import { useLocation, useParams } from "react-router-dom";
 import { DataTalkChatSession } from "../components/chat/DataTalkChatSession";
-import { Session } from "../types";
+import { ChatMessage, DataSource, Session } from "../types";
 
 export function ChatSessionRoute({
                                      dataTalkConfig,
@@ -67,22 +67,36 @@ function ChatRouteInner({
     const usedSession = session ?? {
         id: sessionId,
         created_at: new Date(),
-        messages: []
+        updated_at: new Date(),
+        messages: [],
+        dataSources: []
     } satisfies Session;
+
+    const onMessagesChange = (messages: ChatMessage[]) => {
+        const newSession = {
+            ...usedSession,
+            messages
+        };
+        setSession(newSession);
+        dataTalkConfig.saveSession(newSession);
+    };
+
+    const onDataSourcesChange = (dataSources: DataSource[]) => {
+        const newSession = {
+            ...usedSession,
+            dataSources
+        };
+        setSession(newSession);
+        dataTalkConfig.saveSession(newSession);
+    }
 
     return (
         <DataTalkChatSession
             onAnalyticsEvent={onAnalyticsEvent}
             session={usedSession}
             initialPrompt={initialPrompt ?? undefined}
-            onMessagesChange={(messages) => {
-                const newSession = {
-                    ...usedSession,
-                    messages
-                };
-                setSession(newSession);
-                dataTalkConfig.saveSession(newSession);
-            }}
+            onDataSourcesChange={onDataSourcesChange}
+            onMessagesChange={onMessagesChange}
         />
     )
 }

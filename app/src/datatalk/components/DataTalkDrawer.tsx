@@ -26,7 +26,7 @@ export function DataTalkDrawer() {
 
             <div className={"flex-grow overflow-scroll no-scrollbar my-8"}>
 
-                <Tooltip title={"Start new chat"}>
+                <Tooltip title={"Start new chat"} side={"bottom"}>
                     <Link to={getNewChatPath()}>
                         <Button variant={"outlined"} className={"ml-4 mb-8 rounded-2xl"}>
                             <ForumIcon size="small"/>

@@ -5,7 +5,6 @@ import {
     ArrowForwardIcon,
     Card,
     cls,
-    cn,
     DeleteIcon,
     IconButton,
     LineAxisIcon,
@@ -24,7 +23,7 @@ export type DashboardCardProps = {
 
 export function DashboardPreviewCard({
                                          dashboard,
-                                         onClick,
+                                         onClick
                                      }: DashboardCardProps) {
 
     const {
@@ -35,7 +34,7 @@ export function DashboardPreviewCard({
     const datatalk = useDataTalk();
 
     return (<Card
-        className={cls("p-4 cursor-pointer h-[180px] w-[300px]")}
+        className={cls("m-0 p-4 cursor-pointer h-[180px] w-[300px]")}
         onClick={() => {
             onClick?.();
         }}>
@@ -64,11 +63,11 @@ export function DashboardPreviewCard({
                             <MenuItem
                                 dense={true}
                                 onClick={(event) => {
-                                event.preventDefault();
-                                event.stopPropagation();
-                                datatalk.deleteDashboard(dashboard.id);
-                                // setDeleteRequested(true);
-                            }}>
+                                    event.preventDefault();
+                                    event.stopPropagation();
+                                    datatalk.deleteDashboard(dashboard.id);
+                                    // setDeleteRequested(true);
+                                }}>
                                 <DeleteIcon size={"small"}/>
                                 Delete
                             </MenuItem>
@@ -103,9 +102,9 @@ export function DashboardPreviewCard({
 }
 
 export function NewDashboardCard({
-                                     onClick,
+                                     onClick
                                  }: {
-    onClick: (id: string) => void
+    onClick: (dashboard: Dashboard) => void
 }) {
 
     const dataTalkConfig = useDataTalk();
@@ -113,18 +112,20 @@ export function NewDashboardCard({
 
     return (
         <Card className={cls("p-4 min-h-[124px] flex items-center justify-center w-full flex-grow flex-col")}
-              onClick={isPending ? undefined : () => {
-                  startTransition(async () => {
-                      const id = await dataTalkConfig.createDashboard();
-                      onClick(id);
-                  });
-              }}>
+              onClick={isPending
+                  ? undefined
+                  : () => {
+                      startTransition(() => {
+                          dataTalkConfig.createDashboard().then((dashboard) => {
+                              onClick(dashboard);
+                          });
+                      });
+                  }}>
 
             <AddIcon color={isPending ? undefined : "primary"} size={"large"}/>
             <Typography color="primary"
                         variant={"caption"}
                         className={"font-medium"}>{"Create a new dashboard".toUpperCase()}</Typography>
-
 
         </Card>
     );

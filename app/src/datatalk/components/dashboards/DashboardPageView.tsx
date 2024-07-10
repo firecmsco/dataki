@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from "react";
+import React, { useCallback, useEffect, useMemo } from "react";
 import ReactFlow, { Background, BackgroundVariant, MiniMap, Node, Panel, useNodesState } from "reactflow";
 
 import "reactflow/dist/style.css";
@@ -68,11 +68,6 @@ function convertWidgetsToNodes(widgets: DashboardWidgetConfig[], paperSize: Widg
         paperNode, ...widgetNodes];
 }
 
-const nodeTypes = {
-    paper: PaperNode,
-    chart: ChartNode,
-};
-
 export const DashboardPageView = function DashboardPageView({
                                                                 page,
                                                                 dashboard,
@@ -82,6 +77,11 @@ export const DashboardPageView = function DashboardPageView({
     dashboard: Dashboard,
     containerSize: WidgetSize
 }) {
+
+    const nodeTypes = useMemo(() => ({
+        paper: PaperNode,
+        chart: ChartNode,
+    }), []);
 
     const dataTalk = useDataTalk();
 
@@ -159,7 +159,8 @@ export const DashboardPageView = function DashboardPageView({
             // }}
         >
             <Panel position="top-left">
-                <div className={cls("w-full flex flex-row bg-white dark:bg-gray-900 rounded-2xl border", defaultBorderMixin)}>
+                <div
+                    className={cls("w-full flex flex-row bg-white dark:bg-gray-900 rounded-2xl border", defaultBorderMixin)}>
                     <DashboardMenubar dashboard={dashboard}/>
                 </div>
             </Panel>

@@ -1,6 +1,6 @@
 # datatalk-hackathon
 
-You can find the live demo at [https://fire-cms-devrel-demo.web.app](https://fire-cms-devrel-demo.web.app).
+You can find the live demo at [https://datatalk-443fb.web.app](https://datatalk-443fb.web.app).
 
 ## Backend
 
@@ -59,11 +59,11 @@ npm run deploy
 This is the frontend for the DataTalk project. It is a React application that
 uses some of the components from the [FireCMS](https://firecms.co) project.
 
-This project is configured with the project `fire-cms-devrel-demo` but can be used with any Firebase project.
+This project is configured with the project `datatalk-443fb` but can be used with any Firebase project.
 If you want to use a different project, make sure to change the Firebase config in `src/firebase_config.ts`.
 
 It is also connecting by default to the backend of this demo project, which is hosted
-at `https://fire-cms-devrel-demo.web.app`.
+at `https://datatalk-443fb.web.app`.
 
 ### Running the project
 

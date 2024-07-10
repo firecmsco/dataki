@@ -46,6 +46,7 @@ export function DashboardNameTextField({
     return (
         <TextField
             className={"font-semibold rounded-xl text-sm"}
+            inputClassName={"rounded-xl"}
             invisible={true}
             size={"smallest"}
             placeholder={"Untitled dashboard"}

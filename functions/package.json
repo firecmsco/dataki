@@ -5,14 +5,14 @@
     "prettify": "eslint 'src/**/*' --fix",
     "build": "tsc",
     "build-watch": "tsc -w &>/dev/null &",
-    "serve": "export GOOGLE_APPLICATION_CREDENTIALS=/Users/francesco/fire-cms-devrel-demo.json && yarpm run build-watch & firebase emulators:start --only functions",
+    "serve": "export GOOGLE_APPLICATION_CREDENTIALS=/Users/francesco/datatalk-443fb-firebase-adminsdk-c2q4o-7658d1df0e.json && yarpm run build-watch & firebase emulators:start --only functions",
     "shell": "yarpm run build && firebase functions:shell",
     "start": "yarpm run shell",
-    "deploy": "yarpm run build && firebase deploy --only functions:datatalkapi --project=fire-cms-devrel-demo",
+    "deploy": "yarpm run build && firebase deploy --only functions:datatalkapi --project=datatalk-443fb",
     "logs": "firebase functions:log"
   },
   "engines": {
-    "node": "18"
+    "node": "20"
   },
   "main": "lib/index.js",
   "dependencies": {
@@ -21,6 +21,7 @@
     "@google-cloud/error-reporting": "^3.0.5",
     "@google-cloud/kms": "^3.0.1",
     "@google-cloud/pubsub": "^3.1.1",
+    "@google-cloud/resource-manager": "^5.3.0",
     "@google-cloud/vertexai": "^1.2.0",
     "@google/generative-ai": "^0.8.0",
     "axios": "^0.21.1",
@@ -31,9 +32,10 @@
     "express": "^4.17.1",
     "express-async-errors": "^3.1.1",
     "express-mung": "^0.5.1",
-    "firebase-admin": "^12.1.0",
+    "firebase-admin": "^12.2.0",
     "firebase-functions": "^4.9.0",
-    "google-auth-library": "^9.9.0",
+    "google-auth-library": "^9.11.0",
+    "googleapis": "^140.0.1",
     "json5": "^2.2.3",
     "morgan": "^1.10.0",
     "node-fetch": "^2.6.1",

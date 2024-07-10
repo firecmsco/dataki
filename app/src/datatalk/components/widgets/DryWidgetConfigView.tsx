@@ -88,8 +88,6 @@ export function DryWidgetConfigView({
     };
 
     const downloadFile = () => {
-        console.dir(viewRef.current);
-        viewRef.current
         toPng(viewRef.current as HTMLElement, {
             backgroundColor: mode === "dark" ? "#18181c" : "#fff",
             width: viewRef.current?.scrollWidth,
@@ -135,14 +133,14 @@ export function DryWidgetConfigView({
                     </div>
 
                     <div className={"m-2.5 ml-1 flex flex-row gap-1 nodrag"}>
-                        <Tooltip title={"Add this view to a dashboard"}>
-                            <IconButton size={"small"} onClick={() => setAddToDashboardDialogOpen(true)}>
-                                <AddIcon size={"small"}/>
-                            </IconButton>
-                        </Tooltip>
                         <Tooltip title={"Edit widget configuration"}>
                             <IconButton size={"small"} onClick={() => setConfigDialogOpen(true)}>
                                 <SettingsIcon size={"small"}/>
+                            </IconButton>
+                        </Tooltip>
+                        <Tooltip title={"Add this view to a dashboard"}>
+                            <IconButton size={"small"} onClick={() => setAddToDashboardDialogOpen(true)}>
+                                <AddIcon size={"small"}/>
                             </IconButton>
                         </Tooltip>
                     </div>
@@ -183,7 +181,7 @@ export function DryWidgetConfigView({
 
         {config && <AddToDashboardDialog open={addToDashboardDialogOpen}
                                          setOpen={setAddToDashboardDialogOpen}
-                                         widgetConfig={config}/>}
+                                         widgetConfig={dryConfig}/>}
     </>;
 }
 

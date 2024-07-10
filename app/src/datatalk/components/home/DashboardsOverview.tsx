@@ -13,8 +13,6 @@ export function DashboardsOverview() {
         return <CircularProgressCenter/>
     }
 
-    console.log("Dashboards", dataTalkConfig.dashboards);
-
     return (
         <div className={"my-8"}>
 
@@ -42,7 +40,7 @@ export function DashboardsOverview() {
                         }}/>
                 ))}
                 {dataTalkConfig.dashboards.length === 0 && (
-                    <Typography variant={"body2"} className={"text-gray-500"}>
+                    <Typography variant={"body2"} className={"text-gray-500 self-center w-full text-center"} component={"div"}>
                         No dashboards yet
                     </Typography>
                 )}
