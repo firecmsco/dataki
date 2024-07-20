@@ -1,17 +1,31 @@
-import React, { useEffect, useRef, useState } from "react";
-import { randomString, useSnackbarController } from "@firecms/core";
-import { Button, SendIcon, TextareaAutosize, Typography } from "@firecms/ui";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { randomString, useAuthController, useSnackbarController } from "@firecms/core";
+import { Button, cls, fieldBackgroundHoverMixin, SendIcon, TextareaAutosize, Typography } from "@firecms/ui";
 import { MessageView } from "./MessageView";
-import { getDataTalkSamplePrompts, streamDataTalkCommand } from "../../api";
-import { ChatMessage, DataSource, FeedbackSlug, Session } from "../../types";
+import { getDataTalkPromptSuggestions, streamDataTalkCommand } from "../../api";
+import { ChatMessage, DashboardParams, DataSource, FeedbackSlug, Session } from "../../types";
 import { PromptSuggestions } from "./PromptSuggestions";
 import { useDataTalk } from "../../DataTalkProvider";
 import { DataSourcesSelection } from "../DataSourcesSelection";
+import { PromptSuggestionsSmall } from "./PromptSuggestionsSmall";
+import { DatePickerWithRange } from "../DateRange";
+import { getInitialDateRange } from "../utils/dates";
 
 const DEMO_DATA_SOURCES: DataSource[] = [{
     projectId: "bigquery-public-data",
     datasetId: "thelook_ecommerce"
 }];
+
+function getInitialDataSources(session: Session, uid: string) {
+    if (session.dataSources && session.dataSources.length > 0) {
+        return session.dataSources;
+    }
+    const savedLocally = loadDataSourceLocally(uid);
+    if (savedLocally) {
+        return savedLocally;
+    }
+    return DEMO_DATA_SOURCES;
+}
 
 export function DataTalkChatSession({
                                         session,
@@ -27,35 +41,59 @@ export function DataTalkChatSession({
     onDataSourcesChange?: (dataSources: DataSource[]) => void
 }) {
 
+    const authController = useAuthController();
+    if (!authController.user) {
+        throw new Error("User not authenticated");
+    }
+    const { uid } = authController.user;
+
     const snackbar = useSnackbarController();
 
     const [samplePrompts, setSamplePrompts] = useState<string[]>([]);
+    const [samplePromptsLoading, setSamplePromptsLoading] = useState<boolean>(false);
 
-    const initialDataSources = session.dataSources ?? DEMO_DATA_SOURCES;
+    const initialDataSources = getInitialDataSources(session, uid);
     const [dataSources, setDataSources] = useState<DataSource[]>(initialDataSources);
 
+    const [textInput, setTextInput] = useState<string>("");
+
+    const [messages, setMessages] = useState<ChatMessage[]>(session.messages || []);
+    const [messageLoading, setMessageLoading] = useState<boolean>(false);
+
+    const [dateRange, setDateRange] = useState<[Date | null, Date | null]>(getInitialDateRange());
+
+    const params: DashboardParams = useMemo(() => ({
+        dateStart: dateRange[0] ?? null,
+        dateEnd: dateRange[1] ?? null
+    }), [dateRange]);
+
     useEffect(() => {
-        console.log("Loading sample prompts");
-        getAuthToken().then((firebaseToken) => {
-            getDataTalkSamplePrompts(firebaseToken, apiEndpoint, dataSources)
-                .then(setSamplePrompts);
-        });
-    }, [dataSources]);
+        if (dataSources.length > 0) {
+            const lastMessage = messages.length > 0 ? messages[messages.length - 1] : null;
+            const shouldLoadSamplePrompts = !lastMessage || (lastMessage.user === "SYSTEM" && !lastMessage.loading);
+
+            console.log("Loading sample prompts");
+            if (shouldLoadSamplePrompts) {
+                getAuthToken().then((firebaseToken) => {
+                    setSamplePromptsLoading(true);
+                    getDataTalkPromptSuggestions(firebaseToken, apiEndpoint, dataSources, messages)
+                        .then(setSamplePrompts)
+                        .finally(() => setSamplePromptsLoading(false));
+                });
+            }
+        }
+    }, [dataSources, messages]);
 
     const updateDataSources = (dataSources: DataSource[]) => {
         setDataSources(dataSources);
         onDataSourcesChange?.(dataSources);
-        saveDataSourceLocally(session.id, dataSources);
+        saveDataSourceLocally(uid, dataSources);
     }
 
     const {
         apiEndpoint,
         getAuthToken
     } = useDataTalk();
-    const [textInput, setTextInput] = useState<string>("");
-
-    const [messages, setMessages] = useState<ChatMessage[]>(session.messages || []);
-    const [messageLoading, setMessageLoading] = useState<boolean>(false);
 
     useEffect(() => {
         scrollToBottom();
@@ -67,7 +105,7 @@ export function DataTalkChatSession({
         }
     }, []);
 
-    const [isUserScrolledUp, setIsUserScrolledUp] = useState(false);
+    const isUserScrolledDownRef = useRef(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -75,10 +113,13 @@ export function DataTalkChatSession({
         setTimeout(() => {
             scrollContainerRef.current?.scrollTo(scrollContainerRef.current?.scrollLeft, scrollContainerRef.current.scrollHeight);
             // messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-        }, 20);
+        }, 10);
     };
 
-    const handleScroll = () => {
+    // const handleScrollCapture = (e:any) => {
+    //     console.log("handleScrollCapture", e);
+    // }
+    const handleScroll = (e: any) => {
         if (!scrollContainerRef.current) return;
 
         const {
@@ -87,16 +128,16 @@ export function DataTalkChatSession({
             clientHeight
         } = scrollContainerRef.current;
         // If user is not at the bottom
-        if (scrollHeight - scrollTop > clientHeight + 100) {
-            setIsUserScrolledUp(true);
+        if (scrollHeight - scrollTop >= clientHeight + 1) {
+            isUserScrolledDownRef.current = false;
         } else {
-            setIsUserScrolledUp(false);
+            isUserScrolledDownRef.current = true;
         }
     };
 
     useEffect(() => {
         const observer = new IntersectionObserver((entries, observer) => {
-            if (entries[0].isIntersecting && !isUserScrolledUp) {
+            if (entries[0].isIntersecting && !isUserScrolledDownRef.current) {
                 scrollToBottom();
             }
         }, {
@@ -107,7 +148,7 @@ export function DataTalkChatSession({
         }
 
         const resizeObserver = new ResizeObserver(() => {
-            if (!isUserScrolledUp) {
+            if (!isUserScrolledDownRef.current) {
                 scrollToBottom();
             }
         });
@@ -122,7 +163,7 @@ export function DataTalkChatSession({
                 resizeObserver.unobserve(scrollContainerRef.current);
             }
         };
-    }, [isUserScrolledUp]);
+    }, []);
 
     const submitMessage = async (messageText: string, baseMessages: ChatMessage[] = messages) => {
 
@@ -144,7 +185,7 @@ export function DataTalkChatSession({
         const userMessageId = randomString(20);
         const systemMessageId = randomString(20);
 
-        const currentMessages: ChatMessage[] = [
+        let currentMessages: ChatMessage[] = [
             ...baseMessages,
             {
                 id: userMessageId,
@@ -188,6 +229,25 @@ export function DataTalkChatSession({
                         date: new Date()
                     }
                 ]);
+                if (isUserScrolledDownRef.current) {
+                    scrollToBottom();
+                }
+            },
+            (sqlQuery) => {
+                console.log("Got SQL query", sqlQuery);
+                const newMessages = [...currentMessages];
+                // this message must go before the one with id systemMessageId
+                const sqlMessage: ChatMessage = {
+                    id: systemMessageId,
+                    loading: false,
+                    text: sqlQuery,
+                    user: "SQL_STATEMENT",
+                    date: new Date()
+                };
+                newMessages.push(sqlMessage);
+                currentMessages = newMessages;
+                setMessages(newMessages);
+
             })
             .then((newMessage) => {
                 const updatedMessages: ChatMessage[] = [
@@ -239,9 +299,12 @@ export function DataTalkChatSession({
         const newMessages = [...messages];
         newMessages.splice(index);
         const lastUserMessage = newMessages.filter(m => m.user === "USER").pop();
-        newMessages.splice(index - 1);
-        console.log("newMessages", newMessages);
-        console.log("lastUserMessage", lastUserMessage);
+        if (!lastUserMessage) {
+            throw new Error("No user message found");
+        }
+        // remove all messages after the last user message, including the last user message
+        const indexOfLastUserMessage = newMessages.map(m => m.id).indexOf(lastUserMessage.id);
+        newMessages.splice(indexOfLastUserMessage);
 
         // get text from the last user message
         if (lastUserMessage) {
@@ -255,7 +318,7 @@ export function DataTalkChatSession({
         }
 
         const newMessages = [...messages];
-        newMessages.splice(index - 1);
+        newMessages.pop();
         console.log("newMessages", newMessages);
 
         if (message) {
@@ -295,24 +358,24 @@ export function DataTalkChatSession({
 
     return (
 
-        <div className="h-full w-full flex flex-col bg-gray-50 dark:bg-gray-900">
+        <div className="relative h-full w-full flex flex-col ">
             <div className="h-full overflow-auto"
                  onScroll={handleScroll}
                  ref={scrollContainerRef}>
+                <div className={"absolute top-4 right-4 bg-white dark:bg-gray-800 rounded-lg"}>
+                    <DatePickerWithRange dateRange={dateRange} setDateRange={setDateRange}/>
+                </div>
 
-                <div className="container mx-auto px-4 md:px-6 pt-8 flex-1 flex flex-col gap-4">
-
-                    <DataSourcesSelection dataSources={dataSources}
-                                          setDataSources={updateDataSources}
-                                          className={"self-end"}/>
+                <div className="container mx-auto px-4 md:px-6 pt-8 flex-1 flex flex-col gap-4 mt-12">
 
                     {(messages ?? []).length === 0 &&
 
                         <div className={"my-8"}>
                             <Typography variant={"h3"} gutterBottom={true} className={"font-mono ml-4 my-2"}>
-                                Welcome to DATATALK
+                                How can I help you?
                             </Typography>
                             <PromptSuggestions
+                                loading={samplePromptsLoading}
                                 suggestions={samplePrompts}
                                 onPromptSuggestionClick={(prompt) => submitMessage(prompt)}/>
                         </div>}
@@ -325,6 +388,7 @@ export function DataTalkChatSession({
                                                 setMessages(newMessages);
                                                 onMessagesChange?.(newMessages);
                                             }}
+                                            params={params}
                                             onFeedback={(reason, feedbackMessage) => {
                                                 saveFeedback(message, reason, feedbackMessage, index);
                                             }}
@@ -348,29 +412,41 @@ export function DataTalkChatSession({
                 <div ref={messagesEndRef} style={{ height: 24 }}/>
             </div>
 
-            <div className="container sticky bottom-0 right-0 left-0 mx-auto px-4 md:px-6 pb-8 pt-4">
-                <form
-                    noValidate
-                    onSubmit={(e: React.FormEvent) => {
-                        e.preventDefault();
-                        if (!messageLoading && textInput)
-                            submitMessage(textInput);
-                    }}
-                    autoComplete="off"
-                    className="relative bg-white dark:bg-gray-800 rounded-full flex items-center gap-2 ">
-                    <TextareaAutosize
-                        value={textInput}
-                        autoFocus={true}
-                        onKeyDown={handleKeyDown}
-                        onChange={(e) => setTextInput(e.target.value)}
-                        className="flex-1 resize-none rounded-3xl p-4 border-none focus:ring-0 dark:bg-gray-800 dark:text-gray-200 pr-[80px] pl-8"
-                        placeholder="Type your message..."
-                    />
-                    <Button className={"rounded-3xl absolute right-0 top-0 m-1.5"} variant="text" type={"submit"}
-                            disabled={!textInput || messageLoading}>
-                        <SendIcon color={"primary"}/>
-                    </Button>
-                </form>
+            <div
+                className="w-full sticky bottom-0 right-0 left-0 pt-3 pb-6 dark:bg-gray-800 dark:bg-opacity-20 rounded-lg">
+
+                <div className={"container mx-auto px-4 md:px-6 flex flex-col gap-2"}>
+                    <div className={"flex flex-row gap-4"}>
+                        <DataSourcesSelection dataSources={dataSources}
+                                              setDataSources={updateDataSources}/>
+
+                        {messages.length > 0 && <PromptSuggestionsSmall loading={samplePromptsLoading}
+                                                                        suggestions={samplePrompts}
+                                                                        onPromptSuggestionClick={(prompt) => submitMessage(prompt)}/>}
+                    </div>
+                    <form
+                        noValidate
+                        onSubmit={(e: React.FormEvent) => {
+                            e.preventDefault();
+                            if (!messageLoading && textInput)
+                                submitMessage(textInput);
+                        }}
+                        autoComplete="off"
+                        className="relative bg-white dark:bg-gray-800 rounded-full flex items-center gap-2 ">
+                        <TextareaAutosize
+                            value={textInput}
+                            autoFocus={true}
+                            onKeyDown={handleKeyDown}
+                            onChange={(e) => setTextInput(e.target.value)}
+                            className={cls(fieldBackgroundHoverMixin, "flex-1 resize-none rounded-3xl p-4 border-none focus:ring-0 dark:bg-gray-800 dark:text-gray-200 pr-[80px] pl-8")}
+                            placeholder="Type your message..."
+                        />
+                        <Button className={"rounded-3xl absolute right-0 top-0 m-1.5"} variant="text" type={"submit"}
+                                disabled={!textInput || messageLoading}>
+                            <SendIcon color={"primary"}/>
+                        </Button>
+                    </form>
+                </div>
             </div>
         </div>
     )

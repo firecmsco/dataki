@@ -19,7 +19,7 @@ export type DataRow = {
 export type ChatMessage = {
     id: string;
     text: string;
-    user: "USER" | "SYSTEM";
+    user: "USER" | "SYSTEM" | "SQL_STATEMENT";
     date: Date;
     loading?: boolean;
     negative_feedback?: {
@@ -157,4 +157,9 @@ export type GCPProject = {
     };
     // is this project linked to DataTalk with a Service Account?
     linked: boolean;
+}
+
+export type DashboardParams = {
+    dateStart?: Date | null;
+    dateEnd?: Date | null;
 }

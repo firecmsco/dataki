@@ -1,4 +1,4 @@
-import { ChatMessage, DataSource, DryWidgetConfig, GCPProject, Item, WidgetConfig } from "./types";
+import { ChatMessage, DashboardParams, DataSource, DryWidgetConfig, GCPProject, Item, WidgetConfig } from "./types";
 import { LLMOutputParser } from "./utils/llm_parser";
 
 export async function streamDataTalkCommand(firebaseAccessToken: string,
@@ -7,13 +7,16 @@ export async function streamDataTalkCommand(firebaseAccessToken: string,
                                             sessionId: string,
                                             sources: DataSource[],
                                             messages: ChatMessage[],
-                                            onDelta: (delta: string) => void
+                                            onDelta: (delta: string) => void,
+                                            onSQLQuery: (sqlQuery: string) => void
 ): Promise<string> {
 
     const parser = new LLMOutputParser((v) => console.log("Delta:", v));
+
     // eslint-disable-next-line no-async-promise-executor
     return new Promise<string>(async (resolve, reject) => {
         try {
+            const history = messages.filter(message => message.user === "USER" || message.user === "SYSTEM");
             const response = await fetch(apiEndpoint + "/datatalk/command", {
                 method: "POST",
                 headers: {
@@ -24,7 +27,7 @@ export async function streamDataTalkCommand(firebaseAccessToken: string,
                     sessionId,
                     command,
                     sources,
-                    history: messages
+                    history
                 })
             });
 
@@ -43,7 +46,6 @@ export async function streamDataTalkCommand(firebaseAccessToken: string,
                 const processChunk = (chunk: ReadableStreamReadResult<Uint8Array>): void | Promise<void> => {
                     if (chunk.done) {
                         console.log("Stream completed", { result });
-                        // resolve(result);
                         return;
                     }
 
@@ -67,11 +69,11 @@ export async function streamDataTalkCommand(firebaseAccessToken: string,
                         try {
                             const message = JSON.parse(part);
                             if (message.type === "delta") {
-                                // console.log("Delta received:", message.data.delta);
                                 result.push(message.data.delta);
                                 onDelta(message.data.delta);
-
                                 parser.parseDelta(message.data.delta);
+                            } else if (message.type === "sql") {
+                                onSQLQuery(message.data.sqlQuery);
                             } else if (message.type === "result") {
                                 console.log("Result received:", parser.getFinalState());
                                 resolve(message.data);
@@ -98,7 +100,8 @@ export async function streamDataTalkCommand(firebaseAccessToken: string,
 // make simple POST http request to the API
 export function hydrateWidgetConfig(firebaseAccessToken: string,
                                     apiEndpoint: string,
-                                    config: DryWidgetConfig
+                                    config: DryWidgetConfig,
+                                    params?: DashboardParams
 ): Promise<WidgetConfig> {
     return fetch(apiEndpoint + "/datatalk/hydrate", {
         method: "POST",
@@ -106,7 +109,10 @@ export function hydrateWidgetConfig(firebaseAccessToken: string,
             "Content-Type": "application/json",
             Authorization: `Bearer ${firebaseAccessToken}`
         },
-        body: JSON.stringify({ config })
+        body: JSON.stringify({
+            config,
+            params
+        })
     })
         .then(response => {
             if (!response.ok) {
@@ -119,12 +125,13 @@ export function hydrateWidgetConfig(firebaseAccessToken: string,
         .then(data => data.data);
 }
 
-export function getDataTalkSamplePrompts(firebaseAccessToken: string,
-                                         apiEndpoint: string,
-                                         dataSources: DataSource[],
-                                         messages?: ChatMessage[]
+export function getDataTalkPromptSuggestions(firebaseAccessToken: string,
+                                             apiEndpoint: string,
+                                             dataSources: DataSource[],
+                                             messages?: ChatMessage[]
 ): Promise<string[]> {
-    return fetch(apiEndpoint + "/datatalk/sample_prompts", {
+    const history = (messages ?? []).filter(message => message.user === "USER" || message.user === "SYSTEM");
+    return fetch(apiEndpoint + "/datatalk/prompt_suggestions", {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
@@ -132,7 +139,7 @@ export function getDataTalkSamplePrompts(firebaseAccessToken: string,
         },
         body: JSON.stringify({
             dataSources,
-            history: messages ?? []
+            history
         })
     })
         .then(response => {
@@ -165,6 +172,7 @@ export function fetchDataSourcesForProject(firebaseAccessToken: string, apiEndpo
         .then(data => data.data);
 
 }
+
 export function createServiceAccountLink(firebaseAccessToken: string, apiEndpoint: string, projectId: string): Promise<boolean> {
     return fetch(apiEndpoint + "/projects/" + projectId + "/service_accounts",
         {

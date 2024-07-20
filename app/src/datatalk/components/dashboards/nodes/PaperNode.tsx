@@ -33,7 +33,7 @@ function PaperNode(props: NodeProps<PaperNodeProps>) {
                          minHeight={300}
                          onResize={(event, params) => {
 
-                             console.log("onResize", {
+                             console.log("paper resize", {
                                  params,
                                  event
                              });

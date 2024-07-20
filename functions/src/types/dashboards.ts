@@ -74,3 +74,7 @@ export type TableColumn = { key: string, name: string, dataType: DataType };
 
 export type DataType = "string" | "number" | "date" | "object" | "array";
 
+export type DashboardParams = {
+    dateStart?: Date | null;
+    dateEnd?: Date| null;
+}

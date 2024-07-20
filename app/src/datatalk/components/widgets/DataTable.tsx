@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React from "react";
 import { CellRendererParams, VirtualTable, VirtualTableColumn } from "@firecms/core";
 import { getIn } from "@firecms/formex";
 import { DataType, TableConfig } from "../../types";
@@ -8,7 +8,7 @@ export type DataTableProps = {
     config: TableConfig;
     zoom?: number;
     maxWidth?: number;
-    ref?: React.RefObject<HTMLDivElement | null>,
+    ref: React.RefObject<HTMLDivElement | null>,
 }
 
 export function DataTable({
@@ -16,12 +16,11 @@ export function DataTable({
                                   data,
                                   columns
                               },
-                              ref: refProp,
+                              ref,
                               zoom = 1,
                               maxWidth
                           }: DataTableProps) {
 
-    const ref = refProp ?? useRef<HTMLDivElement>(null);
     const size = useResizeObserver(ref);
 
     function cellRenderer({

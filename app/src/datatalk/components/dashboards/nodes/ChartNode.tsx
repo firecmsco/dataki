@@ -1,6 +1,6 @@
 import React, { ComponentType, memo, useState } from "react";
 import { NodeProps, NodeResizer, useOnViewportChange, Viewport } from "reactflow";
-import { DashboardWidgetConfig, WidgetSize } from "../../../types";
+import { DashboardParams, DashboardWidgetConfig, WidgetSize } from "../../../types";
 import { DEFAULT_WIDGET_SIZE } from "../../../utils/widgets";
 import { DryWidgetConfigView } from "../../widgets/DryWidgetConfigView";
 import { useDataTalk } from "../../../DataTalkProvider";
@@ -8,6 +8,7 @@ import { mergeDeep } from "@firecms/core";
 
 export type ChartNodeProps = {
     widgetConfig: DashboardWidgetConfig;
+    params?: DashboardParams;
     dashboardId: string;
     pageId: string;
     onRemoveClick: (widgetId: string) => void;
@@ -37,16 +38,26 @@ function ChartNode(props: NodeProps<ChartNodeProps>) {
             <NodeResizer minWidth={200}
                          minHeight={200}
                          onResize={(event, params) => {
+                             console.log("chart resize", {
+                                 params,
+                                 event
+                             });
                              const updatedSize = {
                                  width: params.width,
                                  height: params.height
                              };
+                             const position = {
+                                 x: params.x,
+                                 y: params.y
+                             };
+                             dataTalk.onWidgetMove(data.dashboardId, data.pageId, data.widgetConfig.id, position);
                              setSize(updatedSize);
                              dataTalk.onWidgetResize(data.dashboardId, data.pageId, data.widgetConfig.id, updatedSize);
                          }}
             />
 
             <DryWidgetConfigView dryConfig={data.widgetConfig}
+                                 params={data.params}
                                  zoom={zoom}
                                  onRemoveClick={() => data.onRemoveClick(data.widgetConfig.id)}
                                  onUpdated={(newConfig) => {
@@ -55,8 +66,6 @@ function ChartNode(props: NodeProps<ChartNodeProps>) {
                                  }}
 
             />
-            {/*{data.chart && <ChartView title={data.title} config={data.chart} size={data.size}/>}*/}
-            {/*{data.table && <DataTable title={data.title} config={data.table}/>}*/}
         </div>
     );
 }

@@ -19,6 +19,7 @@ export function ConfigViewDialog({
     const snackbar = useSnackbarController();
 
     const [title, setTitle] = React.useState<string>(dryConfigProp.title);
+    const [description, setDescription] = React.useState<string>(dryConfigProp.description);
     const [sqlCode, setSqlCode] = React.useState<string>(dryConfigProp.sql);
     const initialChartConfig: string = useMemo(() => {
         if (dryConfigProp.type === "chart")
@@ -40,6 +41,7 @@ export function ConfigViewDialog({
             let dryConfig = {
                 ...dryConfigProp,
                 title,
+                description,
                 sql: sqlCode,
             };
 
@@ -71,12 +73,20 @@ export function ConfigViewDialog({
         setTitle(event.target.value);
     }
 
+    const onDescriptionChange = (event: React.ChangeEvent<any>) => {
+        setDescription(event.target.value);
+    }
+
     return <Sheet
         side={"bottom"}
         open={open}
         onOpenChange={setOpen}
     >
-        <div
+        <form
+            onSubmit={(e) => {
+                e.preventDefault();
+                onUpdate();
+            }}
             className={"max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-950"}>
 
             <Container
@@ -85,10 +95,14 @@ export function ConfigViewDialog({
                 <TextField value={title}
                            onChange={onTitleChange}
                            className={"text-lg font-semibold"}
-                           placeholder={"Widget config"}/>
+                           placeholder={"Title of the widget"}/>
+                <TextField value={description}
+                           size={"small"}
+                           onChange={onDescriptionChange}
+                           placeholder={"Description"}/>
                 <div className={"h-full flex-grow flex flex-col w-full gap-4"}>
 
-                    <div className={"flex flex-col flex-grow"}>
+                    <div className={"flex flex-col flex-grow mt-4"}>
                         <Typography gutterBottom variant={"label"}>
                             SQL code
                         </Typography>
@@ -98,9 +112,9 @@ export function ConfigViewDialog({
                                                           setSqlCode(updatedSQL ?? "");
                                                       }}/>}
                     </div>
-                    <div className={"flex flex-col flex-grow"}>
+                    <div className={"flex flex-col flex-grow mt-4"}>
                         <Typography gutterBottom variant={"label"}>
-                            Widget config
+                            {dryConfigProp.type === "chart" ? "Chart config" : "Table config"}
                         </Typography>
                         <AutoHeightEditor value={chartOrTableConfig ?? ""}
                                           defaultLanguage={"json"}
@@ -112,11 +126,11 @@ export function ConfigViewDialog({
                 </div>
             </Container>
             <DialogActions>
-                <Button onClick={onUpdate}
+                <Button type={"submit"}
                         variant={"outlined"}>
                     Update
                 </Button>
             </DialogActions>
-        </div>
+        </form>
     </Sheet>
 }

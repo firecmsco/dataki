@@ -12,30 +12,12 @@ import { Part } from "@google/generative-ai";
 import * as util from "util";
 import { ServiceAccountKey } from "../types/service_account";
 import { CommandMessage } from "../types/command";
-import { DataSource } from "../types/items";
+import { DataSource } from "../types/dashboards";
 import { getProjectDataContext } from "./context_data";
 import DataTalkException from "../types/exceptions";
 
 const PREFERRED_COLORS = ["#ea5545", "#f46a9b", "#ef9b20", "#edbf33", "#ede15b", "#bdcf32", "#87bc45", "#27aeef", "#b33dc6"];
 
-// const genaiapikey = process.env.GEN_AI_API_KEY;
-// if (!genaiapikey) {
-//     throw new Error("GEN_AI_API_KEY is not set");
-// }
-// const genAI = new GoogleGenerativeAI(genaiapikey);
-//
-// export const getGenAI = async (): Promise<GenerativeModel> => {
-//     const model = "gemini-1.5-pro";
-//     return genAI.getGenerativeModel({
-//         model: model,
-//         generationConfig: {
-//             maxOutputTokens: 2048,
-//             temperature: 1,
-//             topP: 0.95
-//         },
-//         tools: [makeSQLQueryFunctionDeclaration],
-//     }, { apiVersion: 'v1beta' });
-// }
 export const getVertexAI = async (): Promise<GenerativeModelPreview> => {
     const model = "gemini-1.5-pro";
     const projectId = await getGoogleProjectId();
@@ -58,6 +40,7 @@ export async function makeGeminiRequest({
                                             userQuery,
                                             dataContexts,
                                             onDelta,
+                                            onSQLQuery,
                                             history,
                                             credentials
                                         }:
@@ -65,6 +48,7 @@ export async function makeGeminiRequest({
                                                 userQuery: string,
                                                 dataContexts: string[],
                                                 onDelta: (delta: string) => void,
+                                                onSQLQuery?: (sql: string) => void,
                                                 history: ChatMessage[],
                                                 credentials?: ServiceAccountKey
                                             }): Promise<string> {
@@ -73,6 +57,7 @@ export async function makeGeminiRequest({
 
     const functions = {
         makeSQLQuery: ({ sql }: { sql: string }) => {
+            onSQLQuery && onSQLQuery(sql);
             return runSQLQuery(sql, credentials)
         }
     };
@@ -89,8 +74,13 @@ When generating JSON configs, they need to follow a very specific format, that w
 The frontend will replace the placeholders in the JSON with the actual data.
 
 If you can provide the answer in natural language, you should do so, but you can also generate a chart or table config in JSON format.
-You should try to be brief and return just the chart or table config when requested to, but you can also provide a mix of markdown and JSON.
+You should try to be brief and return the chart or table config when requested to, but you can also provide a mix of markdown and JSON.
 Or even only text if the user is asking for instructions, or answers you can provide in natural language.
+
+You should usually include a small description of what the widget displays, before the chart or table.
+
+When returning data as text, try to set in bold the most important information, like the total, the average, etc.
+Also, when returning a list, try to use bullet points to make it easier to read.
 
 When asked for data, NEVER make it up, always fetch it from BigQuery.
 You proactively make calls to makeSQLQuery to fetch the data you need to answer the user's question, do not ask the 
@@ -113,7 +103,8 @@ questions in natural language, by fetching the data from BigQuery and then gener
 - Some data really doesn't make sense to be displayed in a chart, so you should return it in a table format.
 Do NOT generate "choropleth" charts, as they are not supported by the frontend.
 
-When you are generating chart or table configs, the JSON need to look like this:
+* Charts:
+When you are generating chart configs, the JSON need to look like this:
 
 \`\`\`json
 {
@@ -124,7 +115,7 @@ When you are generating chart or table configs, the JSON need to look like this:
         "projectId": "your-project-id",
         "datasetId": "your-dataset-id"
     },
-    "sql": "SELECT * FROM table",
+    "sql": "SELECT * FROM table WHERE date BETWEEN @DATE_START AND @DATE_END",
     "chart":{
         "type": "bar",
         "data": {
@@ -132,10 +123,25 @@ When you are generating chart or table configs, the JSON need to look like this:
             "datasets": [
                 {
                     "label": "Column 1",
-                    "data": [[data_mapping_key]],
-                    "backgroundColor": [${PREFERRED_COLORS.map(c => "\"" + c + "\"").join(", ")}]
+                    "data": [[data_mapping_key]]
                 }
             ]
+        },
+        "options": {
+            "scales": {
+              "x": {
+                    "title": {
+                      "display": "true",
+                      "text": "Month"
+                    }
+              },
+              "y": {
+                    "title": {
+                      "display": "true",
+                      "text": "Title of the Y axis"
+                    }
+              }
+           }
         }
     }
 }
@@ -157,7 +163,34 @@ up to date data.
 \`\`\`json
 "data": "[[total_sold]]",
 \`\`\`
+- The scales object in the options is optional, but you should include it when it makes sense.
 
+
+* Tables:
+If you are generating a table, the JSON should look like this:
+\`\`\`json
+{
+    "title": "Sample table title",
+    "description" : "Provide a small description of what this widget displays",
+    "type": "table",
+    "dataSource": {
+        "projectId": "your-project-id",
+        "datasetId": "your-dataset-id"
+    },
+    "sql": "SELECT * FROM table WHERE date BETWEEN @DATE_START AND @DATE_END",
+    "table": {
+        "columns": [
+            {"key": "purchase_date", "name": "Purchase Date", "dataType": "date"},
+            {"key": "name", "name": "Purchase Name", "dataType": "string"},
+        ]
+    }
+}
+\`\`\`
+
+The possible data types are: "string", "number", "date", "object", "array"
+
+You MUST include \`\`\`json
+\`\`\` in your response, if generating data config.
 
 ---
 SQL:
@@ -174,6 +207,14 @@ names like 'products', 'sales', 'customers', 'count', 'average', or whatever mak
 - Double-check the SQL you generate to make sure it is correct and will return the data the user is asking for.
 - For BigQuery SQL, make sure to include the project and dataset in the query, e.g. \`SELECT * FROM project.dataset.table\`.
 - When building SQL for a chart, make sure you SELECT at least 2 attributes, since charts need at least 2 dimensions (e.g. a distinct value and a count)
+- You should provide the params @DATE_START and @DATE_END in the SQL query, so the user can filter the data by date. 
+  Add those parameters whenever you can, so the user can filter the data by date range.
+- The @DATE_START and @DATE_END are of type TIMESTAMP. So make sure whenever you use them in the SQL query, 
+  make sure the value you are comparing is casted to TIMESTAMP.
+- Be specially careful when generating SQL queries that include dates. Your SQL should be able to handle date ranges,
+  CAST TO TIMESTAMP: like 'TIMESTAMP(covid19_open_data.date) BETWEEN @DATE_START AND @DATE_END'
+- Remember you are able to query the database using makeSQLQuery(sql). If the user asks for data, EXECUTE
+  the SQL query and return the result.
 
 ---
 Hydration:
@@ -189,30 +230,6 @@ and they will ALWAYS be replaced with an array mapped to the fetched data. They 
 Please always use these colors when required: ${PREFERRED_COLORS.join(", ")} (or similar ones if you need more).
 You usually do not need to include the color in the JSON, you only need it for more complex charts.
 
-If you are generating a table, the JSON should look like this:
-\`\`\`json
-{
-    "title": "Sample table title",
-    "description" : "Provide a small description of what this widget displays",
-    "type": "table",
-    "dataSource": {
-        "projectId": "your-project-id",
-        "datasetId": "your-dataset-id"
-    },
-    "sql": "SELECT * FROM table",
-    "table": {
-        "columns": [
-            {"key": "purchase_date", "name": "Purchase Date", "dataType": "date"},
-            {"key": "name", "name": "Purchase Name", "dataType": "string"},
-        ]
-    }
-}
-\`\`\`
-
-The possible data types are: "string", "number", "date", "object", "array"
-
-You MUST include \`\`\`json
-\`\`\` in your response, if generating data config.
 
 Important: you can fetch some data from BigQuery using the function makeSQLQuery, for better context on the data you are working with.
 For example, you may want to make a distinct select query for getting the possible values of a column, 
@@ -221,7 +238,6 @@ or a count query to get the number of rows in a table.
 You should not return \`\`\`sql blocks in your response, only \`\`\`json with chart or table configs, or answers in natural language.
 You should proactively make calls to makeSQLQuery to fetch the data you need to answer the user's question.
 `;
-    console.log(instructions);
 
     const chat = geminiModel.startChat({
         systemInstruction: {
@@ -260,6 +276,7 @@ You should proactively make calls to makeSQLQuery to fetch the data you need to 
         if (part?.functionCall) {
             const functionName = part.functionCall.name;
             const functionParams = part.functionCall.args;
+            // @ts-ignore
             const functionResponse = await functions[functionName](functionParams);
             await sendMessage([{
                 functionResponse: {
@@ -277,6 +294,13 @@ You should proactively make calls to makeSQLQuery to fetch the data you need to 
             console.warn("Unknown part", part);
         }
     }
+
+    // if running in debug mode
+    // if (process.env.NODE_ENV === "development") {
+    //     console.log("Saving to file:");
+    const fs = require("fs");
+    fs.writeFileSync("gemini_output.txt", totalDelta);
+    // }
 
     return totalDelta;
 
@@ -335,8 +359,7 @@ export const generateSamplePrompts = async (
     });
 
     const systemInstruction = buildSamplePromptsSystemInstructions(dataContexts)
-    console.log("Result prompt");
-    console.log(systemInstruction);
+
     const geminiModel = await getVertexAI();
     const chat = geminiModel.startChat({
         systemInstruction: {
@@ -350,7 +373,7 @@ export const generateSamplePrompts = async (
                 : "user"
         }))
     });
-    const llmResult = await chat.sendMessage("Give me 5 prompts based on the data you have in the BigQuery datasets, and the chat history. Your outcome MUST be a JSON with an array of 5 prompts.");
+    const llmResult = await chat.sendMessage("Give me 4 prompts based on the data you have in the BigQuery datasets, and the chat history. Your outcome MUST be a JSON with an array of 4 prompts.");
     const candidates = llmResult.response.candidates;
     if (candidates && candidates.length > 0) {
         const firstCandidate = candidates[0];
@@ -364,7 +387,6 @@ export const generateSamplePrompts = async (
             .replace(/```json5/g, "")
             .replace(/```/g, "");
         console.log({
-            result,
             cleanedResult
         });
         return JSON.parse(cleanedResult);
@@ -373,28 +395,34 @@ export const generateSamplePrompts = async (
 }
 
 export const buildSamplePromptsSystemInstructions = (dataContexts: string[]): string => {
-    return `I need you to give me 5 sample prompts for a ChatBot named DATATALK.
+    return `I need you to give me 4 sample prompts for a ChatBot named DATATALK.
 DATATALK allows users to make questions to their BigQuery datasets in natural language.
 
-You ALWAYS return a JSON with an array of 5 sample prompts like:
-\`\`\`JSON
-["Give me the products with a price bigger than 500 dollars",
-"Books of travel and fiction",
-"Show me the books that are in stock",
-"Create a chart with the sales of the last month",
-"Show me all posts from the last month"]
-\`\`\`
-
-You may also receive the current chat history in the request. You can use this information to generate the prompts.
-
-You need to adapt the prompts to the data you have in the given BigQuery tables. 
-Here is a summary of the collections and fields you have in your database:
-
-
+Here is a summary of the collections and fields you have in your database.
 BIGQUERY DATASETS:
 
 ${dataContexts.join("\n\n")}
 
+You need to adapt the prompts to the data you have in the given BigQuery tables. 
+
+You ALWAYS return a JSON with an array of 4 sample prompts like:
+\`\`\`JSON
+[
+"Can you suggest some useful charts with this data?",
+"Create a chart with the sales of the last month",
+"Create a table with the top 10 products by sales",
+"Show me the sales of the last month, grouped by distribution center"
+]
+\`\`\`
+
+Try to think of the most common questions users might ask about the data you have in the BigQuery datasets.
+Especially related to data you would have in an analytics dashboard.
+Probably not count operations, but more like "Show me the sales of the last month", "Create a chart with the sales of the last month", etc.
+
+You may also receive the current chat history in the request. In that case, always try to follow up with suggestions
+for questions the user may want to make based on the data you have in the BigQuery datasets.
+
+Do not suggest generating maps.
 
 Your output will be parsed by a script so it MUST always be in the same format.
 `;

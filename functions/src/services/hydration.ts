@@ -1,8 +1,8 @@
-import { DryWidgetConfig, WidgetConfig } from "../types/items";
+import { DashboardParams, DryWidgetConfig, WidgetConfig } from "../types/dashboards";
 import { DataRow } from "../types/sql";
 import * as util from "util";
 
-export function hydrateWidgetConfig(config: DryWidgetConfig, data: DataRow[]): WidgetConfig {
+export function hydrateWidgetConfig(config: DryWidgetConfig, data: DataRow[], filters?: DashboardParams): WidgetConfig {
 
     console.log("Hydrating widget config", util.inspect(config, false, null, true /* enable colors */) + "\n\n", data);
 
@@ -15,6 +15,7 @@ export function hydrateWidgetConfig(config: DryWidgetConfig, data: DataRow[]): W
         } else if (typeof obj === "object" && obj !== null) {
             const hydratedObj = {};
             for (const key in obj) {
+                // @ts-ignore
                 hydratedObj[key] = hydrateObject(obj[key], data);
             }
             return hydratedObj;
@@ -26,13 +27,25 @@ export function hydrateWidgetConfig(config: DryWidgetConfig, data: DataRow[]): W
     function replacePlaceholders(str: string, data: DataRow[]): string | string[] {
         const replaced = str.replace(/\[\[|]]/g, "");
         if (replaced === str) return str; // No placeholders found
-        return data.map(row => getIn(row, replaced));
-        // return str.replace(/\[\[(.+?)\]\]/g, (match, path) => {
-        //     const value = getIn(data, path.replace(/\[|\]/g, "")); // Remove brackets for clarity
-        //     return Array.isArray(value)
-        //         ? JSON.stringify(value)
-        //         : value; // Handle arrays for charts
-        // });
+        return data.map(row => {
+            const value = getIn(row, replaced);
+            if (value === undefined || value === null) {
+                return null;
+            }
+
+            if (value instanceof Date) {
+                //if time is 00:00:00, return only date
+                if (value.getHours() === 0 && value.getMinutes() === 0 && value.getSeconds() === 0) {
+                    return value.toISOString().split("T")[0];
+                }
+
+                return value.toISOString();
+            }
+            if (typeof value === "object" && "value" in value) {
+                return value.value;
+            }
+            return value;
+        });
     }
 
     const res = hydrateObject(config, data);
@@ -41,7 +54,6 @@ export function hydrateWidgetConfig(config: DryWidgetConfig, data: DataRow[]): W
     }
     return res;
 }
-
 
 // export function hydrateWidgetConfig(config: DryWidgetConfig, data: DataRow[]): WidgetConfig {
 //
@@ -86,13 +98,11 @@ export function hydrateWidgetConfig(config: DryWidgetConfig, data: DataRow[]): W
 //     };
 // }
 
-
 function toPath(value: string | string[]) {
     if (Array.isArray(value)) return value; // Already in path array form.
     // Replace brackets with dots, remove leading/trailing dots, then split by dot.
     return value.replace(/\[(\d+)]/g, ".$1").replace(/^\./, "").replace(/\.$/, "").split(".");
 }
-
 
 /**
  * Deeply get a value from an object via its path.

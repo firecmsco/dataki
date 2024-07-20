@@ -1,5 +1,6 @@
 import {
     AddIcon,
+    Alert,
     Button,
     CachedIcon,
     CheckIcon,
@@ -10,6 +11,7 @@ import {
     DialogActions,
     DialogContent,
     IconButton,
+    InfoIcon,
     Label,
     LinkIcon,
     LoadingButton,
@@ -125,9 +127,11 @@ export function DataSourcesSelection({
                 onClick={() => {
                     setDialogOpen(true);
                 }}
-                className={cls("flex-wrap w-fit font-normal border cursor-pointer rounded-md p-2 px-3 flex items-center gap-2 [&:has(:checked)]:bg-gray-100 dark:[&:has(:checked)]:bg-gray-800", className)}
+                className={cls("shrink-0 bg-white dark:bg-gray-800 flex-wrap w-fit font-normal border cursor-pointer rounded-md p-2 px-3 flex items-center gap-2 [&:has(:checked)]:bg-gray-100 dark:[&:has(:checked)]:bg-gray-800", className)}
             >
+
                 <StorageIcon size={"small"} color={"primary"}/>
+
                 <span className={"font-semibold"}>{!dataSources.length && "Select data source"}</span>
 
                 {dataSources.length > 0 && dataSources.slice(0, PREVIEW_DATASOURCES_COUNT).map((dataSource, index) => (
@@ -145,215 +149,238 @@ export function DataSourcesSelection({
 
             </Label>
 
-            <Dialog maxWidth={"xl"}
+            <Dialog maxWidth={"6xl"}
                     open={dialogOpen}
                     onOpenChange={setDialogOpen}
                     onOpenAutoFocus={(e) => {
                         e.preventDefault();
                     }}>
-                <DialogContent className={"flex flex-col gap-4"}>
-
-                    <Typography variant={"label"}>
-                        Your datasets
-                    </Typography>
-                    <Typography variant={"body2"}>
-                        Select your BigQuery data sources from your Google Cloud Platform projects
-                    </Typography>
-                    {projects.length === 0 && !loadingProjects && (
-                        <Typography variant={"caption"}>
-                            No projects available
+                <DialogContent className={"flex flex-col lg:flex-row gap-12 my-12"}>
+                    <div className={"flex flex-col gap-4 flex-grow lg:w-1/2"}>
+                        <Typography variant={"subtitle2"}>
+                            Your datasets
                         </Typography>
-                    )}
-                    {projectError && (
-                        <Typography variant={"caption"} color={"error"}>
-                            {projectError}
+                        <Typography variant={"body2"}>
+                            Select your BigQuery data sources from your Google Cloud Platform projects
                         </Typography>
-                    )}
-
-                    <Select placeholder={"Select a project"}
-                            value={selectedProjectId ?? ""}
-                            renderValue={(value) => {
-                                if (!value) {
-                                    return "Select a project";
-                                }
-                                const project = projects.find((p) => p.projectId === value);
-                                return project ? renderSelectProject(project) : "Unknown project";
-                            }}
-                            onValueChange={(value) => {
-                                setSelectedProjectId(value);
-                                loadDataSourcesFor(value);
-                            }}>
-                        {projects.map((project) => (
-                            <SelectItem key={project.projectId} value={project.projectId}>
-                                {renderSelectProject(project)}
-                            </SelectItem>
-                        ))}
-                    </Select>
-
-                    {selectedProject && !selectedProject.linked && (
-                        <>
-                            <LinkProjectButton projectId={selectedProject.projectId}
-                                               onSuccess={() => {
-                                                   loadDataSourcesFor(selectedProject.projectId);
-                                                   setProjects((prev) => {
-                                                       const newProjects = [...prev];
-                                                       const projectIndex = newProjects.findIndex((p) => p.projectId === selectedProject.projectId);
-                                                       if (projectIndex === -1) {
-                                                           return newProjects;
-                                                       }
-                                                       newProjects[projectIndex] = {
-                                                           ...newProjects[projectIndex],
-                                                           linked: true
-                                                       };
-                                                       return newProjects;
-                                                   });
-                                               }}
-                            />
+                        {projects.length === 0 && !loadingProjects && (
                             <Typography variant={"caption"}>
-                                You need to link your project to DataTalk before using it.
-                                A service account named DataTalk will be created in your project
+                                No projects available
                             </Typography>
-                        </>
-                    )}
-
-                    {selectedProject?.linked && (
-                        <>
-                            <Typography variant={"label"} className={"flex flex-row items-center gap-2"}>
-                                Data sources in project
-                                <IconButton
-                                    size={"smallest"}
-                                    onClick={() => {
-                                        loadDataSourcesFor(selectedProject.projectId);
-                                    }}>
-                                    <CachedIcon
-                                        size={"smallest"}/>
-                                </IconButton>
+                        )}
+                        {projectError && (
+                            <Typography variant={"caption"} color={"error"}>
+                                {projectError}
                             </Typography>
-                            {loadingDataSources && (
-                                <CircularProgress size={"small"}/>
-                            )}
-                            {!loadingDataSources && projectDataSources?.length > 0 &&
-                                <div className={"flex flex-col gap-2"}>
-                                    {projectDataSources.map((dataSource, index) => (
-                                        <Label
-                                            key={dataSource.datasetId}
-                                            onClick={(e) => {
-                                                e.preventDefault();
-                                                const newSources = [...dataSourcesInternal];
-                                                const exists = newSources.find(ds => ds.projectId === dataSource.projectId && ds.datasetId === dataSource.datasetId);
-                                                if (exists) {
-                                                    newSources.splice(newSources.indexOf(exists), 1);
-                                                } else {
-                                                    newSources.push({
-                                                        projectId: dataSource.projectId,
-                                                        datasetId: dataSource.datasetId
-                                                    });
-                                                }
-                                                setDataSourcesInternal(newSources);
-                                            }}
-                                            className="w-full border cursor-pointer rounded-md p-1 px-3 flex items-center gap-2 [&:has(:checked)]:bg-gray-100 dark:[&:has(:checked)]:bg-gray-800 font-normal"
-                                        >
-                                            {dataSourcesInternal.find(ds => ds.projectId === dataSource.projectId && ds.datasetId === dataSource.datasetId)
-                                                ? <CheckIcon size={"small"}/>
-                                                : <AddIcon size={"small"}/>}
-                                            <div className={"inline-block"}>
-                                                <span>{dataSource.projectId + "."}</span>
-                                                <span className={"font-semibold"}>{dataSource.datasetId}</span>
-                                            </div>
-                                        </Label>
+                        )}
 
-                                    ))}
-                                </div>
-                            }
+                        <Select placeholder={"Select a project"}
+                                value={selectedProjectId ?? ""}
+                                renderValue={(value) => {
+                                    if (!value) {
+                                        return "Select a project";
+                                    }
+                                    const project = projects.find((p) => p.projectId === value);
+                                    return project ? renderSelectProject(project) : "Unknown project";
+                                }}
+                                onValueChange={(value) => {
+                                    setSelectedProjectId(value);
+                                    loadDataSourcesFor(value);
+                                }}>
+                            {projects.map((project) => (
+                                <SelectItem key={project.projectId} value={project.projectId}>
+                                    {renderSelectProject(project)}
+                                </SelectItem>
+                            ))}
+                        </Select>
 
-                            {!loadingDataSources && projectDataSources.length === 0 &&
-                                <Typography color={"secondary"}>
-                                    No data sources available for this project
-                                </Typography>}
-                        </>
-                    )}
+                        {selectedProject && !selectedProject.linked && (
+                            <>
 
-                    <Separator orientation={"horizontal"}/>
+                                <Typography variant={"caption"}>
+                                    You need to link your project to DataTalk before using it.
+                                    A service account named DataTalk will be created in your project
+                                </Typography>
+                                <LinkProjectButton projectId={selectedProject.projectId}
+                                                   onSuccess={() => {
+                                                       loadDataSourcesFor(selectedProject.projectId);
+                                                       setProjects((prev) => {
+                                                           const newProjects = [...prev];
+                                                           const projectIndex = newProjects.findIndex((p) => p.projectId === selectedProject.projectId);
+                                                           if (projectIndex === -1) {
+                                                               return newProjects;
+                                                           }
+                                                           newProjects[projectIndex] = {
+                                                               ...newProjects[projectIndex],
+                                                               linked: true
+                                                           };
+                                                           return newProjects;
+                                                       });
+                                                   }}
+                                />
+                            </>
+                        )}
 
-                    <Typography variant={"body2"}>
-                        or add a datasource by specifying the project and dataset id
-                    </Typography>
+                        {selectedProject?.linked && (
+                            <>
+                                <Typography variant={"label"} className={"flex flex-row items-center gap-2"}>
+                                    Data sources in project
+                                    <IconButton
+                                        size={"smallest"}
+                                        onClick={() => {
+                                            loadDataSourcesFor(selectedProject.projectId);
+                                        }}>
+                                        <CachedIcon
+                                            size={"smallest"}/>
+                                    </IconButton>
+                                </Typography>
+                                {loadingDataSources && (
+                                    <CircularProgress size={"small"}/>
+                                )}
+                                {!loadingDataSources && projectDataSources?.length > 0 &&
+                                    <div className={"flex flex-col gap-2"}>
+                                        {projectDataSources.map((dataSource, index) => (
+                                            <Label
+                                                key={dataSource.datasetId}
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    const newSources = [...dataSourcesInternal];
+                                                    const exists = newSources.find(ds => ds.projectId === dataSource.projectId && ds.datasetId === dataSource.datasetId);
+                                                    if (exists) {
+                                                        newSources.splice(newSources.indexOf(exists), 1);
+                                                    } else {
+                                                        newSources.push({
+                                                            projectId: dataSource.projectId,
+                                                            datasetId: dataSource.datasetId
+                                                        });
+                                                    }
+                                                    setDataSourcesInternal(newSources);
+                                                }}
+                                                className="w-full border cursor-pointer rounded-md p-1 px-3 flex items-center gap-2 [&:has(:checked)]:bg-gray-100 dark:[&:has(:checked)]:bg-gray-800 font-normal"
+                                            >
+                                                {dataSourcesInternal.find(ds => ds.projectId === dataSource.projectId && ds.datasetId === dataSource.datasetId)
+                                                    ? <CheckIcon size={"small"}/>
+                                                    : <AddIcon size={"small"}/>}
+                                                <div className={"inline-block"}>
+                                                    <span>{dataSource.projectId + "."}</span>
+                                                    <span className={"font-semibold"}>{dataSource.datasetId}</span>
+                                                </div>
+                                            </Label>
 
-                    {<form className={"flex gap-4 items-center"}
-                           noValidate={true}
-                           onSubmit={(e) => {
-                               e.preventDefault();
-                           }}
-                    >
-                        <TextField
-                            size={"small"}
-                            label={"Project ID"}
-                            value={newDataSource.projectId}
-                            onChange={(e) => setNewDataSource({
-                                ...newDataSource,
-                                projectId: e.target.value
-                            })}
-
-                        />
-                        <TextField
-                            label={"Dataset ID"}
-                            className={"flex-grow"}
-                            size={"small"}
-                            value={newDataSource.datasetId}
-                            onChange={(e) => setNewDataSource({
-                                ...newDataSource,
-                                datasetId: e.target.value
-                            })}
-
-                        />
-                        <IconButton
-                            type={"submit"}
-                            onClick={() => {
-                                console.log("newDataSource", newDataSource);
-                                if (!newDataSource.projectId || !newDataSource.datasetId) {
-                                    return;
+                                        ))}
+                                    </div>
                                 }
-                                setDataSourcesInternal([...dataSourcesInternal, newDataSource]);
-                                setNewDataSource({
-                                    projectId: "",
-                                    datasetId: ""
-                                });
-                            }}>
-                            <AddIcon/>
-                        </IconButton>
-                    </form>}
 
-                    <Separator orientation={"horizontal"}/>
+                                {!loadingDataSources && projectDataSources.length === 0 &&
+                                    <Typography color={"secondary"}>
+                                        No data sources available for this project
+                                    </Typography>}
+                            </>
+                        )}
 
-                    <Typography variant={"label"}>
-                        Selected data sources
-                    </Typography>
+                        <Separator orientation={"horizontal"}/>
 
-                    <div className={"flex flex-col gap-2"}>
-                        {dataSourcesInternal.map((dataSource, index) => (
-                            <Label
-                                key={dataSource.datasetId}
-                                className="w-full border cursor-pointer rounded-md p-2 px-3 flex items-center gap-2 [&:has(:checked)]:bg-gray-100 dark:[&:has(:checked)]:bg-gray-800 font-normal"
-                            >
-                                <StorageIcon size={"small"} color={"primary"}/>
-                                <div className={"inline-block flex-grow"}>
-                                    <span>{dataSource.projectId + "."}</span>
-                                    <span className={"font-semibold"}>{dataSource.datasetId}</span>
-                                </div>
-                                <IconButton
-                                    size={"small"}
-                                    onClick={() => {
-                                        const newSources = [...dataSourcesInternal];
-                                        newSources.splice(index, 1);
-                                        setDataSourcesInternal(newSources);
-                                    }}>
-                                    <CloseIcon/>
-                                </IconButton>
-                            </Label>
+                        <Typography variant={"body2"}>
+                            or add a datasource by specifying the project and dataset id
+                        </Typography>
 
-                        ))}
+                        {<form className={"flex gap-4 items-center"}
+                               noValidate={true}
+                               onSubmit={(e) => {
+                                   e.preventDefault();
+                               }}
+                        >
+                            <TextField
+                                size={"small"}
+                                label={"Project ID"}
+                                value={newDataSource.projectId}
+                                onChange={(e) => setNewDataSource({
+                                    ...newDataSource,
+                                    projectId: e.target.value
+                                })}
+
+                            />
+                            <TextField
+                                label={"Dataset ID"}
+                                className={"flex-grow"}
+                                size={"small"}
+                                value={newDataSource.datasetId}
+                                onChange={(e) => setNewDataSource({
+                                    ...newDataSource,
+                                    datasetId: e.target.value
+                                })}
+
+                            />
+                            <IconButton
+                                type={"submit"}
+                                onClick={() => {
+                                    console.log("newDataSource", newDataSource);
+                                    if (!newDataSource.projectId || !newDataSource.datasetId) {
+                                        return;
+                                    }
+                                    setDataSourcesInternal([...dataSourcesInternal, newDataSource]);
+                                    setNewDataSource({
+                                        projectId: "",
+                                        datasetId: ""
+                                    });
+                                }}>
+                                <AddIcon/>
+                            </IconButton>
+                        </form>}
+
+                        <Button variant={"text"}
+                                size={"small"}
+                                onClick={() => {
+                                    setDataSourcesInternal([...dataSourcesInternal, {
+                                        projectId: "bigquery-public-data",
+                                        datasetId: "thelook_ecommerce"
+                                    }]);
+                                }}>
+                            Add demo e-commerce data source
+                        </Button>
                     </div>
 
+                    {/*<Separator orientation={"horizontal"}/>*/}
+
+                    <div className={"flex flex-col gap-4 flex-grow lg:w-1/2"}>
+                        <Typography variant={"subtitle2"}>
+                            Selected data sources
+                        </Typography>
+
+                        <Typography>
+                            The data sets will be used to query data from BigQuery. You can select
+                            multiple datasets, but they all must belong to the same Google Cloud Project.
+                        </Typography>
+
+                        <div className={"flex flex-col gap-2"}>
+                            {dataSourcesInternal.map((dataSource, index) => (
+                                <Label
+                                    key={dataSource.datasetId}
+                                    className="w-full border cursor-pointer rounded-md p-2 px-3 flex items-center gap-2 [&:has(:checked)]:bg-gray-100 dark:[&:has(:checked)]:bg-gray-800 font-normal"
+                                >
+                                    <StorageIcon size={"small"} color={"primary"}/>
+                                    <div className={"inline-block flex-grow"}>
+                                        <span>{dataSource.projectId + "."}</span>
+                                        <span className={"font-semibold"}>{dataSource.datasetId}</span>
+                                    </div>
+                                    <IconButton
+                                        size={"small"}
+                                        onClick={() => {
+                                            const newSources = [...dataSourcesInternal];
+                                            newSources.splice(index, 1);
+                                            setDataSourcesInternal(newSources);
+                                        }}>
+                                        <CloseIcon/>
+                                    </IconButton>
+                                </Label>
+                            ))}
+                            {dataSourcesInternal.length === 0 && (
+                                <Typography color={"secondary"} className={"flex flex-row gap-2 items-center m-3"}>
+                                    <InfoIcon size={"small"}/> No data sources selected
+                                </Typography>
+                            )}
+                        </div>
+                    </div>
 
                 </DialogContent>
                 <DialogActions>
@@ -405,13 +432,17 @@ function LinkProjectButton({
             .finally(() => setLoading(false));
     }
 
-    return (
-        <LoadingButton loading={loading}
-                       variant={"text"}
-                       fullWidth={true}
-                       onClick={linkProject}>
-            {!loading && <LinkIcon/>}
-            Link project to DataTalk
-        </LoadingButton>
+    return (<>
+            <Alert color="base" className={"text-xs"}>It takes around 2 minutes after linking a project to be able to
+                make BiqQuery queries</Alert>
+
+            <LoadingButton loading={loading}
+                           variant={"outlined"}
+                           fullWidth={true}
+                           onClick={linkProject}>
+                {!loading && <LinkIcon/>}
+                Link project to DataTalk
+            </LoadingButton>
+        </>
     );
 }

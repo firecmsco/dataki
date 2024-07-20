@@ -2,9 +2,6 @@ import cors from "cors";
 
 const whitelist = [
     "datatalk-443fb.web.app",
-    "firecms-hackathon.web.app",
-    "https://datatalk-preview.web.app",
-    "https://datatalk-443fb.web.app",
     /http:\/\/localhost(:\d+)?/,
     /http:\/\/127\.0\.0\.1(:\d+)?/
 ];

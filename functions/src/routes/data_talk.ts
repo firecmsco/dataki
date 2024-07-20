@@ -1,7 +1,7 @@
 import express, { Request, Response } from "express";
 import { firebaseAuthorization } from "../middlewares";
 import DataTalkException from "../types/exceptions";
-import { DataSource, DryWidgetConfig } from "../types/items";
+import { DashboardParams, DataSource, DryWidgetConfig } from "../types/dashboards";
 import { runSQLQuery } from "../services/bigquery";
 import { hydrateWidgetConfig } from "../services/hydration";
 import { generateSamplePrompts, makeGeminiRequest } from "../services/gemini";
@@ -15,7 +15,7 @@ export const dataTalkRouter = express.Router();
 dataTalkRouter.get("/health", check());
 dataTalkRouter.post("/command", firebaseAuthorization(), processUserCommandRoute);
 dataTalkRouter.post("/hydrate", firebaseAuthorization(), hydrateChartOrTableRoute);
-dataTalkRouter.post("/sample_prompts", firebaseAuthorization(), samplePromptsRoute);
+dataTalkRouter.post("/prompt_suggestions", firebaseAuthorization(), samplePromptsRoute);
 
 function getProjectIdFromSources(sources: DataSource[]) {
     console.log("Getting project id from sources", sources);
@@ -70,8 +70,16 @@ async function processUserCommandRoute(request: Request, response: Response) {
                 type: "delta",
                 data: { delta }
             }));
+        },
+        onSQLQuery: (sqlQuery) => {
+            console.log("Got SQL query", sqlQuery);
+            response.write("&$# " + JSON.stringify({
+                type: "sql",
+                data: { sqlQuery }
+            }));
         }
     });
+
     response.write("&$# " + JSON.stringify({
         type: "result",
         data: output
@@ -90,14 +98,15 @@ async function hydrateChartOrTableRoute(request: Request, response: Response) {
         throw new DataTalkException(400, "Missing sql in the config", "Invalid request");
     }
 
+    const params: DashboardParams | undefined = request.body.params;
+
     console.log("Hydrating chart or table", config);
     const projectId = config.dataSource.projectId;
     console.log("Got project id", projectId);
     const credentials = await getStoredServiceAccount(firestore, projectId);
-    console.log("Got credentials", credentials);
 
-    const data = await runSQLQuery(config.sql, credentials);
-    const res = hydrateWidgetConfig(config, data);
+    const data = await runSQLQuery(config.sql, credentials, params);
+    const res = hydrateWidgetConfig(config, data, params);
 
     response.json({ data: res });
 }

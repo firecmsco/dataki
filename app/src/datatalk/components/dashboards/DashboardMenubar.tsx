@@ -16,7 +16,8 @@ import {
     MenubarSubContent,
     MenubarSubTrigger,
     MenubarSubTriggerIndicator,
-    MenubarTrigger
+    MenubarTrigger, ShareIcon,
+    Tooltip
 } from "@firecms/ui";
 import { Dashboard } from "../../types";
 import { DownloadButton } from "./DownloadButton";
@@ -27,18 +28,31 @@ const CHECK_ITEMS = ["Always Show Bookmarks Bar", "Always Show Full URLs"];
 
 export const DashboardMenubar = ({
                                      dashboard,
-                                 }: { dashboard: Dashboard }) => {
+                                     dateRange,
+                                     setDateRange
+                                 }: {
+    dashboard: Dashboard,
+    dateRange: [Date | null, Date | null];
+    setDateRange: (dateRange: [Date | null, Date | null]) => void;
+}) => {
     const [checkedSelection, setCheckedSelection] = React.useState([CHECK_ITEMS[1]]);
     const [radioSelection, setRadioSelection] = React.useState(RADIO_ITEMS[2]);
 
     return (
-        <Menubar className={"flex items-center bg-transparent dark:bg-transparent rounded-2xl"}>
+        <Menubar className={"flex items-center bg-transparent dark:bg-transparent rounded-2xl gap-2"}>
 
             <DashboardNameTextField title={dashboard.title} id={dashboard.id}/>
-            <DownloadButton/>
+
+            <Tooltip title={"Download as .png"}>
+                <DownloadButton/>
+            </Tooltip>
+            <Tooltip title={"Not ready yet!"}>
+                <ShareIcon color={"disabled"}/>
+            </Tooltip>
 
             <MenubarMenu>
-                <MenubarTrigger className={"hover:bg-slate-200 hover:bg-opacity-75 dark:hover:bg-gray-700 dark:hover:bg-opacity-50"}>
+                <MenubarTrigger
+                    className={"hover:bg-slate-200 hover:bg-opacity-75 dark:hover:bg-gray-700 dark:hover:bg-opacity-50"}>
                     File
                 </MenubarTrigger>
                 <MenubarPortal>

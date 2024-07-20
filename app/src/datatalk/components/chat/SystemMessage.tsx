@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from "react";
+import equal from "react-fast-compare"
+
 import { MarkdownElement, parseMarkdown } from "../../utils/parser";
 import {
     Button,
@@ -17,7 +19,7 @@ import {
     Tooltip,
     Typography
 } from "@firecms/ui";
-import { DataSource, FeedbackSlug } from "../../types";
+import { DashboardParams, DataSource, FeedbackSlug } from "../../types";
 import { WidgetMessageView } from "./WidgetMessageView";
 
 export function SystemMessage({
@@ -29,6 +31,7 @@ export function SystemMessage({
                                   canRegenerate,
                                   onFeedback,
                                   onUpdatedMessage,
+                                  params
                               }: {
     text?: string,
     loading?: boolean,
@@ -38,6 +41,7 @@ export function SystemMessage({
     canRegenerate?: boolean,
     onFeedback?: (reason?: FeedbackSlug, feedbackMessage?: string) => void,
     onUpdatedMessage?: (message: string) => void,
+    params?: DashboardParams
 }) {
 
     const [parsedElements, setParsedElements] = useState<MarkdownElement[] | null>();
@@ -75,8 +79,13 @@ export function SystemMessage({
                                           rawDryConfig={element.content}
                                           maxWidth={containerWidth ? containerWidth - 90 : undefined}
                                           dataSources={dataSources}
+                                          params={params}
                                           onContentModified={(updatedContent) => {
                                               console.log("Updated content", updatedContent);
+                                              if (equal(updatedContent, parsedElements[index].content)) {
+                                                  console.log("No change");
+                                                  return;
+                                              }
                                               const updatedElements = [...parsedElements];
                                               updatedElements[index] = {
                                                   type: "widget",

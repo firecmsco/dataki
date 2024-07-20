@@ -1,45 +1,28 @@
-import { BigQuery, BigQueryTimestamp } from "@google-cloud/bigquery";
+import { BigQuery, BigQueryDate, BigQueryDatetime, BigQueryInt, BigQueryTimestamp } from "@google-cloud/bigquery";
 // @ts-ignore
 import { Big } from "big.js";
 import { ServiceAccountKey } from "../types/service_account";
-import { DataSource } from "../types/items";
+import { DashboardParams, DataSource } from "../types/dashboards";
 import DataTalkException from "../types/exceptions";
 import * as util from "util";
 
-// function initBigQuery() {
-//     // const oauth2Client = new google.auth.OAuth2(
-//     //     process.env.GOOGLE_CLIENT_ID,
-//     //     process.env.GOOGLE_CLIENT_SECRET,
-//     //     ""
-//     // );
-//     const authClient = new google.auth.getClient();
-//
-//     const bigquery = new BigQuery({
-//         authClient
-//     });
-//     return bigquery;
-// }
-//
-// const bigquery = initBigQuery();
-
-// const bigquery = new BigQuery();
-export async function runSQLQuery(sql: string, credentials?: ServiceAccountKey) {
-
-    console.log(`Running query:`, {
-        sql,
-    });
+export async function runSQLQuery(sql: string, credentials?: ServiceAccountKey, params?: DashboardParams) {
 
     try {
         const bigquery = new BigQuery({
-            // credentials
+            projectId: credentials?.project_id,
+            credentials
         });
 
         // console.log("bigquery", util.inspect(bigquery, false, null, true));
         // console.log(bigquery.authClient);
         // console.log(bigquery.makeAuthenticatedRequest.getCredentials((err, cred) => {
-        //     console.log("INNER: getCredentials", {err, cred});
+        //     console.log("INNER: getCredentials", {
+        //         err,
+        //         cred
+        //     });
         // }));
-        console.log(await bigquery.getProjectId());
+        console.log("projectId", await bigquery.getProjectId());
 
         const cleanSQL = sql
             .replaceAll("\\n", " ")
@@ -49,13 +32,15 @@ export async function runSQLQuery(sql: string, credentials?: ServiceAccountKey) 
             .replace(/\n/g, "")
             .replace(/\\\\/g, "");
 
-        console.log(`Running clean query: ${cleanSQL}`);
-        const options = {
+        const usedParams = convertParams(params);
+        console.log("Running clean query:", cleanSQL, usedParams);
+        const query = {
             query: cleanSQL,
+            params: usedParams,
             parseJson: true
         };
 
-        const [rows] = await bigquery.query(options);
+        const [rows] = await bigquery.query(query);
         console.log(`Total rows: ${rows.length}`);
 
         const result = rows.map(convertBQValues);
@@ -119,7 +104,16 @@ function convertBQValues(obj: any): any {
         return obj.toNumber();
     }
 
+    if (obj instanceof BigQueryDate) {
+        return new Date(obj.value);
+    }
+    if (obj instanceof BigQueryDatetime) {
+        return new Date(obj.value);
+    }
     if (obj instanceof BigQueryTimestamp) {
+        return new Date(obj.value);
+    }
+    if (obj instanceof BigQueryInt) {
         return new Date(obj.value);
     }
 
@@ -161,4 +155,23 @@ export async function getBigQueryDatasets(projectId: string, accessToken: string
         ...e.datasetReference,
         location: e.location
     })) || []; // Handle cases where datasets might be empty
+}
+
+function convertParams(params?: DashboardParams): Record<string, any> {
+    console.log("Converting params", params);
+
+    const threeMonthsAgo = new Date();
+    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+
+    const result = {
+        DATE_START: threeMonthsAgo,
+        DATE_END: new Date()
+    }
+    if (params?.dateStart) {
+        result.DATE_START = params.dateStart;
+    }
+    if (params?.dateEnd) {
+        result.DATE_END = params.dateEnd;
+    }
+    return result;
 }

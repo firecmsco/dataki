@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
+import equal from "react-fast-compare"
+
 import { hydrateWidgetConfig } from "../../api";
 import { useDataTalk } from "../../DataTalkProvider";
-import { DryWidgetConfig, WidgetConfig } from "../../types";
+import { DashboardParams, DashboardWidgetConfig, DryWidgetConfig, WidgetConfig } from "../../types";
 import { DataTable } from "./DataTable";
-import { CircularProgressCenter, mergeDeep, useModeController } from "@firecms/core";
+import { CircularProgressCenter, ErrorBoundary, mergeDeep, useModeController } from "@firecms/core";
 import { format } from "sql-formatter";
 import { DEFAULT_WIDGET_SIZE } from "../../utils/widgets";
 import { ChartView } from "./ChartView";
@@ -24,16 +26,18 @@ import { downloadImage } from "../../utils/downloadImage";
 
 export function DryWidgetConfigView({
                                         dryConfig,
+                                        params,
                                         onUpdated,
                                         onRemoveClick,
                                         zoom,
                                         maxWidth
                                     }: {
     dryConfig: DryWidgetConfig,
+    params?: DashboardParams,
     onUpdated?: (newConfig: DryWidgetConfig) => void,
     onRemoveClick?: () => void,
     maxWidth?: number,
-    zoom?: number
+    zoom?: number,
 }) {
 
     const {
@@ -51,11 +55,22 @@ export function DryWidgetConfigView({
 
     const viewRef = React.useRef<HTMLDivElement>(null);
 
-    const initialised = React.useRef(false);
+    const loadedConfig = React.useRef<{ dryConfig: DryWidgetConfig, params?: DashboardParams } | null>(null);
 
     useEffect(() => {
-        if (dryConfig && !initialised.current) {
+        if (loadedConfig.current && equal(loadedConfig.current, {
+            dryConfig: getConfigWithoutSize(dryConfig),
+            params
+        })) {
+            return;
+        }
+
+        if (dryConfig) {
             try {
+                loadedConfig.current = {
+                    dryConfig: getConfigWithoutSize(dryConfig),
+                    params
+                };
                 const formattedDrySQL = format(dryConfig.sql, { language: "bigquery" })
                 onUpdated?.({
                     ...dryConfig,
@@ -66,9 +81,8 @@ export function DryWidgetConfigView({
                 console.error(dryConfig);
                 console.error("Error parsing dry config", e);
             }
-            initialised.current = true;
         }
-    }, [dryConfig]);
+    }, [dryConfig, params]);
 
     const makeHydrationRequest = async (newDryConfig: DryWidgetConfig) => {
         const firebaseToken = await getAuthToken();
@@ -79,7 +93,7 @@ export function DryWidgetConfigView({
         setHydrationInProgress(true);
         setHydrationError(null);
         console.log("Hydrating config", newDryConfig);
-        hydrateWidgetConfig(firebaseToken, apiEndpoint, newDryConfig)
+        hydrateWidgetConfig(firebaseToken, apiEndpoint, newDryConfig, params)
             .then((config) => {
                 setConfig(mergeDeep(newDryConfig, config));
             })
@@ -94,89 +108,84 @@ export function DryWidgetConfigView({
             height: viewRef.current?.scrollHeight,
         }).then((url) => downloadImage(url, "chart.png"));
     }
-    // const onResize = (size: WidgetSize) => {
-    //     if (!dryConfig) return;
-    //     const newConfig: DryWidgetConfig = { ...dryConfig, size };
-    //     setDryConfig(newConfig);
-    //     onContentModified?.(JSON5.stringify(newConfig, null, 2));
-    // }
 
+    const onConfigUpdated = (newConfig: DryWidgetConfig) => {
+        if (!newConfig) return;
+        makeHydrationRequest(newConfig);
+        onUpdated?.(newConfig)
+    };
     return <>
-
 
         <div
             className={"group flex flex-col w-full h-full bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 dark:border-opacity-80 rounded-lg overflow-hidden"}>
 
-            {hydrationInProgress && <CircularProgressCenter/>}
-            {!hydrationInProgress && <>
-                <div
-                    className={"flex flex-row w-full border-b border-gray-100 dark:border-gray-800 dark:border-opacity-80"}>
-                    <Typography variant={"label"}
-                                className={"grow pl-4 py-4 line-clamp-1 h-10"}>{config?.title}</Typography>
-                    <div className={"m-2.5 mr-0 flex-row gap-1 hidden group-hover:flex nodrag"}>
+            <div
+                className={"flex flex-row w-full border-b border-gray-100 dark:border-gray-800 dark:border-opacity-80"}>
+                <Typography variant={"label"}
+                            className={"grow pl-4 py-4 line-clamp-1 h-10"}>{config?.title ?? dryConfig.title}</Typography>
+                <div className={"m-2.5 mr-0 flex-row gap-1 hidden group-hover:flex nodrag"}>
 
-                        <Tooltip title={"Download"}>
-                            <IconButton size={"small"} onClick={downloadFile}>
-                                <DownloadIcon size={"small"}/>
-                            </IconButton>
-                        </Tooltip>
-                        <Tooltip title={"Refresh data"}>
-                            <IconButton size={"small"} onClick={() => makeHydrationRequest(dryConfig)}>
-                                <RefreshIcon size={"small"}/>
-                            </IconButton>
-                        </Tooltip>
-                        {onRemoveClick && <Tooltip title={"Remove this view"}>
-                            <IconButton size={"small"} onClick={onRemoveClick}>
-                                <RemoveIcon size={"small"}/>
-                            </IconButton>
-                        </Tooltip>}
-                    </div>
-
-                    <div className={"m-2.5 ml-1 flex flex-row gap-1 nodrag"}>
-                        <Tooltip title={"Edit widget configuration"}>
-                            <IconButton size={"small"} onClick={() => setConfigDialogOpen(true)}>
-                                <SettingsIcon size={"small"}/>
-                            </IconButton>
-                        </Tooltip>
-                        <Tooltip title={"Add this view to a dashboard"}>
-                            <IconButton size={"small"} onClick={() => setAddToDashboardDialogOpen(true)}>
-                                <AddIcon size={"small"}/>
-                            </IconButton>
-                        </Tooltip>
-                    </div>
+                    <Tooltip title={"Download"}>
+                        <IconButton size={"small"} onClick={downloadFile}>
+                            <DownloadIcon size={"small"}/>
+                        </IconButton>
+                    </Tooltip>
+                    <Tooltip title={"Refresh data"}>
+                        <IconButton size={"small"} onClick={() => makeHydrationRequest(dryConfig)}>
+                            <RefreshIcon size={"small"}/>
+                        </IconButton>
+                    </Tooltip>
+                    {onRemoveClick && <Tooltip title={"Remove this view"}>
+                        <IconButton size={"small"} onClick={onRemoveClick}>
+                            <RemoveIcon size={"small"}/>
+                        </IconButton>
+                    </Tooltip>}
                 </div>
 
-                {!hydrationError && <>
-                    {config?.type === "chart" && config?.chart && (
-                        <ChartView
-                            ref={viewRef}
-                            size={dryConfig?.size ?? DEFAULT_WIDGET_SIZE}
-                            config={config?.chart}/>
-                    )}
+                <div className={"m-2.5 ml-1 flex flex-row gap-1 nodrag"}>
+                    <Tooltip title={"Edit widget configuration"}>
+                        <IconButton size={"small"} onClick={() => setConfigDialogOpen(true)}>
+                            <SettingsIcon size={"small"}/>
+                        </IconButton>
+                    </Tooltip>
+                    <Tooltip title={"Add this view to a dashboard"}>
+                        <IconButton size={"small"} onClick={() => setAddToDashboardDialogOpen(true)}>
+                            <AddIcon size={"small"}/>
+                        </IconButton>
+                    </Tooltip>
+                </div>
+            </div>
 
-                    {config?.type === "table" && config?.table && (
-                        <DataTable
-                            ref={viewRef}
-                            config={config?.table}
-                            zoom={zoom}
-                            maxWidth={maxWidth}/>
-                    )}
-                </>}
+            {hydrationInProgress && <CircularProgressCenter/>}
 
-                {hydrationError && (
-                    <ExecutionErrorView executionError={hydrationError}/>
+            {!hydrationInProgress && !hydrationError && <>
+                {config?.type === "chart" && config?.chart && (
+                    <ChartView
+                        ref={viewRef}
+                        size={dryConfig?.size ?? DEFAULT_WIDGET_SIZE}
+                        config={config?.chart}/>
                 )}
 
+                {config?.type === "table" && config?.table && (
+                    <DataTable
+                        ref={viewRef}
+                        config={config?.table}
+                        zoom={zoom}
+                        maxWidth={maxWidth}/>
+                )}
+            </>}
+
+            {!hydrationInProgress && hydrationError && (
+                <ExecutionErrorView executionError={hydrationError}/>
+            )}
+
+            <ErrorBoundary>
                 {dryConfig && <ConfigViewDialog open={configDialogOpen}
                                                 setOpen={setConfigDialogOpen}
                                                 dryConfig={dryConfig}
-                                                onUpdate={(newConfig) => {
-                                                    if (!newConfig) return;
-                                                    makeHydrationRequest(newConfig);
-                                                    onUpdated?.(newConfig)
-                                                }}
+                                                onUpdate={onConfigUpdated}
                 />}
-            </>}
+            </ErrorBoundary>
         </div>
 
         {config && <AddToDashboardDialog open={addToDashboardDialogOpen}
@@ -196,6 +205,18 @@ function ExecutionErrorView(props: { executionError: Error }) {
     return <div className={"w-full text-sm bg-red-100 dark:bg-red-800 p-4 rounded-lg"}>
         <code className={"text-red-700 dark:text-red-300 break-all"} dangerouslySetInnerHTML={{ __html: htmlContent }}/>
     </div>;
+}
+
+function getConfigWithoutSize(config: DryWidgetConfig | DashboardWidgetConfig): DryWidgetConfig {
+    const {
+        // @ts-ignore
+        id,
+        size,
+        // @ts-ignore
+        position,
+        ...rest
+    } = config;
+    return rest;
 }
 
 

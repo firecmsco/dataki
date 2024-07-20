@@ -1,22 +1,25 @@
 import React, { useEffect, useState } from "react";
 import JSON5 from "json5";
 import { CircularProgress } from "@firecms/ui";
-import { DataSource, DryWidgetConfig } from "../../types";
+import { DashboardParams, DataSource, DryWidgetConfig } from "../../types";
 import { DEFAULT_WIDGET_SIZE } from "../../utils/widgets";
 import { DryWidgetConfigView } from "../widgets/DryWidgetConfigView";
+import { ErrorBoundary } from "@firecms/core";
 
 export function WidgetMessageView({
                                       rawDryConfig,
                                       maxWidth,
                                       loading,
                                       onContentModified,
-                                      dataSources
+                                      dataSources,
+                                      params
                                   }: {
     rawDryConfig?: string,
     loading?: boolean,
     maxWidth?: number,
     onContentModified?: (rawDryConfig: string) => void,
-    dataSources: DataSource[]
+    dataSources: DataSource[],
+    params?: DashboardParams,
 }) {
 
     const [dryConfig, setDryConfig] = useState<DryWidgetConfig | null>(null);
@@ -24,6 +27,7 @@ export function WidgetMessageView({
     useEffect(() => {
         if (rawDryConfig && !loading) {
             try {
+                console.log("Parsing dry config", rawDryConfig);
                 setParsingError(null);
                 const newDryConfig = JSON5.parse(rawDryConfig);
                 if (!newDryConfig.dataSources && dataSources.length > 0) {
@@ -43,6 +47,7 @@ export function WidgetMessageView({
     const widgetMaxWidth = dryConfig?.type === "table" ? undefined : dryConfig?.size?.width ?? DEFAULT_WIDGET_SIZE.width;
 
     function onChange(newConfig: DryWidgetConfig) {
+        console.log("onChange", newConfig);
         onContentModified?.(JSON5.stringify(newConfig, null, 2));
     }
 
@@ -63,14 +68,17 @@ export function WidgetMessageView({
             )}
 
             {!loading && dryConfig && (
-                <DryWidgetConfigView
-                    dryConfig={dryConfig}
-                    onUpdated={(newConfig) => {
-                        setDryConfig(newConfig);
-                        onChange(newConfig);
-                    }}
-                    maxWidth={maxWidth}
-                />)}
+                <ErrorBoundary>
+                    <DryWidgetConfigView
+                        dryConfig={dryConfig}
+                        params={params}
+                        onUpdated={(newConfig) => {
+                            setDryConfig(newConfig);
+                            onChange(newConfig);
+                        }}
+                        maxWidth={maxWidth}
+                    />
+                </ErrorBoundary>)}
 
             {parsingError && (
                 <div className={"text-red-500"}>

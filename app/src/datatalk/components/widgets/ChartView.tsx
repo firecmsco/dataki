@@ -1,7 +1,10 @@
 import Chart from "chart.js/auto"
+import { Colors } from "chart.js";
 import React, { useEffect } from "react";
 import { ChartConfig, WidgetSize } from "../../types";
 import { useModeController } from "@firecms/core";
+
+Chart.register(Colors);
 
 export function ChartView({
                               config,
@@ -33,14 +36,6 @@ export function ChartView({
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: {},
-                    // legend: {
-                    //     position: config.options?.plugins?.legend?.position || "bottom"
-                    // },
-                    // title: {
-                    //     display: true,
-                    //     text: title
-                    // },
                     ...config?.options?.plugins
                 },
                 ...config?.options

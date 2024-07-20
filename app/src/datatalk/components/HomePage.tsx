@@ -14,6 +14,9 @@ export function HomePage() {
             {/*    Welcome to DATATALK*/}
             {/*</Typography>*/}
             <div className={"my-8 flex flex-col gap-4"}>
+                <Typography variant={"h3"} gutterBottom={true} className={"font-mono ml-4 my-2"}>
+                    Welcome to DATATALK
+                </Typography>
                 <Typography>
                     DataTalk is a conversational interface to your data.
                 </Typography>

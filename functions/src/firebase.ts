@@ -1,16 +1,18 @@
-import * as admin from "firebase-admin";
+import { initializeApp } from "firebase-admin/app";
+import { getFirestore } from "firebase-admin/firestore";
+import { getAuth } from "firebase-admin/auth";
 
+let app;
 // this is a hack to avoid multiple initialization of firebase app in scripts
 try {
-    if (process.env.npm_lifecycle_event === "test")
-        admin.initializeApp({ storageBucket: "firecms-dev-2da42.appspot.com" });
-    else
-        admin.initializeApp();
+    app = initializeApp();
 } catch (e) {
     console.warn("Error initializing app", e)
 }
-
-const firestoreDb: FirebaseFirestore.Firestore = admin.firestore();
+if (!app) {
+    throw new Error("App not initialized");
+}
+const firestoreDb: FirebaseFirestore.Firestore = getFirestore(app)
 
 try {
     firestoreDb.settings({ ignoreUndefinedProperties: true })
@@ -20,6 +22,6 @@ try {
 
 export const firestore = firestoreDb;
 // export const bucket = admin.storage().bucket();
-export const firebaseAuth = admin.auth();
+export const firebaseAuth = getAuth(app);
 
 

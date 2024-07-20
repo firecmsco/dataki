@@ -1,30 +1,32 @@
-import React, { useCallback, useEffect, useMemo } from "react";
-import ReactFlow, { Background, BackgroundVariant, MiniMap, Node, Panel, useNodesState } from "reactflow";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import ReactFlow, { Background, BackgroundVariant, Node, Panel, useNodesState } from "reactflow";
 
 import "reactflow/dist/style.css";
 import { cls, defaultBorderMixin, useInjectStyles } from "@firecms/ui";
-import { Dashboard, DashboardPage, DashboardWidgetConfig, WidgetSize } from "../../types";
+import { Dashboard, DashboardPage, DashboardParams, DashboardWidgetConfig, WidgetSize } from "../../types";
 import ChartNode, { ChartNodeProps } from "./nodes/ChartNode";
 import { useDataTalk } from "../../DataTalkProvider";
 import PaperNode from "./nodes/PaperNode";
 import { DEFAULT_PAPER_SIZE } from "../../utils/widgets";
 import { DashboardMenubar } from "./DashboardMenubar";
+import { DatePickerWithRange } from "../DateRange";
+import { getInitialDateRange } from "../utils/dates";
 
-function convertWidgetsToNodes(widgets: DashboardWidgetConfig[], paperSize: WidgetSize, dashboardId: string, pageId: string, onRemoveClick: (id: string) => void): Node<ChartNodeProps>[] {
+function convertWidgetsToNodes(widgets: DashboardWidgetConfig[], paperSize: WidgetSize, dashboardId: string, pageId: string, onRemoveClick: (id: string) => void, params: DashboardParams): Node<ChartNodeProps>[] {
     const paperNode: Node<any> = {
         id: "paper",
         type: "paper",
         draggable: false,
         position: {
             x: 0,
-            y: 0,
+            y: 0
         },
         data: {
             width: paperSize.width,
             height: paperSize.height,
-            dashboardId: dashboardId,
-            pageId: pageId,
-        },
+            dashboardId,
+            pageId
+        }
         // style: {
         //     width: 800,
         //     height: 1200,
@@ -40,12 +42,13 @@ function convertWidgetsToNodes(widgets: DashboardWidgetConfig[], paperSize: Widg
         selectable: true,
         data: {
             widgetConfig: widget,
-            dashboardId: dashboardId,
-            pageId: pageId,
-            onRemoveClick,
+            params,
+            dashboardId,
+            pageId,
+            onRemoveClick
         },
         position: widget.position,
-        parentId: "paper",
+        parentId: "paper"
     }));
 
     return [
@@ -68,19 +71,27 @@ function convertWidgetsToNodes(widgets: DashboardWidgetConfig[], paperSize: Widg
         paperNode, ...widgetNodes];
 }
 
+
 export const DashboardPageView = function DashboardPageView({
                                                                 page,
                                                                 dashboard,
-                                                                containerSize,
+                                                                containerSize
                                                             }: {
     page: DashboardPage,
     dashboard: Dashboard,
     containerSize: WidgetSize
 }) {
 
+    const [dateRange, setDateRange] = useState<[Date | null, Date | null]>(getInitialDateRange());
+
+    const params: DashboardParams = useMemo(() => ({
+        dateStart: dateRange[0] ?? null,
+        dateEnd: dateRange[1] ?? null
+    }), [dateRange]);
+
     const nodeTypes = useMemo(() => ({
         paper: PaperNode,
-        chart: ChartNode,
+        chart: ChartNode
     }), []);
 
     const dataTalk = useDataTalk();
@@ -97,7 +108,8 @@ export const DashboardPageView = function DashboardPageView({
         paperSize,
         dashboard.id,
         page.id,
-        onRemoveClick,));
+        onRemoveClick,
+        params));
 
     useEffect(() => {
         console.log("Page widgets changed", page.widgets);
@@ -106,15 +118,14 @@ export const DashboardPageView = function DashboardPageView({
             paperSize,
             dashboard.id,
             page.id,
-            onRemoveClick));
-    }, [page.widgets]);
-
-    console.log("DashboardPageView", { nodes });
+            onRemoveClick,
+            params));
+    }, [page.widgets, params]);
 
     useInjectStyles("dashboard", styles);
 
     const onNodeDragStop = useCallback((_: any, node: Node, nodes: Node[]) => {
-        // console.log("Node moved:", node);
+        console.log("Node moved:", node);
         dataTalk.onWidgetMove(dashboard.id, page.id, node.id, node.position);
     }, []);
 
@@ -161,17 +172,27 @@ export const DashboardPageView = function DashboardPageView({
             <Panel position="top-left">
                 <div
                     className={cls("w-full flex flex-row bg-white dark:bg-gray-900 rounded-2xl border", defaultBorderMixin)}>
-                    <DashboardMenubar dashboard={dashboard}/>
+                    <DashboardMenubar dashboard={dashboard}
+                                      dateRange={dateRange}
+                                      setDateRange={setDateRange}
+                    />
+                </div>
+            </Panel>
+            <Panel position="top-right">
+                <div
+                    className={cls("w-full flex flex-row bg-white dark:bg-gray-900 rounded-2xl border", defaultBorderMixin)}>
+
+                    <DatePickerWithRange dateRange={dateRange} setDateRange={setDateRange}/>
                 </div>
             </Panel>
             <Background gap={[25, 25]}
                         color="#888"
                         variant={BackgroundVariant.Dots}/>
 
-            <MiniMap nodeStrokeWidth={3}
-                     className={"dark:bg-gray-900"}
-                     maskColor={"#88888822"}
-                     nodeColor={"#66666622"}/>
+            {/*<MiniMap nodeStrokeWidth={3}*/}
+            {/*         className={"dark:bg-gray-900"}*/}
+            {/*         maskColor={"#88888822"}*/}
+            {/*         nodeColor={"#66666622"}/>*/}
 
         </ReactFlow>
     );

@@ -17,19 +17,19 @@ export function DashboardsOverview() {
         <div className={"my-8"}>
 
             <div className={"flex flex-row"}>
-                <Typography variant={"h6"} gutterBottom={true} className={"flex-grow font-mono ml-4 my-2"}>
+                <Typography variant={"h6"} gutterBottom={true} className={"flex-grow font-mono my-2"}>
                     Dashboards
                 </Typography>
                 <Button variant={"outlined"}
                         onClick={async () => {
-                            const id = await dataTalkConfig.createDashboard();
-                            navigate(getDashboardPath(id));
+                            const dashboard = await dataTalkConfig.createDashboard();
+                            navigate(getDashboardPath(dashboard.id));
                         }}>
                     <AddIcon/>
                     New dashboard
                 </Button>
             </div>
-            <div className={"flex flex-row flex-wrap font-mono container mx-auto min-h-48 flex-1"}>
+            <div className={"flex flex-row flex-wrap font-mono container mx-auto min-h-48 flex-1 gap-2 my-4"}>
                 {dataTalkConfig.dashboards.map((dashboard, index) => (
                     <DashboardPreviewCard
                         key={dashboard.id}
