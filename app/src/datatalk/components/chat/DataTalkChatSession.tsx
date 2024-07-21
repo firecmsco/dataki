@@ -67,18 +67,24 @@ export function DataTalkChatSession({
         dateEnd: dateRange[1] ?? null
     }), [dateRange]);
 
+    const ongoingPromptSuggestionRequest = useRef<boolean>(false);
     useEffect(() => {
+        if (ongoingPromptSuggestionRequest.current) return;
         if (dataSources.length > 0) {
             const lastMessage = messages.length > 0 ? messages[messages.length - 1] : null;
             const shouldLoadSamplePrompts = !lastMessage || (lastMessage.user === "SYSTEM" && !lastMessage.loading);
 
             console.log("Loading sample prompts");
             if (shouldLoadSamplePrompts) {
+                ongoingPromptSuggestionRequest.current = true;
                 getAuthToken().then((firebaseToken) => {
                     setSamplePromptsLoading(true);
                     getDataTalkPromptSuggestions(firebaseToken, apiEndpoint, dataSources, messages)
                         .then(setSamplePrompts)
-                        .finally(() => setSamplePromptsLoading(false));
+                        .finally(() => {
+                            ongoingPromptSuggestionRequest.current = false;
+                            setSamplePromptsLoading(false);
+                        });
                 });
             }
         }
@@ -112,13 +118,9 @@ export function DataTalkChatSession({
     const scrollToBottom = () => {
         setTimeout(() => {
             scrollContainerRef.current?.scrollTo(scrollContainerRef.current?.scrollLeft, scrollContainerRef.current.scrollHeight);
-            // messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
         }, 10);
     };
 
-    // const handleScrollCapture = (e:any) => {
-    //     console.log("handleScrollCapture", e);
-    // }
     const handleScroll = (e: any) => {
         if (!scrollContainerRef.current) return;
 
@@ -409,7 +411,7 @@ export function DataTalkChatSession({
 
                 </div>
 
-                <div ref={messagesEndRef} style={{ height: 24 }}/>
+                <div ref={messagesEndRef} style={{ height: 8 }}/>
             </div>
 
             <div

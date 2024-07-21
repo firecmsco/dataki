@@ -106,7 +106,7 @@ async function hydrateChartOrTableRoute(request: Request, response: Response) {
     const credentials = await getStoredServiceAccount(firestore, projectId);
 
     const data = await runSQLQuery(config.sql, credentials, params);
-    const res = hydrateWidgetConfig(config, data, params);
+    const res = hydrateWidgetConfig(config, data);
 
     response.json({ data: res });
 }

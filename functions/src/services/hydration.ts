@@ -1,51 +1,13 @@
-import { DashboardParams, DryWidgetConfig, WidgetConfig } from "../types/dashboards";
+import { DataSet, DryDataset, DryWidgetConfig, WidgetConfig } from "../types/dashboards";
 import { DataRow } from "../types/sql";
 import * as util from "util";
 
-export function hydrateWidgetConfig(config: DryWidgetConfig, data: DataRow[], filters?: DashboardParams): WidgetConfig {
+export function hydrateWidgetConfig(config: DryWidgetConfig, data: DataRow[]): WidgetConfig {
 
     console.log("Hydrating widget config", util.inspect(config, false, null, true /* enable colors */) + "\n\n", data);
 
-    function hydrateObject(obj: any, data: DataRow[]): any {
-        if (typeof obj === "string") {
-            // Replace placeholders in strings with mapped array values
-            return replacePlaceholders(obj, data);
-        } else if (Array.isArray(obj)) {
-            return obj.map(item => hydrateObject(item, data));
-        } else if (typeof obj === "object" && obj !== null) {
-            const hydratedObj = {};
-            for (const key in obj) {
-                // @ts-ignore
-                hydratedObj[key] = hydrateObject(obj[key], data);
-            }
-            return hydratedObj;
-        } else {
-            return obj;
-        }
-    }
-
-    function replacePlaceholders(str: string, data: DataRow[]): string | string[] {
-        const replaced = str.replace(/\[\[|]]/g, "");
-        if (replaced === str) return str; // No placeholders found
-        return data.map(row => {
-            const value = getIn(row, replaced);
-            if (value === undefined || value === null) {
-                return null;
-            }
-
-            if (value instanceof Date) {
-                //if time is 00:00:00, return only date
-                if (value.getHours() === 0 && value.getMinutes() === 0 && value.getSeconds() === 0) {
-                    return value.toISOString().split("T")[0];
-                }
-
-                return value.toISOString();
-            }
-            if (typeof value === "object" && "value" in value) {
-                return value.value;
-            }
-            return value;
-        });
+    if (config.type === "chart") {
+        return hydrateChartConfig(config, data);
     }
 
     const res = hydrateObject(config, data);
@@ -55,48 +17,121 @@ export function hydrateWidgetConfig(config: DryWidgetConfig, data: DataRow[], fi
     return res;
 }
 
-// export function hydrateWidgetConfig(config: DryWidgetConfig, data: DataRow[]): WidgetConfig {
-//
-//     console.log("Hydrating widget config", util.inspect(config, false, null, true /* enable colors */) + "\n\n", data);
-//
-//     // Extract the keys for labels and data from the LLM output
-//     const labelKey = config.chart?.data?.labels?.replace(/\[\[|]]/g, "");
-//
-//     // Map the data to the corresponding keys
-//     const labels = labelKey
-//         ? data.map(row => getIn(row, labelKey))
-//         : [];
-//
-//     // Map data for each dataset
-//     const datasets = config.chart?.data.datasets.map(dataset => {
-//         const dataKey = dataset.data.replace(/\[\[|]]/g, "");
-//         return {
-//             ...dataset,
-//             data: data.map(row => getIn(row, dataKey))
-//         };
-//     }) || [];
-//
-//     // Create the final JSON with the mapped data
-//     return {
-//         ...config,
-//         chart: config.chart
-//             ? {
-//                 ...config.chart,
-//                 data: {
-//                     ...config.chart.data,
-//                     labels,
-//                     datasets
-//                 }
-//             }
-//             : undefined,
-//         table: config.table
-//             ? {
-//                 ...config.table,
-//                 data
-//             }
-//             : undefined
-//     };
-// }
+export const hydrateChartConfig = (config: DryWidgetConfig, data: DataRow[]): WidgetConfig => {
+    if (config.type !== "chart" || !config.chart) {
+        throw new Error("Invalid widget type or missing chart config");
+    }
+
+    const labels = replacePlaceholders(config.chart.data.labels, data);
+    const dedupedLabels = Array.isArray(labels)
+        ? deduplicateStrings(labels as string[])
+        : [labels];
+
+    const datasets = config.chart.data.datasets.map(dataset => {
+        if (typeof dataset.data !== "string") {
+            throw new Error("Invalid dataset data");
+        }
+        return processDataSet(dataset, data);
+
+    }).flat();
+
+    console.log("datasets", datasets)
+
+    console.log("labels", dedupedLabels);
+    return {
+        title: config.title,
+        description: config.description,
+        sql: config.sql,
+        type: config.type,
+        chart: {
+            ...config.chart,
+            type: config.chart.type,
+            data: {
+                labels: dedupedLabels,
+                datasets: datasets
+            }
+        }
+    };
+}
+
+function convertValueForChart(value: any) {
+    if (value === undefined || value === null) {
+        return null;
+    }
+
+    if (value instanceof Date) {
+        // if time is 00:00:00, return only date
+        if (value.getHours() === 0 && value.getMinutes() === 0 && value.getSeconds() === 0) {
+            return value.toISOString().split("T")[0];
+        }
+
+        return value.toISOString();
+    }
+    if (typeof value === "object" && "value" in value) {
+        return value.value;
+    }
+    return value;
+}
+
+function replacePlaceholders(str: string, data: DataRow[]): string | string[] {
+    const replacedKey = str.replace(/\[\[|]]/g, "");
+    if (replacedKey === str) return str; // No placeholders found
+    return data.map(row => {
+        const value = getIn(row, replacedKey);
+        return convertValueForChart(value);
+    });
+}
+
+export function processDataSet(dataset: DryDataset, data: DataRow[]): DataSet[] {
+    const result: DataSet[] = [];
+    const dataMap = new Map<string, any[]>();
+
+    const patternMatch = dataset.data.match(/\[\[(.*?)\]\](?:\(\((.*?)\)\))?/);
+    if (!patternMatch) {
+        throw new Error("Invalid dataset format");
+    }
+
+    const dataKey = patternMatch[1];
+    const categoryKey = patternMatch[2] || null;
+
+    data.forEach(item => {
+        const category = categoryKey
+            ? getIn(item, categoryKey)
+            : dataset.label;
+        const dailySales = getIn(item, dataKey);
+        if (!dataMap.has(category)) {
+            dataMap.set(category, []);
+        }
+        dataMap.get(category)?.push(convertValueForChart(dailySales));
+    });
+
+    dataMap.forEach((extractedValues, category) => {
+        result.push({
+            data: extractedValues,
+            label: category.toString()
+        });
+    });
+
+    return result;
+}
+
+function hydrateObject(obj: any, data: DataRow[]): any {
+    if (typeof obj === "string") {
+        // Replace placeholders in strings with mapped array values
+        return replacePlaceholders(obj, data);
+    } else if (Array.isArray(obj)) {
+        return obj.map(item => hydrateObject(item, data));
+    } else if (typeof obj === "object" && obj !== null) {
+        const hydratedObj = {};
+        for (const key in obj) {
+            // @ts-ignore
+            hydratedObj[key] = hydrateObject(obj[key], data);
+        }
+        return hydratedObj;
+    } else {
+        return obj;
+    }
+}
 
 function toPath(value: string | string[]) {
     if (Array.isArray(value)) return value; // Already in path array form.
@@ -128,4 +163,16 @@ export function getIn(
         : obj;
 }
 
+function deduplicateStrings(array: string[]): string[] {
+    const seen: Set<string> = new Set();
+    const result: string[] = [];
 
+    for (const str of array) {
+        if (!seen.has(str)) {
+            seen.add(str);
+            result.push(str);
+        }
+    }
+
+    return result;
+}

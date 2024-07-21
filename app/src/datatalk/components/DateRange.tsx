@@ -52,6 +52,16 @@ export function DatePickerWithRange({
 
     useInjectStyles("DateTimeField", datePickerCss);
 
+    const className = cls(
+        "w-full outline-none bg-transparent leading-normal text-base px-3",
+        "pr-12",
+        "rounded-xl",
+        focusedInvisibleMixin,
+        "min-h-[40px]",
+        "p-3",
+        "border",
+        defaultBorderMixin
+    );
     return (
         <>
 
@@ -85,20 +95,8 @@ export function DatePickerWithRange({
                     endDate={endDate ?? undefined}
                     onFocus={() => setFocused(true)}
                     onBlur={() => setFocused(false)}
-                    timeFormat="HH:mm"
-                    timeIntervals={15}
-                    timeCaption="time"
                     preventOpenOnFocus={true}
-                    className={cls(
-                        "w-full outline-none bg-transparent leading-normal text-base px-3",
-                        "pr-12",
-                        "rounded-xl",
-                        focusedInvisibleMixin,
-                        "min-h-[40px]",
-                        "p-3",
-                        "border",
-                        defaultBorderMixin
-                    )}
+                    className={className}
                 />
 
                 <IconButton

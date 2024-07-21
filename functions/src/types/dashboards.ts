@@ -18,6 +18,12 @@ export type BigQueryDataSource = {
     location: string;
 }
 
+export type DryDataset = {
+    label: string;
+    data: string;
+    backgroundColor?: string[];
+};
+
 export type DryWidgetConfig = {
     sql: string;
     dataSource: DataSource;
@@ -28,17 +34,19 @@ export type DryWidgetConfig = {
         type: string;
         data: {
             labels: string;
-            datasets: Array<{
-                label: string;
-                data: string;
-                backgroundColor: string[];
-            }>;
+            datasets: Array<DryDataset>;
         }
     };
     table?: {
         columns: TableColumn[]
     }
 }
+
+export type DataSet = {
+    label: string;
+    data: string[];
+    backgroundColor?: string[];
+};
 
 export type WidgetConfig = {
     title: string;
@@ -49,11 +57,7 @@ export type WidgetConfig = {
         type: string;
         data: {
             labels: string[];
-            datasets: Array<{
-                label: string;
-                data: string[];
-                backgroundColor: string[];
-            }>;
+            datasets: Array<DataSet>;
         },
         options?: {
             plugins?: {
@@ -76,5 +80,5 @@ export type DataType = "string" | "number" | "date" | "object" | "array";
 
 export type DashboardParams = {
     dateStart?: Date | null;
-    dateEnd?: Date| null;
+    dateEnd?: Date | null;
 }

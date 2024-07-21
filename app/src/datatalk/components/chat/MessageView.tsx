@@ -57,7 +57,7 @@ export function MessageView({
     const padding = message?.user === "SQL_STATEMENT" ? "py-1 px-4" : "p-4";
 
     return <div ref={ref}
-                className={cls("flex flex-col gap-2 rounded-lg", bgColor, padding)}>
+                className={cls("flex flex-col gap-2 rounded-3xl", bgColor, padding)}>
         <div className="flex items-start gap-3 justify-center">
             <Menu trigger={<Avatar className="w-10 h-10 shrink-0">
                 {message?.user === "USER" && <PersonIcon/>}

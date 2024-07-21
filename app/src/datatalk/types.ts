@@ -136,7 +136,8 @@ export type DashboardPage = {
     id: string;
     title?: string;
     paper?: {
-        size?: WidgetSize
+        size?: WidgetSize,
+        position?: Position
     }
     widgets: DashboardWidgetConfig[];
 }

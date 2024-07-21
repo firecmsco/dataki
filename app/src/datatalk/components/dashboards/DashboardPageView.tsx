@@ -3,30 +3,33 @@ import ReactFlow, { Background, BackgroundVariant, Node, Panel, useNodesState } 
 
 import "reactflow/dist/style.css";
 import { cls, defaultBorderMixin, useInjectStyles } from "@firecms/ui";
-import { Dashboard, DashboardPage, DashboardParams, DashboardWidgetConfig, WidgetSize } from "../../types";
+import { Dashboard, DashboardPage, DashboardParams, DashboardWidgetConfig, Position, WidgetSize } from "../../types";
 import ChartNode, { ChartNodeProps } from "./nodes/ChartNode";
 import { useDataTalk } from "../../DataTalkProvider";
-import PaperNode from "./nodes/PaperNode";
+import PaperNode, { PaperNodeProps } from "./nodes/PaperNode";
 import { DEFAULT_PAPER_SIZE } from "../../utils/widgets";
 import { DashboardMenubar } from "./DashboardMenubar";
 import { DatePickerWithRange } from "../DateRange";
 import { getInitialDateRange } from "../utils/dates";
 
-function convertWidgetsToNodes(widgets: DashboardWidgetConfig[], paperSize: WidgetSize, dashboardId: string, pageId: string, onRemoveClick: (id: string) => void, params: DashboardParams): Node<ChartNodeProps>[] {
+function convertWidgetsToNodes(widgets: DashboardWidgetConfig[], paperSize: WidgetSize, paperPosition: Position | undefined, dashboardId: string, pageId: string, onRemoveClick: (id: string) => void, params: DashboardParams): Node<ChartNodeProps>[] {
+    const paperData = {
+        width: paperSize.width,
+        height: paperSize.height,
+        x: paperPosition?.x ?? 0,
+        y: paperPosition?.y ?? 0,
+        dashboardId,
+        pageId
+    } satisfies PaperNodeProps;
     const paperNode: Node<any> = {
         id: "paper",
         type: "paper",
         draggable: false,
         position: {
-            x: 0,
-            y: 0
+            x: paperPosition?.x ?? 0,
+            y: paperPosition?.y ?? 0
         },
-        data: {
-            width: paperSize.width,
-            height: paperSize.height,
-            dashboardId,
-            pageId
-        }
+        data: paperData
         // style: {
         //     width: 800,
         //     height: 1200,
@@ -51,26 +54,8 @@ function convertWidgetsToNodes(widgets: DashboardWidgetConfig[], paperSize: Widg
         parentId: "paper"
     }));
 
-    return [
-        // {
-        //     id: "2",
-        //     data: { label: "Node 2" },
-        //     position: {
-        //         x: 100,
-        //         y: -50
-        //     },
-        // },
-        // {
-        //     id: "3",
-        //     data: { label: "Node 3" },
-        //     position: {
-        //         x: 400,
-        //         y: -50
-        //     },
-        // },
-        paperNode, ...widgetNodes];
+    return [paperNode, ...widgetNodes];
 }
-
 
 export const DashboardPageView = function DashboardPageView({
                                                                 page,
@@ -102,10 +87,15 @@ export const DashboardPageView = function DashboardPageView({
     }, [dashboard.id, page.id])
 
     const paperSize = page.paper?.size ?? DEFAULT_PAPER_SIZE;
+    const paperPosition = page.paper?.position ?? {
+        x: 0,
+        y: 0
+    };
 
     const [nodes, setNodes, onNodesChange] = useNodesState(convertWidgetsToNodes(
         page.widgets,
         paperSize,
+        paperPosition,
         dashboard.id,
         page.id,
         onRemoveClick,
@@ -116,6 +106,7 @@ export const DashboardPageView = function DashboardPageView({
         setNodes(convertWidgetsToNodes(
             page.widgets,
             paperSize,
+            paperPosition,
             dashboard.id,
             page.id,
             onRemoveClick,
@@ -129,14 +120,11 @@ export const DashboardPageView = function DashboardPageView({
         dataTalk.onWidgetMove(dashboard.id, page.id, node.id, node.position);
     }, []);
 
+    console.log("paperPosition", paperPosition);
     return (
 
         <ReactFlow
             className={"relative w-full h-full bg-gray-50 dark:bg-gray-950 dark:bg-opacity-80"}
-            // translateExtent={[
-            //     [0, 0],
-            //     [900, 1200]
-            // ]}
             // selectionKeyCode={"Shift"}
             panOnScroll={true}
             // multiSelectionKeyCode={"Shift"}
@@ -149,8 +137,8 @@ export const DashboardPageView = function DashboardPageView({
             minZoom={1}
             maxZoom={1}
             defaultViewport={{
-                x: Math.max((containerSize.width - paperSize.width) / 2, 25),
-                y: 100,
+                x: Math.max((containerSize.width - paperSize.width) / 2, 25) - (paperPosition.x),
+                y: -paperPosition.y + 100,
                 zoom: 1
             }}
             preventScrolling={false}

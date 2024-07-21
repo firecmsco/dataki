@@ -8,6 +8,8 @@ export type PaperNodeProps = {
     pageId: string;
     width: number;
     height: number;
+    x: number;
+    y: number;
 }
 
 function PaperNode(props: NodeProps<PaperNodeProps>) {
@@ -41,9 +43,13 @@ function PaperNode(props: NodeProps<PaperNodeProps>) {
                                  width: params.width,
                                  height: params.height
                              };
+                             const updatedPosition = {
+                                 x: params.x,
+                                 y: params.y
+                             };
                              setSize(updatedSize);
                              dataTalk.updateDashboardPage(data.dashboardId, data.pageId, {
-                                 paper: { size: updatedSize }
+                                 paper: { size: updatedSize, position: updatedPosition }
                              });
                          }}
             />

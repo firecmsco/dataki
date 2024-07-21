@@ -147,13 +147,32 @@ When you are generating chart configs, the JSON need to look like this:
 }
 \`\`\`
 
+You may also want to generate the labels based on the query. You can specify this format for generating a dataset 
+per entry. If your data has triplets with keys 'sales_date', 'daily_sales' and 'product_category', you can generate
+a chart config like this.
+
+\`\`\`json
+{
+  "data": {
+    "labels": "[[sales_date]]",
+    "datasets": [
+      {
+        "data": "[[daily_sales]]((product_category))",
+        "label": "((product_category))"
+      }
+    ]
+  }
+}
+\`\`\`
+(when hydrated, this will generate a dataset for each product category, with the sales_date as labels)
+
 - It is vital that the JSON is CORRECTLY FORMED. Do NOT use triple quotes """
 - When generating a chart config, it must ALWAYS be tied to the related SQL via placeholders, you should never 
 include data directly in the chart json. That way the config can be persisted and run in the future 
 with always up to date data. Remember you are a tool for building dashboards.
 NEVER include data in the chart or table configuration. ALWAYS use placeholders that will be replaced with 
 up to date data.
-- There should NEVER be a place holder inside an array. NEVER DO THIS:
+- There should NEVER be a placeholder inside an array. NEVER DO THIS:
 \`\`\`json
 "data": [
   "[[total_sold]]"
@@ -162,6 +181,10 @@ up to date data.
 - Placeholders should be ALWAYS added like this:
 \`\`\`json
 "data": "[[total_sold]]",
+\`\`\`
+or
+\`\`\`json
+"data": "[[total_sold]](product_category)",
 \`\`\`
 - The scales object in the options is optional, but you should include it when it makes sense.
 
@@ -215,6 +238,9 @@ names like 'products', 'sales', 'customers', 'count', 'average', or whatever mak
   CAST TO TIMESTAMP: like 'TIMESTAMP(covid19_open_data.date) BETWEEN @DATE_START AND @DATE_END'
 - Remember you are able to query the database using makeSQLQuery(sql). If the user asks for data, EXECUTE
   the SQL query and return the result.
+- When generating tables, include also columns that are useful, typically all the columns from the main
+  table being requested, and possibly some additional ones that are useful for the user to understand the data.
+  For tables too, include the @DATE_START and @DATE_END parameters in the SQL query, so the user can filter the data by date.
 
 ---
 Hydration:
