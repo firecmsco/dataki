@@ -2,7 +2,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useDataTalk } from "../DataTalkProvider";
 import { DashboardsOverview } from "./home/DashboardsOverview";
-import { Button, ForumIcon, Separator, Typography } from "@firecms/ui";
+import { Button, ForumIcon, Separator, Typography, useInjectStyles } from "@firecms/ui";
 
 export function HomePage() {
     const navigate = useNavigate();

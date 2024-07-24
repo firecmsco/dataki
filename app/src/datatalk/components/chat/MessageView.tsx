@@ -73,8 +73,8 @@ export function MessageView({
             {/*    {message?.user === "SQL_STATEMENT" && <StorageIcon/>}*/}
             {/*</Avatar>*/}
 
-            <div className={cls(message?.user === "SQL_STATEMENT" ? "my-1" : "mt-3",
-                "flex-1 text-gray-700 dark:text-gray-200")}>
+            <div className={cls(message?.user === "SQL_STATEMENT" ? "my-1" : "my-3",
+                "flex-1 text-gray-700 dark:text-gray-200 self-center")}>
 
                 {message?.user === "USER" && <UserMessage text={message.text}/>}
                 {message?.user === "SQL_STATEMENT" && <SQLStatementMessage text={message.text}/>}
@@ -98,5 +98,5 @@ function UserMessage({ text }: { text: string }) {
 }
 
 function SQLStatementMessage({ text }: { text: string }) {
-    return <code className={"text-sm"}>{text.split("\n").map((line, index) => <p key={index}>{line}</p>)}</code>
+    return <code className={"text-sm self-center"}>{text.split("\n").map((line, index) => <p key={index}>{line}</p>)}</code>
 }

@@ -1,15 +1,5 @@
 import { DataRow } from "./sql";
 
-export type Item = LoadingItem | DryWidgetConfig | MarkdownTextItem;
-
-export type LoadingItem = {
-    type: "loading";
-}
-
-export type MarkdownTextItem = {
-    type: "text";
-    text: string;
-}
 
 export type DataSource = BigQueryDataSource;
 export type BigQueryDataSource = {
@@ -64,8 +54,7 @@ export type WidgetConfig = {
                 legend?: {
                     position: string;
                 }
-            },
-            scales?: {}
+            }
         }
     },
     table?: {

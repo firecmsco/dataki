@@ -97,13 +97,39 @@ export async function streamDataTalkCommand(firebaseAccessToken: string,
     });
 }
 
-// make simple POST http request to the API
-export function hydrateWidgetConfig(firebaseAccessToken: string,
-                                    apiEndpoint: string,
-                                    config: DryWidgetConfig,
-                                    params?: DashboardParams
+export function hydrateChartConfig(firebaseAccessToken: string,
+                                   apiEndpoint: string,
+                                   config: DryWidgetConfig,
+                                   params?: DashboardParams
 ): Promise<WidgetConfig> {
-    return fetch(apiEndpoint + "/datatalk/hydrate", {
+    return fetch(apiEndpoint + "/datatalk/hydrate_chart", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${firebaseAccessToken}`
+        },
+        body: JSON.stringify({
+            config,
+            params
+        })
+    })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(data => {
+                    throw new ApiError(data.message, data.code);
+                });
+            }
+            return response.json();
+        })
+        .then(data => data.data);
+}
+
+export function hydrateTableConfig(firebaseAccessToken: string,
+                                   apiEndpoint: string,
+                                   config: DryWidgetConfig,
+                                   params?: DashboardParams
+): Promise<WidgetConfig> {
+    return fetch(apiEndpoint + "/datatalk/hydrate_table", {
         method: "POST",
         headers: {
             "Content-Type": "application/json",

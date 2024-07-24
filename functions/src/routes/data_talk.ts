@@ -3,7 +3,7 @@ import { firebaseAuthorization } from "../middlewares";
 import DataTalkException from "../types/exceptions";
 import { DashboardParams, DataSource, DryWidgetConfig } from "../types/dashboards";
 import { runSQLQuery } from "../services/bigquery";
-import { hydrateWidgetConfig } from "../services/hydration";
+import { hydrateChartConfig, hydrateTableConfig } from "../services/hydration";
 import { generateSamplePrompts, makeGeminiRequest } from "../services/gemini";
 import { getStoredServiceAccount } from "../services/projects";
 import { firestore } from "../firebase";
@@ -14,7 +14,8 @@ export const dataTalkRouter = express.Router();
 
 dataTalkRouter.get("/health", check());
 dataTalkRouter.post("/command", firebaseAuthorization(), processUserCommandRoute);
-dataTalkRouter.post("/hydrate", firebaseAuthorization(), hydrateChartOrTableRoute);
+dataTalkRouter.post("/hydrate_chart", firebaseAuthorization(), hydrateChartRoute);
+dataTalkRouter.post("/hydrate_table", firebaseAuthorization(), hydrateTableRoute);
 dataTalkRouter.post("/prompt_suggestions", firebaseAuthorization(), samplePromptsRoute);
 
 function getProjectIdFromSources(sources: DataSource[]) {
@@ -87,7 +88,7 @@ async function processUserCommandRoute(request: Request, response: Response) {
     response.end();
 }
 
-async function hydrateChartOrTableRoute(request: Request, response: Response) {
+async function hydrateChartRoute(request: Request, response: Response) {
     if (!request.body.config) {
         throw new DataTalkException(400, "Missing config param in the body", "Invalid request");
     }
@@ -106,7 +107,29 @@ async function hydrateChartOrTableRoute(request: Request, response: Response) {
     const credentials = await getStoredServiceAccount(firestore, projectId);
 
     const data = await runSQLQuery(config.sql, credentials, params);
-    const res = hydrateWidgetConfig(config, data);
+    const res = hydrateChartConfig(config, data);
+
+    response.json({ data: res });
+}
+
+async function hydrateTableRoute(request: Request, response: Response) {
+    if (!request.body.config) {
+        throw new DataTalkException(400, "Missing config param in the body", "Invalid request");
+    }
+
+    const config: DryWidgetConfig = request.body.config;
+
+    if (!config.sql) {
+        throw new DataTalkException(400, "Missing sql in the config", "Invalid request");
+    }
+
+    const params: DashboardParams | undefined = request.body.params;
+
+    const projectId = config.dataSource.projectId;
+    const credentials = await getStoredServiceAccount(firestore, projectId);
+
+    const data = await runSQLQuery(config.sql, credentials, params);
+    const res = hydrateTableConfig(config, data);
 
     response.json({ data: res });
 }

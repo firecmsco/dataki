@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import equal from "react-fast-compare"
 
-import { hydrateWidgetConfig } from "../../api";
+import { hydrateChartConfig, hydrateTableConfig } from "../../api";
 import { useDataTalk } from "../../DataTalkProvider";
 import { DashboardParams, DashboardWidgetConfig, DryWidgetConfig, WidgetConfig } from "../../types";
 import { DataTable } from "./DataTable";
@@ -23,6 +23,7 @@ import { ConfigViewDialog } from "./ConfigViewDialog";
 import { AddToDashboardDialog } from "../dashboards/AddToDashboardDialog";
 import { toPng } from "html-to-image";
 import { downloadImage } from "../../utils/downloadImage";
+import { ExecutionErrorView } from "./ExecutionErrorView";
 
 export function DryWidgetConfigView({
                                         dryConfig,
@@ -47,11 +48,12 @@ export function DryWidgetConfigView({
 
     const { mode } = useModeController();
 
+    const [configDialogOpen, setConfigDialogOpen] = React.useState(false);
+    const [addToDashboardDialogOpen, setAddToDashboardDialogOpen] = React.useState(false);
+
     const [config, setConfig] = useState<WidgetConfig | null>(null);
     const [hydrationInProgress, setHydrationInProgress] = useState<boolean>(false);
     const [hydrationError, setHydrationError] = useState<Error | null>(null);
-    const [configDialogOpen, setConfigDialogOpen] = React.useState(false);
-    const [addToDashboardDialogOpen, setAddToDashboardDialogOpen] = React.useState(false);
 
     const viewRef = React.useRef<HTMLDivElement>(null);
 
@@ -93,12 +95,21 @@ export function DryWidgetConfigView({
         setHydrationInProgress(true);
         setHydrationError(null);
         console.log("Hydrating config", newDryConfig);
-        hydrateWidgetConfig(firebaseToken, apiEndpoint, newDryConfig, params)
-            .then((config) => {
-                setConfig(mergeDeep(newDryConfig, config));
-            })
-            .catch(setHydrationError)
-            .finally(() => setHydrationInProgress(false));
+        if (newDryConfig.type === "table") {
+            hydrateTableConfig(firebaseToken, apiEndpoint, newDryConfig, params)
+                .then((config) => {
+                    setConfig(mergeDeep(newDryConfig, config));
+                })
+                .catch(setHydrationError)
+                .finally(() => setHydrationInProgress(false));
+        } else if (newDryConfig.type === "chart") {
+            hydrateChartConfig(firebaseToken, apiEndpoint, newDryConfig, params)
+                .then((config) => {
+                    setConfig(mergeDeep(newDryConfig, config));
+                })
+                .catch(setHydrationError)
+                .finally(() => setHydrationInProgress(false));
+        }
     };
 
     const downloadFile = () => {
@@ -194,18 +205,7 @@ export function DryWidgetConfigView({
     </>;
 }
 
-function ExecutionErrorView(props: { executionError: Error }) {
-    const message = props.executionError.message;
-    const urlRegex = /https?:\/\/[^\s]+/g;
-    const htmlContent = message.replace(urlRegex, (url) => {
-        // For each URL found, replace it with an HTML <a> tag
-        return `<a href="${url}" target="_blank" class="underline">LINK</a><br/>`;
-    });
 
-    return <div className={"w-full text-sm bg-red-100 dark:bg-red-800 p-4 rounded-lg"}>
-        <code className={"text-red-700 dark:text-red-300 break-all"} dangerouslySetInnerHTML={{ __html: htmlContent }}/>
-    </div>;
-}
 
 function getConfigWithoutSize(config: DryWidgetConfig | DashboardWidgetConfig): DryWidgetConfig {
     const {

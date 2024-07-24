@@ -2,7 +2,7 @@ import { DataSet, DryDataset, DryWidgetConfig, WidgetConfig } from "../types/das
 import { DataRow } from "../types/sql";
 import * as util from "util";
 
-export function hydrateWidgetConfig(config: DryWidgetConfig, data: DataRow[]): WidgetConfig {
+export function hydrateTableConfig(config: DryWidgetConfig, data: DataRow[]): WidgetConfig {
 
     console.log("Hydrating widget config", util.inspect(config, false, null, true /* enable colors */) + "\n\n", data);
 
@@ -35,9 +35,6 @@ export const hydrateChartConfig = (config: DryWidgetConfig, data: DataRow[]): Wi
 
     }).flat();
 
-    console.log("datasets", datasets)
-
-    console.log("labels", dedupedLabels);
     return {
         title: config.title,
         description: config.description,
