@@ -3,12 +3,13 @@ import { firebaseAuthorization } from "../middlewares";
 import { getBigQueryDatasets } from "../services/bigquery";
 import { getUserAccessToken, listUserProjects } from "../services/users";
 import { firestore } from "../firebase";
-import { createServiceAccountLink } from "../services/projects";
+import { createServiceAccountLink, deleteServiceAccountLink } from "../services/projects";
 
 export const projectsRouter = express.Router();
 
 projectsRouter.get("/:projectId/datasets", firebaseAuthorization(), getDatasetsRoute);
 projectsRouter.post("/:projectId/service_accounts", firebaseAuthorization(), createServiceAccountRoute);
+projectsRouter.delete("/:projectId/service_accounts", firebaseAuthorization(), deleteServiceAccountRoute);
 projectsRouter.get("/", firebaseAuthorization(), getUserGCPProjectsRoute);
 
 async function getDatasetsRoute(request: Request, response: Response) {
@@ -60,6 +61,22 @@ async function createServiceAccountRoute(request: Request, response: Response) {
         throw new Error("Admin token not found");
     }
     const data = await createServiceAccountLink(firestore, accessToken, projectId);
+    response.json({ data: Boolean(data) });
+}
+
+
+async function deleteServiceAccountRoute(request: Request, response: Response) {
+    const projectId: string = request.params.projectId;
+    const uid = request.firebaseTokenInfo?.uid;
+    if (!uid) {
+        throw new Error("User not found");
+    }
+    if (!projectId) {
+        throw new Error("Project ID not found");
+    }
+    // TODO: check user has permission over this project
+    const data = await deleteServiceAccountLink(firestore, projectId);
+
     response.json({ data: Boolean(data) });
 }
 

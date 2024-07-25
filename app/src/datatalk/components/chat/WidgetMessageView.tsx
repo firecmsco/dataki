@@ -10,15 +10,15 @@ export function WidgetMessageView({
                                       rawDryConfig,
                                       maxWidth,
                                       loading,
+                                      projectId,
                                       onContentModified,
-                                      dataSources,
                                       params
                                   }: {
     rawDryConfig?: string,
     loading?: boolean,
     maxWidth?: number,
     onContentModified?: (rawDryConfig: string) => void,
-    dataSources: DataSource[],
+    projectId: string,
     params?: DashboardParams,
 }) {
 
@@ -29,9 +29,9 @@ export function WidgetMessageView({
             try {
                 console.log("Parsing dry config", rawDryConfig);
                 setParsingError(null);
-                const newDryConfig = JSON5.parse(rawDryConfig);
-                if (!newDryConfig.dataSources && dataSources.length > 0) {
-                    newDryConfig.dataSources = dataSources;
+                const newDryConfig = JSON5.parse(rawDryConfig) as DryWidgetConfig;
+                if (!newDryConfig.projectId && projectId) {
+                    newDryConfig.projectId = projectId;
                     onChange(newDryConfig);
                 }
                 setDryConfig(newDryConfig);
@@ -52,7 +52,7 @@ export function WidgetMessageView({
     }
 
     return (
-        <div className={"flex flex-col gap-2 mb-6"}
+        <div className={"flex flex-col gap-2 mb-4"}
              style={{
                  maxWidth: widgetMaxWidth,
                  height: widgetHeight + 92

@@ -16,7 +16,7 @@ export type DryDataset = {
 
 export type DryWidgetConfig = {
     sql: string;
-    dataSource: DataSource;
+    projectId: string;
     type: "chart" | "table";
     title: string;
     description: string;

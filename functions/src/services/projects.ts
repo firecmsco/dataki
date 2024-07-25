@@ -26,6 +26,12 @@ export async function createServiceAccountLink(firestore: Firestore, accessToken
 
 }
 
+export async function deleteServiceAccountLink(firestore: Firestore, projectId: string,) {
+    await firestore.collection("projects").doc(projectId).set({
+        serviceAccount: null
+    });
+}
+
 export async function getStoredServiceAccount(firestore: Firestore, projectId: string): Promise<ServiceAccountKey | undefined> {
     const project = await firestore.collection("projects").doc(projectId).get();
     if (!project.exists) {

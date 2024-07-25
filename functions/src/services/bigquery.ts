@@ -14,14 +14,15 @@ export async function runSQLQuery(sql: string, credentials?: ServiceAccountKey, 
             credentials
         });
 
-        // console.log("bigquery", util.inspect(bigquery, false, null, true));
-        // console.log(bigquery.authClient);
-        // console.log(bigquery.makeAuthenticatedRequest.getCredentials((err, cred) => {
-        //     console.log("INNER: getCredentials", {
-        //         err,
-        //         cred
-        //     });
-        // }));
+        console.log("credentials", credentials);
+        console.log("bigquery", util.inspect(bigquery, false, null, true));
+        console.log(bigquery.authClient);
+        console.log(bigquery.makeAuthenticatedRequest.getCredentials((err, cred) => {
+            console.log("INNER: getCredentials", {
+                err,
+                cred
+            });
+        }));
         console.log("projectId", await bigquery.getProjectId());
 
         const cleanSQL = sql

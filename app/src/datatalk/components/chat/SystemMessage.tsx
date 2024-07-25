@@ -19,28 +19,28 @@ import {
     Tooltip,
     Typography
 } from "@firecms/ui";
-import { DashboardParams, DataSource, FeedbackSlug } from "../../types";
+import { DashboardParams, FeedbackSlug } from "../../types";
 import { WidgetMessageView } from "./WidgetMessageView";
 
 export function SystemMessage({
                                   text,
                                   loading,
                                   containerWidth,
-                                  dataSources,
                                   onRegenerate,
                                   canRegenerate,
                                   onFeedback,
                                   onUpdatedMessage,
-                                  params
+                                  params,
+                                  projectId
                               }: {
     text?: string,
     loading?: boolean,
     containerWidth?: number,
-    dataSources: DataSource[],
     onRegenerate?: () => void,
     canRegenerate?: boolean,
     onFeedback?: (reason?: FeedbackSlug, feedbackMessage?: string) => void,
     onUpdatedMessage?: (message: string) => void,
+    projectId: string,
     params?: DashboardParams
 }) {
 
@@ -70,7 +70,7 @@ export function SystemMessage({
         {parsedElements && parsedElements.map((element, index) => {
             if (element.type === "html") {
                 return <div
-                    className={"max-w-full prose dark:prose-invert prose-headings:font-title text-base text-gray-700 dark:text-gray-200 mb-2"}
+                    className={"max-w-full prose dark:prose-invert prose-headings:font-title text-base text-gray-700 dark:text-gray-200 mb-3"}
                     dangerouslySetInnerHTML={{ __html: element.content }}
                     key={index}/>;
             } else if (element.type === "widget") {
@@ -78,7 +78,7 @@ export function SystemMessage({
                                           loading={loading}
                                           rawDryConfig={element.content}
                                           maxWidth={containerWidth ? containerWidth - 90 : undefined}
-                                          dataSources={dataSources}
+                                          projectId={projectId}
                                           params={params}
                                           onContentModified={(updatedContent) => {
                                               console.log("Updated content", updatedContent);
@@ -103,7 +103,7 @@ export function SystemMessage({
 
         {loading && <Skeleton className={"max-w-4xl mt-1 mb-4"}/>}
 
-        <div className={"mt-2 flex flex-row gap-1"}>
+        <div className={"mt-1 flex flex-row gap-1"}>
             {canRegenerate && <Tooltip title={"Regenerate"}>
                 <IconButton size={"smallest"} disabled={loading} onClick={onRegenerate}>
                     <LoopIcon size={"smallest"}/>

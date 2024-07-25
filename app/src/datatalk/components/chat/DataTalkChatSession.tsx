@@ -16,6 +16,18 @@ const DEMO_DATA_SOURCES: DataSource[] = [{
     datasetId: "thelook_ecommerce"
 }];
 
+function getInitialProject(session: Session, uid: string) {
+    if (session.projectId)
+        return session.projectId;
+
+    const savedLocally = loadLastProjectLocally(uid);
+    if (savedLocally) {
+        return savedLocally;
+    }
+
+    return DEMO_DATA_SOURCES[0].projectId;
+}
+
 function getInitialDataSources(session: Session, uid: string) {
     if (session.dataSources && session.dataSources.length > 0) {
         return session.dataSources;
@@ -32,13 +44,15 @@ export function DataTalkChatSession({
                                         initialPrompt,
                                         onAnalyticsEvent,
                                         onMessagesChange,
-                                        onDataSourcesChange
+                                        onDataSourcesChange,
+                                        onProjectIdChange
                                     }: {
     session: Session,
     initialPrompt?: string,
     onAnalyticsEvent?: (event: string, params?: any) => void,
     onMessagesChange?: (messages: ChatMessage[]) => void,
-    onDataSourcesChange?: (dataSources: DataSource[]) => void
+    onDataSourcesChange?: (dataSources: DataSource[]) => void,
+    onProjectIdChange?: (projectId: string) => void
 }) {
 
     const authController = useAuthController();
@@ -49,11 +63,13 @@ export function DataTalkChatSession({
 
     const snackbar = useSnackbarController();
 
+    const [projectId, setProjectId] = useState<string | undefined>(getInitialProject(session, uid));
+    // const [projectId, setProjectId] = useState<string | undefined>("bigquery-public-data");
+
     const [samplePrompts, setSamplePrompts] = useState<string[]>([]);
     const [samplePromptsLoading, setSamplePromptsLoading] = useState<boolean>(false);
 
-    const initialDataSources = getInitialDataSources(session, uid);
-    const [dataSources, setDataSources] = useState<DataSource[]>(initialDataSources);
+    const [dataSources, setDataSources] = useState<DataSource[]>(getInitialDataSources(session, uid));
 
     const [textInput, setTextInput] = useState<string>("");
 
@@ -90,6 +106,12 @@ export function DataTalkChatSession({
         }
     }, [dataSources, messages]);
 
+    const updateProjectId = (projectId: string) => {
+        setProjectId(projectId);
+        onProjectIdChange?.(projectId);
+        saveLastProjectLocally(uid, projectId);
+    }
+
     const updateDataSources = (dataSources: DataSource[]) => {
         setDataSources(dataSources);
         onDataSourcesChange?.(dataSources);
@@ -106,7 +128,7 @@ export function DataTalkChatSession({
     }, []);
 
     useEffect(() => {
-        if (initialPrompt && messages.length === 0) {
+        if (projectId && initialPrompt && messages.length === 0) {
             submitMessage(initialPrompt);
         }
     }, []);
@@ -169,6 +191,7 @@ export function DataTalkChatSession({
 
     const submitMessage = async (messageText: string, baseMessages: ChatMessage[] = messages) => {
 
+        if (!projectId) return;
         if (!messageText) return;
         if (messageLoading) return;
 
@@ -217,6 +240,7 @@ export function DataTalkChatSession({
             messageText,
             apiEndpoint,
             session.id,
+            projectId,
             dataSources,
             baseMessages,
             (newDelta) => {
@@ -321,7 +345,6 @@ export function DataTalkChatSession({
 
         const newMessages = [...messages];
         newMessages.pop();
-        console.log("newMessages", newMessages);
 
         if (message) {
             submitMessage(message.text, newMessages);
@@ -382,7 +405,7 @@ export function DataTalkChatSession({
                                 onPromptSuggestionClick={(prompt) => submitMessage(prompt)}/>
                         </div>}
 
-                    {messages.map((message, index) => {
+                    {projectId && messages.map((message, index) => {
                         return <MessageView key={message.date.toISOString() + index}
                                             onRemove={() => {
                                                 const newMessages = [...messages];
@@ -397,7 +420,7 @@ export function DataTalkChatSession({
                                             onUpdatedMessage={(message) => {
                                                 updateMessage(message, index);
                                             }}
-                                            dataSources={dataSources}
+                                            projectId={projectId}
                                             message={message}
                                             canRegenerate={index === messages.length - 1 && message.user === "SYSTEM"}
                                             onRegenerate={() => onRegenerate(message, index)}/>;
@@ -419,18 +442,21 @@ export function DataTalkChatSession({
 
                 <div className={"container mx-auto px-4 md:px-6 flex flex-col gap-2"}>
                     <div className={"flex flex-row gap-4"}>
-                        <DataSourcesSelection dataSources={dataSources}
+                        <DataSourcesSelection projectId={projectId}
+                                              setProjectId={updateProjectId}
+                                              projectDisabled={messages.length > 0}
+                                              dataSources={dataSources}
                                               setDataSources={updateDataSources}/>
 
-                        {messages.length > 0 && <PromptSuggestionsSmall loading={samplePromptsLoading}
-                                                                        suggestions={samplePrompts}
-                                                                        onPromptSuggestionClick={(prompt) => submitMessage(prompt)}/>}
+                        {projectId && messages.length > 0 && <PromptSuggestionsSmall loading={samplePromptsLoading}
+                                                                                     suggestions={samplePrompts}
+                                                                                     onPromptSuggestionClick={(prompt) => submitMessage(prompt)}/>}
                     </div>
                     <form
                         noValidate
                         onSubmit={(e: React.FormEvent) => {
                             e.preventDefault();
-                            if (!messageLoading && textInput)
+                            if (!messageLoading && textInput && projectId)
                                 submitMessage(textInput);
                         }}
                         autoComplete="off"
@@ -444,7 +470,7 @@ export function DataTalkChatSession({
                             placeholder="Type your message..."
                         />
                         <Button className={"rounded-3xl absolute right-0 top-0 m-1.5"} variant="text" type={"submit"}
-                                disabled={!textInput || messageLoading}>
+                                disabled={!textInput || messageLoading || !projectId}>
                             <SendIcon color={"primary"}/>
                         </Button>
                     </form>
@@ -464,4 +490,12 @@ function loadDataSourceLocally(uid: string): DataSource[] | undefined {
         return undefined;
     }
     return JSON.parse(data);
+}
+
+function saveLastProjectLocally(uid: string, projectId: string) {
+    localStorage.setItem("projectId:" + uid, projectId);
+}
+
+function loadLastProjectLocally(uid: string): string | null {
+    return localStorage.getItem("projectId:" + uid);
 }

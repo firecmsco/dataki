@@ -3,6 +3,7 @@ export type Session = {
     name?: string;
     created_at: Date;
     updated_at: Date;
+    projectId?: string;
     dataSources: DataSource[];
     messages: ChatMessage[];
 };
@@ -54,7 +55,7 @@ export type BigQueryDataSource = {
 
 export type DryWidgetConfig = {
     title: string;
-    source: DataSource;
+    projectId: string;
     description: string;
     sql: string;
     type: "chart" | "table";
@@ -65,7 +66,7 @@ export type DryWidgetConfig = {
 
 export type WidgetConfig = {
     title: string;
-    source: DataSource;
+    projectId: string;
     description: string;
     sql: string;
     type: "chart" | "table";
@@ -121,11 +122,13 @@ export type Dashboard = {
     title?: string;
     description?: string;
     pages: DashboardPage[];
+    users?: string[];
     owner?: string;
     permissions?: {
         uid: string,
         read: boolean;
         edit: boolean;
+        delete: boolean;
     }[],
     created_at: Date,
     updated_at: Date,

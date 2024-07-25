@@ -22,10 +22,8 @@ import {
     WidgetSize
 } from "./types";
 import { DEFAULT_WIDGET_SIZE } from "./utils/widgets";
-import { randomString } from "@firecms/core";
+import { randomString, User } from "@firecms/core";
 import equal from "react-fast-compare"
-
-import { OAuthCredential } from "@firebase/auth";
 
 export type DataTalkConfig = {
     loading: boolean;
@@ -58,6 +56,7 @@ export interface DataTalkConfigParams {
     userSessionsPath?: string;
     getAuthToken: () => Promise<string>;
     apiEndpoint: string;
+    user: User | null
 }
 
 const DataTalkConfigContext = React.createContext<DataTalkConfig>({} as any);
@@ -68,7 +67,8 @@ export function useBuildDataTalkConfig({
                                            userSessionsPath,
                                            dashboardsPath,
                                            getAuthToken,
-                                           apiEndpoint
+                                           apiEndpoint,
+                                           user
                                        }: DataTalkConfigParams): DataTalkConfig {
 
     const [sessions, setSessions] = useState<Session[]>([]);
@@ -144,17 +144,20 @@ export function useBuildDataTalkConfig({
     }, [firebaseApp, dashboardsPath]);
 
     const createDashboard = useCallback(async (): Promise<Dashboard> => {
-        if (!firebaseApp) throw Error("useBuildDataTalkConfig Firebase not initialised");
+        if (user === null)
+            throw Error("User not found");
+        if (!firebaseApp)
+            throw Error("useBuildDataTalkConfig Firebase not initialised");
         const firestore = getFirestore(firebaseApp);
         if (!firestore || !dashboardsPath) throw Error("useFirestoreConfigurationPersistence Firestore not initialised");
         const documentReference = doc(collection(firestore, dashboardsPath));
         const id = documentReference.id;
-        const data = initializeDashboard(id);
+        const data = initializeDashboard(id, user.uid);
         await setDoc(documentReference, data);
         const newDashboard = { id, ...data };
         updateDashboards([...dashboardsRef.current, newDashboard]);
         return newDashboard;
-    }, [firebaseApp, dashboardsPath]);
+    }, [firebaseApp, dashboardsPath, user]);
 
     const deleteDashboard = useCallback(async (id: string) => {
         if (!firebaseApp) throw Error("useBuildDataTalkConfig Firebase not initialised");
@@ -259,6 +262,7 @@ export function useBuildDataTalkConfig({
 
     useEffect(() => {
         if (!enabled) return;
+        if (!user?.uid) return;
         if (!firebaseApp) throw Error("useBuildDataTalkConfig Firebase not initialised");
         const firestore = getFirestore(firebaseApp);
         if (!firestore || !dashboardsPath) return;
@@ -267,6 +271,7 @@ export function useBuildDataTalkConfig({
             query(
                 collection(firestore, dashboardsPath).withConverter(timestampToDateConverter),
                 where("deleted", "==", false),
+                where("users", "array-contains", user.uid),
                 orderBy("created_at", "desc")
             ),
             {
@@ -285,7 +290,7 @@ export function useBuildDataTalkConfig({
                 }
             }
         );
-    }, [enabled, firebaseApp, dashboardsPath]);
+    }, [enabled, firebaseApp, dashboardsPath, user?.uid]);
 
     const updateDashboard = useCallback((dashboardId: string, dashboardData: Partial<Dashboard>) => {
         console.log("updateDashboard", dashboardId, dashboardData)
@@ -381,10 +386,18 @@ function convertTimestamps(data: any): any {
     return data; // Return the data if it is neither a Timestamp nor a complex object/array
 }
 
-function initializeDashboard(dashboardId: string): Omit<Dashboard, "id"> {
+function initializeDashboard(dashboardId: string, uid: string): Omit<Dashboard, "id"> {
     return {
         created_at: new Date(),
         updated_at: new Date(),
+        users: [uid],
+        owner: uid,
+        permissions: [{
+            uid,
+            read: true,
+            edit: true,
+            delete: true
+        }],
         pages: [{
             id: randomString(20),
             widgets: []

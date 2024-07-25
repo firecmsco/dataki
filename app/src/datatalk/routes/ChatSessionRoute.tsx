@@ -90,12 +90,22 @@ function ChatRouteInner({
         dataTalkConfig.saveSession(newSession);
     }
 
+    const onProjectIdChange = (projectId: string) => {
+        const newSession = {
+            ...usedSession,
+            projectId
+        };
+        setSession(newSession);
+        dataTalkConfig.saveSession(newSession);
+    }
+
     return (
         <DataTalkChatSession
             onAnalyticsEvent={onAnalyticsEvent}
             session={usedSession}
             initialPrompt={initialPrompt ?? undefined}
             onDataSourcesChange={onDataSourcesChange}
+            onProjectIdChange={onProjectIdChange}
             onMessagesChange={onMessagesChange}
         />
     )

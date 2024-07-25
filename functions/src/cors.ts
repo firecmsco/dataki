@@ -2,13 +2,13 @@ import cors from "cors";
 
 const whitelist = [
     "datatalk-443fb.web.app",
+    /https:\/\/datatalk-443fb.web.app(:\\d+)?/,
     /http:\/\/localhost(:\d+)?/,
     /http:\/\/127\.0\.0\.1(:\d+)?/
 ];
 
 const corsOptions = {
     origin: whitelist,
-    exposedHeaders: ["x-de-api-key", "x-de-version"],
     optionsSuccessStatus: 200,
     credentials: true,
     preflightContinue: true

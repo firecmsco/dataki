@@ -20,6 +20,7 @@ export function ConfigViewDialog({
 
     const [title, setTitle] = React.useState<string>(dryConfigProp.title);
     const [description, setDescription] = React.useState<string>(dryConfigProp.description);
+    const [projectId, setProjectId] = React.useState<string>(dryConfigProp.projectId);
     const [sqlCode, setSqlCode] = React.useState<string>(dryConfigProp.sql);
     const initialChartConfig: string = useMemo(() => {
         if (dryConfigProp.type === "chart")
@@ -76,6 +77,9 @@ export function ConfigViewDialog({
     const onDescriptionChange = (event: React.ChangeEvent<any>) => {
         setDescription(event.target.value);
     }
+    const onProjectIdChange = (event: React.ChangeEvent<any>) => {
+        setProjectId(event.target.value);
+    }
 
     return <Sheet
         side={"bottom"}
@@ -96,10 +100,23 @@ export function ConfigViewDialog({
                            onChange={onTitleChange}
                            className={"text-lg font-semibold"}
                            placeholder={"Title of the widget"}/>
-                <TextField value={description}
-                           size={"small"}
-                           onChange={onDescriptionChange}
-                           placeholder={"Description"}/>
+
+                <div className={"flex flex-row gap-2"}>
+
+                    <TextField value={projectId}
+                               size={"small"}
+                               className={"lg:min-w-80"}
+                               label={"Project ID"}
+                               onChange={onProjectIdChange}
+                               placeholder={"Project ID"}/>
+                    <TextField value={description}
+                               className={"flex-grow"}
+                               size={"small"}
+                               label={"Description"}
+                               onChange={onDescriptionChange}
+                               placeholder={"Description"}/>
+                </div>
+
                 <div className={"h-full flex-grow flex flex-col w-full gap-4"}>
 
                     <div className={"flex flex-col flex-grow mt-4"}>

@@ -43,7 +43,7 @@ async function processUserCommandRoute(request: Request, response: Response) {
         throw new DataTalkException(400, "You must specify data sources in the body", "Invalid request");
     }
 
-    const projectId = getProjectIdFromSources(sources);
+    const projectId = request.body.projectId;
     const credentials = await getStoredServiceAccount(firestore, projectId);
 
     const dataContexts = await Promise.all(sources.map(async ({
@@ -102,7 +102,7 @@ async function hydrateChartRoute(request: Request, response: Response) {
     const params: DashboardParams | undefined = request.body.params;
 
     console.log("Hydrating chart or table", config);
-    const projectId = config.dataSource.projectId;
+    const projectId = config.projectId;
     console.log("Got project id", projectId);
     const credentials = await getStoredServiceAccount(firestore, projectId);
 
@@ -125,7 +125,7 @@ async function hydrateTableRoute(request: Request, response: Response) {
 
     const params: DashboardParams | undefined = request.body.params;
 
-    const projectId = config.dataSource.projectId;
+    const projectId = config.projectId;
     const credentials = await getStoredServiceAccount(firestore, projectId);
 
     const data = await runSQLQuery(config.sql, credentials, params);

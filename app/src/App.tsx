@@ -99,7 +99,8 @@ export function App() {
         userSessionsPath: `/users/${authController.user?.uid}/datatalk_sessions`,
         dashboardsPath: `/dashboards`,
         getAuthToken: authController.getAuthToken,
-        apiEndpoint: API_ENDPOINT
+        apiEndpoint: API_ENDPOINT,
+        user: authController.user
     });
 
     /**

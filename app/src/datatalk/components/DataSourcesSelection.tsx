@@ -14,6 +14,7 @@ import {
     InfoIcon,
     Label,
     LinkIcon,
+    LinkOffIcon,
     LoadingButton,
     Select,
     SelectItem,
@@ -26,11 +27,20 @@ import {
 import { DataSource, GCPProject } from "../types";
 import React, { useEffect } from "react";
 import { useDataTalk } from "../DataTalkProvider";
-import { createServiceAccountLink, fetchDataSourcesForProject, fetchGCPProjects } from "../api";
+import {
+    createServiceAccountLink,
+    deleteServiceAccountLink,
+    fetchDataSourcesForProject,
+    fetchGCPProjects
+} from "../api";
+import { useSnackbarController } from "@firecms/core";
 
 const PREVIEW_DATASOURCES_COUNT = 3;
 
 export type DataSourceSelectionProps = {
+    projectId?: string;
+    setProjectId: (projectId: string) => void;
+    projectDisabled?: boolean;
     dataSources: DataSource[];
     setDataSources: (dataSources: DataSource[]) => void;
     className?: string;
@@ -56,10 +66,15 @@ function renderSelectProject(project: GCPProject) {
 }
 
 export function DataSourcesSelection({
+                                         projectId,
+                                         setProjectId,
+                                         projectDisabled,
                                          dataSources,
                                          setDataSources,
                                          className
                                      }: DataSourceSelectionProps) {
+
+    const snackbar = useSnackbarController()
 
     const [dataSourcesInternal, setDataSourcesInternal] = React.useState<DataSource[]>(dataSources);
     useEffect(() => {
@@ -94,12 +109,11 @@ export function DataSourcesSelection({
             .finally(() => setLoadingProjects(false));
     }
 
-    const [selectedProjectId, setSelectedProjectId] = React.useState<string | undefined>(undefined);
     const [projectDataSources, setProjectDataSources] = React.useState<DataSource[]>([]);
     const [loadingDataSources, setLoadingDataSources] = React.useState(false);
     const [projectDataSourcesError, setProjectDataSourcesError] = React.useState<string | undefined>(undefined);
 
-    const selectedProject = projects.find((p) => p.projectId === selectedProjectId);
+    const selectedProject = projects.find((p) => p.projectId === projectId);
 
     useEffect(() => {
         loadProjects();
@@ -120,6 +134,35 @@ export function DataSourcesSelection({
         projectId: "",
         datasetId: ""
     });
+
+    const [unlinkLoading, setUnlinkLoading] = React.useState(false);
+
+    async function unlinkProject(projectId: string) {
+        const token = await dataTalk.getAuthToken();
+        setUnlinkLoading(true);
+        deleteServiceAccountLink(token, dataTalk.apiEndpoint, projectId)
+            .then(res => {
+                if (res) {
+                    snackbar.open({
+                        message: "Project unlinked successfully",
+                        type: "success"
+                    });
+                    setProjects((prev) => {
+                        const newProjects = [...prev];
+                        const projectIndex = newProjects.findIndex((p) => p.projectId === projectId);
+                        if (projectIndex === -1) {
+                            return newProjects;
+                        }
+                        newProjects[projectIndex] = {
+                            ...newProjects[projectIndex],
+                            linked: false
+                        };
+                        return newProjects;
+                    });
+                }
+            })
+            .finally(() => setUnlinkLoading(false));
+    }
 
     return (
         <>
@@ -155,36 +198,26 @@ export function DataSourcesSelection({
                     onOpenAutoFocus={(e) => {
                         e.preventDefault();
                     }}>
-                <DialogContent className={"flex flex-col lg:flex-row gap-12 my-12"}>
+                <DialogContent className={"flex flex-col lg:flex-row gap-12 my-8 mx-6"}>
                     <div className={"flex flex-col gap-4 flex-grow lg:w-1/2"}>
                         <Typography variant={"subtitle2"}>
-                            Your datasets
+                            Session project
                         </Typography>
-                        <Typography variant={"body2"}>
-                            Select your BigQuery data sources from your Google Cloud Platform projects
+                        <Typography variant={"caption"}>
+                            All BigQuery queries will be executed in the selected project
                         </Typography>
-                        {projects.length === 0 && !loadingProjects && (
-                            <Typography variant={"caption"}>
-                                No projects available
-                            </Typography>
-                        )}
-                        {projectError && (
-                            <Typography variant={"caption"} color={"error"}>
-                                {projectError}
-                            </Typography>
-                        )}
-
                         <Select placeholder={"Select a project"}
-                                value={selectedProjectId ?? ""}
+                                value={projectId ?? ""}
+                                disabled={projectDisabled}
                                 renderValue={(value) => {
                                     if (!value) {
                                         return "Select a project";
                                     }
                                     const project = projects.find((p) => p.projectId === value);
-                                    return project ? renderSelectProject(project) : "Unknown project";
+                                    return project ? renderSelectProject(project) : value;
                                 }}
                                 onValueChange={(value) => {
-                                    setSelectedProjectId(value);
+                                    setProjectId(value);
                                     loadDataSourcesFor(value);
                                 }}>
                             {projects.map((project) => (
@@ -216,22 +249,85 @@ export function DataSourcesSelection({
                                                            };
                                                            return newProjects;
                                                        });
-                                                   }}
-                                />
+                                                   }}/>
                             </>
+                        )}
+
+                        <Separator orientation={"horizontal"}/>
+
+                        <Typography variant={"subtitle2"}>
+                            Selected data sources
+                        </Typography>
+
+                        <Typography>
+                            The data sets will be used to query data from BigQuery. You can select
+                            multiple datasets.
+                        </Typography>
+
+                        <div className={"flex flex-col gap-2"}>
+                            {dataSourcesInternal.map((dataSource, index) => (
+                                <Label
+                                    key={dataSource.datasetId}
+                                    className="w-full border cursor-pointer rounded-md p-2 px-3 flex items-center gap-2 [&:has(:checked)]:bg-gray-100 dark:[&:has(:checked)]:bg-gray-800 font-normal"
+                                >
+                                    <StorageIcon size={"small"} color={"primary"}/>
+                                    <div className={"inline-block flex-grow"}>
+                                        <span>{dataSource.projectId + "."}</span>
+                                        <span className={"font-semibold"}>{dataSource.datasetId}</span>
+                                    </div>
+                                    <IconButton
+                                        size={"small"}
+                                        onClick={() => {
+                                            const newSources = [...dataSourcesInternal];
+                                            newSources.splice(index, 1);
+                                            setDataSourcesInternal(newSources);
+                                        }}>
+                                        <CloseIcon/>
+                                    </IconButton>
+                                </Label>
+                            ))}
+                            {dataSourcesInternal.length === 0 && (
+                                <Typography color={"secondary"} className={"flex flex-row gap-2 items-center m-3"}>
+                                    <InfoIcon size={"small"}/> No data sources selected
+                                </Typography>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className={"flex flex-col gap-4 flex-grow lg:w-1/2"}>
+
+
+                        <Typography variant={"subtitle2"}>
+                            Your datasets
+                        </Typography>
+                        <Typography variant={"body2"}>
+                            Select your BigQuery data sources from your Google Cloud Platform projects
+                        </Typography>
+
+                        {(projectDataSources ?? []).length === 0 && !loadingProjects && (
+                            <EmptyValue/>
+                        )}
+                        {projectError && (
+                            <Typography variant={"caption"} color={"error"}>
+                                {projectError}
+                            </Typography>
                         )}
 
                         {selectedProject?.linked && (
                             <>
-                                <Typography variant={"label"} className={"flex flex-row items-center gap-2"}>
+                                <Typography variant={"label"} component="div"
+                                            className={"flex flex-row items-center gap-2"}>
                                     Data sources in project
                                     <IconButton
                                         size={"smallest"}
-                                        onClick={() => {
-                                            loadDataSourcesFor(selectedProject.projectId);
-                                        }}>
-                                        <CachedIcon
-                                            size={"smallest"}/>
+                                        onClick={() => loadDataSourcesFor(selectedProject.projectId)}>
+                                        <CachedIcon size={"smallest"}/>
+                                    </IconButton>
+                                    <IconButton
+                                        size={"smallest"}
+                                        disabled={unlinkLoading}
+                                        onClick={() => unlinkProject(selectedProject.projectId)}>
+                                        <LinkOffIcon size={"smallest"}/>
                                     </IconButton>
                                 </Typography>
                                 {loadingDataSources && (
@@ -284,7 +380,7 @@ export function DataSourcesSelection({
                             or add a datasource by specifying the project and dataset id
                         </Typography>
 
-                        {<form className={"flex gap-4 items-center"}
+                        {<form className={"flex gap-2 items-center"}
                                noValidate={true}
                                onSubmit={(e) => {
                                    e.preventDefault();
@@ -328,63 +424,22 @@ export function DataSourcesSelection({
                             </IconButton>
                         </form>}
 
-                        <Button variant={"text"}
-                                size={"small"}
-                                onClick={() => {
-                                    setDataSourcesInternal([...dataSourcesInternal, {
-                                        projectId: "bigquery-public-data",
-                                        datasetId: "thelook_ecommerce"
-                                    }]);
-                                }}>
-                            Add demo e-commerce data source
-                        </Button>
-                    </div>
-
-                    {/*<Separator orientation={"horizontal"}/>*/}
-
-                    <div className={"flex flex-col gap-4 flex-grow lg:w-1/2"}>
-                        <Typography variant={"subtitle2"}>
-                            Selected data sources
-                        </Typography>
-
-                        <Typography>
-                            The data sets will be used to query data from BigQuery. You can select
-                            multiple datasets, but they all must belong to the same Google Cloud Project.
-                        </Typography>
-
-                        <div className={"flex flex-col gap-2"}>
-                            {dataSourcesInternal.map((dataSource, index) => (
-                                <Label
-                                    key={dataSource.datasetId}
-                                    className="w-full border cursor-pointer rounded-md p-2 px-3 flex items-center gap-2 [&:has(:checked)]:bg-gray-100 dark:[&:has(:checked)]:bg-gray-800 font-normal"
-                                >
-                                    <StorageIcon size={"small"} color={"primary"}/>
-                                    <div className={"inline-block flex-grow"}>
-                                        <span>{dataSource.projectId + "."}</span>
-                                        <span className={"font-semibold"}>{dataSource.datasetId}</span>
-                                    </div>
-                                    <IconButton
-                                        size={"small"}
-                                        onClick={() => {
-                                            const newSources = [...dataSourcesInternal];
-                                            newSources.splice(index, 1);
-                                            setDataSourcesInternal(newSources);
-                                        }}>
-                                        <CloseIcon/>
-                                    </IconButton>
-                                </Label>
-                            ))}
-                            {dataSourcesInternal.length === 0 && (
-                                <Typography color={"secondary"} className={"flex flex-row gap-2 items-center m-3"}>
-                                    <InfoIcon size={"small"}/> No data sources selected
-                                </Typography>
-                            )}
-                        </div>
                     </div>
 
                 </DialogContent>
                 <DialogActions>
-
+                    <Button variant={"text"}
+                            size={"small"}
+                            onClick={() => {
+                                setProjectId("bigquery-public-data");
+                                setDataSourcesInternal([{
+                                    projectId: "bigquery-public-data",
+                                    datasetId: "thelook_ecommerce"
+                                }]);
+                            }}>
+                        Use demo e-commerce data source
+                    </Button>
+                    <div className={"flex-grow"}></div>
                     <Button
                         variant={"text"}
                         onClick={() => {
@@ -404,7 +459,8 @@ export function DataSourcesSelection({
                 </DialogActions>
             </Dialog>
         </>
-    );
+    )
+        ;
 }
 
 function LinkProjectButton({
@@ -445,4 +501,9 @@ function LinkProjectButton({
             </LoadingButton>
         </>
     );
+}
+
+function EmptyValue() {
+    return <div
+        className="rounded-full bg-gray-200 bg-opacity-30 dark:bg-opacity-20 w-5 h-2 inline-block"/>;
 }

@@ -5,6 +5,7 @@ export async function streamDataTalkCommand(firebaseAccessToken: string,
                                             command: string,
                                             apiEndpoint: string,
                                             sessionId: string,
+                                            projectId: string,
                                             sources: DataSource[],
                                             messages: ChatMessage[],
                                             onDelta: (delta: string) => void,
@@ -26,6 +27,7 @@ export async function streamDataTalkCommand(firebaseAccessToken: string,
                 body: JSON.stringify({
                     sessionId,
                     command,
+                    projectId,
                     sources,
                     history
                 })
@@ -203,6 +205,26 @@ export function createServiceAccountLink(firebaseAccessToken: string, apiEndpoin
     return fetch(apiEndpoint + "/projects/" + projectId + "/service_accounts",
         {
             method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${firebaseAccessToken}`
+            }
+        }).then(response => {
+        if (!response.ok) {
+            return response.json().then(data => {
+                throw new ApiError(data.message, data.code);
+            });
+        }
+        return response.json();
+    })
+        .then(data => data.data);
+
+}
+
+export function deleteServiceAccountLink(firebaseAccessToken: string, apiEndpoint: string, projectId: string): Promise<boolean> {
+    return fetch(apiEndpoint + "/projects/" + projectId + "/service_accounts",
+        {
+            method: "DELETE",
             headers: {
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${firebaseAccessToken}`

@@ -14,7 +14,7 @@ export function PromptSuggestions({
         ? suggestions
         : [
             "What can you do?",
-            "What collections are available?",
+            "What data is available?",
             "Show me all products under 50 euros"
         ];
 

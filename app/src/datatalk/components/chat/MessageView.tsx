@@ -10,7 +10,7 @@ export function MessageView({
                                 canRegenerate,
                                 onFeedback,
                                 onUpdatedMessage,
-                                dataSources,
+                                projectId,
                                 params
                             }: {
     message?: ChatMessage,
@@ -19,7 +19,7 @@ export function MessageView({
     canRegenerate?: boolean,
     onFeedback?: (reason?: FeedbackSlug, feedbackMessage?: string) => void,
     onUpdatedMessage?: (message: ChatMessage) => void,
-    dataSources: DataSource[],
+    projectId: string,
     params?: DashboardParams
 }) {
 
@@ -73,14 +73,14 @@ export function MessageView({
             {/*    {message?.user === "SQL_STATEMENT" && <StorageIcon/>}*/}
             {/*</Avatar>*/}
 
-            <div className={cls(message?.user === "SQL_STATEMENT" ? "my-1" : "my-3",
+            <div className={cls(message?.user === "SQL_STATEMENT" ? "my-1" : "mt-3 mb-1 min-h-[32px]",
                 "flex-1 text-gray-700 dark:text-gray-200 self-center")}>
 
                 {message?.user === "USER" && <UserMessage text={message.text}/>}
                 {message?.user === "SQL_STATEMENT" && <SQLStatementMessage text={message.text}/>}
                 {message?.user === "SYSTEM" && <SystemMessage text={message.text}
                                                               loading={message.loading}
-                                                              dataSources={dataSources}
+                                                              projectId={projectId}
                                                               canRegenerate={canRegenerate}
                                                               containerWidth={containerWidth ?? undefined}
                                                               onRegenerate={onRegenerate}

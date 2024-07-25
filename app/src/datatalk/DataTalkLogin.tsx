@@ -48,8 +48,6 @@ export function DataTalkLogin({
             });
     }, [])
 
-    console.log("oauthUrl", oauthUrl);
-
     // const ref = React.useRef<HTMLDivElement>(null);
     //
     // function handleCredentialResponse(response: any) {
@@ -140,7 +138,7 @@ export function DataTalkLogin({
                     error={"You need to grant additional permissions in order to manage your Google Cloud projects"}/>}
 
             <Typography variant={"caption"}>
-                FireCMS Cloud use and transfer to any other app of
+                DataTalk use and transfer to any other app of
                 information
                 received from Google APIs will adhere to <a
                 target="_blank"

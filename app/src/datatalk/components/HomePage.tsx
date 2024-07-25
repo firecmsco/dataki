@@ -14,7 +14,7 @@ export function HomePage() {
             {/*    Welcome to DATATALK*/}
             {/*</Typography>*/}
             <div className={"my-8 flex flex-col gap-4"}>
-                <Typography variant={"h3"} gutterBottom={true} className={"font-mono ml-4 my-2"}>
+                <Typography variant={"h3"} gutterBottom={true} className={"font-mono my-2"}>
                     Welcome to DATATALK
                 </Typography>
                 <Typography>
@@ -25,7 +25,7 @@ export function HomePage() {
                 </Typography>
                 <Button
                     size={"xl"}
-                    className={"gap-4"}
+                    className={"my-4 gap-4"}
                     onClick={async () => {
                         const sessionId = await dataTalkConfig.createSessionId();
                         navigate(`/chat/${sessionId}`);
