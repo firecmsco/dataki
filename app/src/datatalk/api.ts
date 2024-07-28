@@ -1,4 +1,14 @@
-import { ChatMessage, DashboardParams, DataSource, DryWidgetConfig, GCPProject, Item, WidgetConfig } from "./types";
+import {
+    ChatMessage,
+    DataRow,
+    DataSource,
+    DateParams,
+    DryWidgetConfig,
+    FilterOp,
+    GCPProject,
+    Item,
+    WidgetConfig
+} from "./types";
 import { LLMOutputParser } from "./utils/llm_parser";
 
 export async function streamDataTalkCommand(firebaseAccessToken: string,
@@ -102,9 +112,9 @@ export async function streamDataTalkCommand(firebaseAccessToken: string,
 export function hydrateChartConfig(firebaseAccessToken: string,
                                    apiEndpoint: string,
                                    config: DryWidgetConfig,
-                                   params?: DashboardParams
+                                   params?: DateParams
 ): Promise<WidgetConfig> {
-    return fetch(apiEndpoint + "/datatalk/hydrate_chart", {
+    return fetch(apiEndpoint + "/datatalk/hydrate_chart" + (config.id ? "?id=" + config.id : ""), {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
@@ -126,20 +136,44 @@ export function hydrateChartConfig(firebaseAccessToken: string,
         .then(data => data.data);
 }
 
-export function hydrateTableConfig(firebaseAccessToken: string,
-                                   apiEndpoint: string,
-                                   config: DryWidgetConfig,
-                                   params?: DashboardParams
-): Promise<WidgetConfig> {
-    return fetch(apiEndpoint + "/datatalk/hydrate_table", {
+export interface SQLQueryRequest {
+    firebaseAccessToken: string;
+    apiEndpoint: string;
+    sql: string;
+    projectId: string;
+    orderBy?: [string, "asc" | "desc"][],
+    filter?: [string, FilterOp, unknown] []
+    params?: DateParams;
+    limit?: number;
+    offset?: number;
+}
+
+export function makeSQLQuery({
+                                 firebaseAccessToken,
+                                 apiEndpoint,
+                                 sql,
+                                 projectId,
+                                 orderBy,
+                                 filter,
+                                 params,
+                                 limit,
+                                 offset
+                             }: SQLQueryRequest
+): Promise<DataRow[]> {
+    return fetch(apiEndpoint + "/data/query", {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${firebaseAccessToken}`
         },
         body: JSON.stringify({
-            config,
-            params
+            sql,
+            projectId,
+            params,
+            orderBy,
+            filter,
+            limit,
+            offset
         })
     })
         .then(response => {

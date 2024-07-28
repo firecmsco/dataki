@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { useEffect, useRef } from "react"
-import DatePicker from "react-datepicker";
+import DatePicker, { CalendarContainer } from "react-datepicker";
 import {
     CalendarMonthIcon,
     cls,
@@ -10,6 +10,7 @@ import {
     fieldBackgroundHoverMixin,
     focusedInvisibleMixin,
     IconButton,
+    Label,
     paperMixin,
     useInjectStyles
 } from "@firecms/ui";
@@ -58,10 +59,71 @@ export function DatePickerWithRange({
         "rounded-xl",
         focusedInvisibleMixin,
         "min-h-[40px]",
-        "p-3",
+        "p-2.5",
         "border",
         defaultBorderMixin
     );
+
+    const MyContainer = ({
+                             className,
+                             children
+                         }: any) => {
+        return (
+            <div className={"flex flex-col"}>
+                <div className={cls("border rounded bg-gray-50 dark:bg-gray-900 flex flex-col gap-1", defaultBorderMixin)}>
+                    <Label
+                        onClick={() => {
+                            const date = new Date();
+                            date.setDate(date.getDate() - 7);
+                            setDateRangeInternal([date, new Date()]);
+                            setDateRange([date, new Date()]);
+                            setOpen(false);
+                        }}
+                        className={"px-3 py-2 font-semibold"}>
+                        Last 7 days
+                    </Label>
+                    <Label
+                        onClick={() => {
+                            const date = new Date();
+                            date.setDate(date.getDate() - 30);
+                            setDateRangeInternal([date, new Date()]);
+                            setDateRange([date, new Date()]);
+                            setOpen(false);
+                        }}
+                        className={"px-3 py-2 font-semibold"}>
+                        Last 30 days
+                    </Label>
+                    <Label
+                        onClick={() => {
+                            const date = new Date();
+                            date.setDate(date.getDate() - 90);
+                            setDateRangeInternal([date, new Date()]);
+                            setDateRange([date, new Date()]);
+                            setOpen(false);
+                        }}
+                        className={"px-3 py-2 font-semibold"}>
+                        Last 90 days
+                    </Label>
+                    <Label
+                        onClick={() => {
+                            //  Year to date
+                            const date = new Date();
+                            date.setMonth(0);
+                            date.setDate(1);
+                            setDateRangeInternal([date, new Date()]);
+                            setDateRange([date, new Date()]);
+                            setOpen(false);
+                        }}
+                        className={"px-3 py-2 font-semibold"}>
+                        Year to date
+                    </Label>
+                </div>
+                <CalendarContainer className={cls(paperMixin, "my-4 shadow relative")}>
+                    {children}
+                </CalendarContainer>
+            </div>
+        );
+    };
     return (
         <>
 
@@ -77,6 +139,10 @@ export function DatePickerWithRange({
 
                 <DatePicker
                     open={open}
+                    onInputClick={() => {
+                        setOpen(true);
+                    }}
+                    calendarContainer={MyContainer}
                     onCalendarOpen={() => setOpen(true)}
                     onCalendarClose={() => {
                         setOpen(false);
@@ -84,7 +150,6 @@ export function DatePickerWithRange({
                     }}
                     selectsRange={true}
                     ref={ref}
-                    popperClassName={cls(paperMixin, "my-4 shadow")}
                     onChange={(update) => {
                         setDateRangeInternal(update);
                     }}
@@ -94,7 +159,9 @@ export function DatePickerWithRange({
                     startDate={startDate ?? undefined}
                     endDate={endDate ?? undefined}
                     onFocus={() => setFocused(true)}
-                    onBlur={() => setFocused(false)}
+                    onBlur={() => {
+                        setFocused(false);
+                    }}
                     preventOpenOnFocus={true}
                     className={className}
                 />

@@ -3,7 +3,7 @@ import { DataTalkConfig } from "../DataTalkProvider";
 import { CircularProgressCenter } from "@firecms/core";
 import { useLocation, useParams } from "react-router-dom";
 import { DataTalkChatSession } from "../components/chat/DataTalkChatSession";
-import { ChatMessage, DataSource, Session } from "../types";
+import { ChatMessage, DataSource, ChatSession } from "../types";
 
 export function ChatSessionRoute({
                                      dataTalkConfig,
@@ -48,7 +48,7 @@ function ChatRouteInner({
     const params = new URLSearchParams(location.search);
     const initialPrompt = params.get("prompt");
 
-    const [session, setSession] = React.useState<Session | undefined>(undefined);
+    const [session, setSession] = React.useState<ChatSession | undefined>(undefined);
     const [loading, setLoading] = React.useState(true);
 
     useEffect(() => {
@@ -70,7 +70,7 @@ function ChatRouteInner({
         updated_at: new Date(),
         messages: [],
         dataSources: []
-    } satisfies Session;
+    } satisfies ChatSession;
 
     const onMessagesChange = (messages: ChatMessage[]) => {
         const newSession = {

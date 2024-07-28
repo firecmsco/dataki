@@ -1,8 +1,10 @@
 import { DryWidgetConfig } from "../../types";
+import JSON5 from "json5";
+
 import React, { useMemo } from "react";
 import { Button, Container, DialogActions, Sheet, TextField, Typography } from "@firecms/ui";
 import { AutoHeightEditor } from "../AutoHeightEditor";
-import { useSnackbarController } from "@firecms/core";
+import { ErrorView, useSnackbarController } from "@firecms/core";
 
 export function ConfigViewDialog({
                                      dryConfig: dryConfigProp,
@@ -22,13 +24,15 @@ export function ConfigViewDialog({
     const [description, setDescription] = React.useState<string>(dryConfigProp.description);
     const [projectId, setProjectId] = React.useState<string>(dryConfigProp.projectId);
     const [sqlCode, setSqlCode] = React.useState<string>(dryConfigProp.sql);
+    const [configError, setConfigError] = React.useState<Error | null>(null);
+
     const initialChartConfig: string = useMemo(() => {
         if (dryConfigProp.type === "chart")
             return JSON.stringify(dryConfigProp.chart, null, 2);
         else if (dryConfigProp.type === "table")
             return JSON.stringify(dryConfigProp.table, null, 2);
         else
-            throw new Error("Unknown widget type");
+            throw new Error("Unknown widget type: " + dryConfigProp.type);
     }, []);
     const [chartOrTableConfig, setChartOrTableConfig] = React.useState(initialChartConfig);
 
@@ -46,15 +50,29 @@ export function ConfigViewDialog({
                 sql: sqlCode,
             };
 
+            let parsedConfig: any;
+            try {
+                parsedConfig = JSON5.parse(chartOrTableConfig);
+            } catch (e: any) {
+                setConfigError(e);
+                snackbar.open({
+                    type: "error",
+                    message: "Error parsing JSON"
+                });
+                return;
+            }
+
+            setConfigError(null);
+
             if (dryConfig.type === "chart") {
                 dryConfig = {
                     ...dryConfig,
-                    chart: JSON.parse(chartOrTableConfig)
+                    chart: parsedConfig
                 }
             } else if (dryConfig.type === "table") {
                 dryConfig = {
                     ...dryConfig,
-                    table: JSON.parse(chartOrTableConfig)
+                    table: parsedConfig
                 }
             }
 
@@ -138,6 +156,7 @@ export function ConfigViewDialog({
                                           onChange={(value) => {
                                               updateChartConfig(value ?? "");
                                           }}/>
+                        {configError && <ErrorView error={configError}/>}
                     </div>
 
                 </div>

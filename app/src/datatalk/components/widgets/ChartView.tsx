@@ -1,10 +1,13 @@
 import Chart from "chart.js/auto"
 import { Colors } from "chart.js";
+import { FunnelController, TrapezoidElement } from "chartjs-chart-funnel";
+
 import React, { useEffect } from "react";
 import { ChartConfig, WidgetSize } from "../../types";
 import { useModeController } from "@firecms/core";
 
-Chart.register(Colors);
+console.log("Colors", Colors);
+Chart.register(Colors, FunnelController, TrapezoidElement);
 
 export function ChartView({
                               config,

@@ -13,12 +13,13 @@ import {
 } from "@firebase/firestore";
 import { FirebaseApp } from "@firebase/app";
 import {
+    ChatSession,
     Dashboard,
     DashboardPage,
     DashboardWidgetConfig,
     DryWidgetConfig,
     Position,
-    Session,
+    TextItem,
     WidgetSize
 } from "./types";
 import { DEFAULT_WIDGET_SIZE } from "./utils/widgets";
@@ -29,22 +30,24 @@ export type DataTalkConfig = {
     loading: boolean;
     apiEndpoint: string;
     getAuthToken: () => Promise<string>;
-    sessions: Session[];
+    sessions: ChatSession[];
     createSessionId: () => Promise<string>;
-    saveSession: (session: Session) => Promise<void>;
-    getSession: (sessionId: string) => Promise<Session | undefined>;
+    saveSession: (session: ChatSession) => Promise<void>;
+    getSession: (sessionId: string) => Promise<ChatSession | undefined>;
     dashboards: Dashboard[];
     createDashboard: () => Promise<Dashboard>;
     saveDashboard: (dashboard: Dashboard) => Promise<void>;
     updateDashboard: (id: string, dashboardData: Partial<Dashboard>) => Promise<void>;
     deleteDashboard: (id: string) => Promise<void>;
     listenDashboard: (dashboardId: string, onDashboardUpdate: (dashboard: Dashboard) => void) => () => void;
-    addDashboardWidget(dashboardId: string, widgetConfig: DryWidgetConfig): void;
+    addDashboardText: (dashboardId: string, pageId: string, node: TextItem) => void;
+    updateDashboardText: (dashboardId: string, pageId: string, id: string, node: TextItem) => void;
+    addDashboardWidget: (dashboardId: string, widgetConfig: DryWidgetConfig) => void;
     onWidgetResize: (dashboardId: string, pageId: string, id: string, size: WidgetSize) => void;
     onWidgetUpdate: (dashboardId: string, pageId: string, id: string, widgetConfig: DashboardWidgetConfig) => void;
     onWidgetMove: (dashboardId: string, pageId: string, id: string, position: Position) => void;
     onWidgetRemove: (dashboardId: string, pageId: string, id: string) => void;
-    updateDashboardPage(id: string, pageId: string, dashboard: Partial<DashboardPage>): void;
+    updateDashboardPage: (id: string, pageId: string, dashboard: Partial<DashboardPage>) => void;
 
     firebaseApp?: FirebaseApp;
 };
@@ -71,7 +74,7 @@ export function useBuildDataTalkConfig({
                                            user
                                        }: DataTalkConfigParams): DataTalkConfig {
 
-    const [sessions, setSessions] = useState<Session[]>([]);
+    const [sessions, setSessions] = useState<ChatSession[]>([]);
     const [sessionsLoading, setSessionsLoading] = useState<boolean>(true);
 
     const dashboardsRef = React.useRef<Dashboard[]>([]);
@@ -86,14 +89,14 @@ export function useBuildDataTalkConfig({
     const createSessionId = useCallback(async (): Promise<string> => {
         if (!firebaseApp) throw Error("useBuildDataTalkConfig Firebase not initialised");
         const firestore = getFirestore(firebaseApp);
-        if (!firestore || !userSessionsPath) throw Error("useFirestoreConfigurationPersistence Firestore not initialised");
+        if (!firestore || !userSessionsPath) throw Error("useBuildDataTalkConfig Firestore not initialised");
         return doc(collection(firestore, userSessionsPath)).id;
     }, [firebaseApp, userSessionsPath]);
 
-    const saveSession = useCallback(async (session: Session) => {
+    const saveSession = useCallback(async (session: ChatSession) => {
         if (!firebaseApp) throw Error("useBuildDataTalkConfig Firebase not initialised");
         const firestore = getFirestore(firebaseApp);
-        if (!firestore || !userSessionsPath) throw Error("useFirestoreConfigurationPersistence Firestore not initialised");
+        if (!firestore || !userSessionsPath) throw Error("useBuildDataTalkConfig Firestore not initialised");
         const {
             id,
             ...sessionData
@@ -112,7 +115,7 @@ export function useBuildDataTalkConfig({
     const saveDashboard = useCallback(async (dashBoard: Dashboard) => {
         if (!firebaseApp) throw Error("useBuildDataTalkConfig Firebase not initialised");
         const firestore = getFirestore(firebaseApp);
-        if (!firestore || !dashboardsPath) throw Error("useFirestoreConfigurationPersistence Firestore not initialised");
+        if (!firestore || !dashboardsPath) throw Error("useBuildDataTalkConfig Firestore not initialised");
         const {
             id,
             ...dashboardData
@@ -127,7 +130,7 @@ export function useBuildDataTalkConfig({
     const listenDashboard = useCallback((id: string, onDashboardUpdate: (dashboard: Dashboard) => void) => {
         if (!firebaseApp) throw Error("useBuildDataTalkConfig Firebase not initialised");
         const firestore = getFirestore(firebaseApp);
-        if (!firestore || !dashboardsPath) throw Error("useFirestoreConfigurationPersistence Firestore not initialised");
+        if (!firestore || !dashboardsPath) throw Error("useBuildDataTalkConfig Firestore not initialised");
         return onSnapshot(doc(firestore, dashboardsPath, id).withConverter(timestampToDateConverter), {
             next: (snapshot) => {
                 const dashboard = {
@@ -149,25 +152,45 @@ export function useBuildDataTalkConfig({
         if (!firebaseApp)
             throw Error("useBuildDataTalkConfig Firebase not initialised");
         const firestore = getFirestore(firebaseApp);
-        if (!firestore || !dashboardsPath) throw Error("useFirestoreConfigurationPersistence Firestore not initialised");
+        if (!firestore || !dashboardsPath) throw Error("useBuildDataTalkConfig Firestore not initialised");
         const documentReference = doc(collection(firestore, dashboardsPath));
         const id = documentReference.id;
         const data = initializeDashboard(id, user.uid);
-        await setDoc(documentReference, data);
         const newDashboard = { id, ...data };
-        updateDashboards([...dashboardsRef.current, newDashboard]);
+        updateDashboards([newDashboard, ...dashboardsRef.current]);
+        await setDoc(documentReference, data);
         return newDashboard;
     }, [firebaseApp, dashboardsPath, user]);
 
     const deleteDashboard = useCallback(async (id: string) => {
         if (!firebaseApp) throw Error("useBuildDataTalkConfig Firebase not initialised");
         const firestore = getFirestore(firebaseApp);
-        if (!firestore || !dashboardsPath) throw Error("useFirestoreConfigurationPersistence Firestore not initialised");
+        if (!firestore || !dashboardsPath) throw Error("useBuildDataTalkConfig Firestore not initialised");
         const dashboard = dashboardsRef.current.find(d => d.id === id);
         if (!dashboard) throw Error("deleteDashboard: Dashboard not found");
         dashboard.deleted = true;
         return saveDashboard(dashboard);
     }, [firebaseApp, dashboardsPath, saveDashboard])
+
+    const addDashboardText = useCallback((dashboardId: string, pageId: string, node: TextItem) => {
+        const dashboard = dashboardsRef.current.find(d => d.id === dashboardId);
+        if (!dashboard) throw Error("addDashboardWidget: Dashboard not found");
+        const page = dashboard.pages.find(p => p.id === pageId);
+        if (!page) throw Error("addDashboardWidget: Page not found");
+        page.widgets.push(node);
+        return saveDashboard(dashboard);
+    }, [saveDashboard]);
+
+    const updateDashboardText = useCallback((dashboardId: string, pageId: string, id: string, node: TextItem) => {
+        const dashboard = dashboardsRef.current.find(d => d.id === dashboardId);
+        if (!dashboard) throw Error("addDashboardWidget: Dashboard not found");
+        const page = dashboard.pages.find(p => p.id === pageId);
+        if (!page) throw Error("addDashboardWidget: Page not found");
+        const widgetIndex = page.widgets.findIndex(w => w.id === id);
+        if (widgetIndex === -1) throw Error("addDashboardWidget: Widget not found");
+        page.widgets.splice(widgetIndex, 1, node);
+        return saveDashboard(dashboard);
+    }, [saveDashboard]);
 
     const addDashboardWidget = (id: string, widgetConfig: DryWidgetConfig) => {
         const dashboard = dashboardsRef.current.find(d => d.id === id);
@@ -248,7 +271,7 @@ export function useBuildDataTalkConfig({
                         return {
                             id: doc.id,
                             ...doc.data()
-                        } as Session;
+                        } as ChatSession;
                     });
                     setSessions(updatedSessions);
                     setSessionsLoading(false);
@@ -296,7 +319,7 @@ export function useBuildDataTalkConfig({
         console.log("updateDashboard", dashboardId, dashboardData)
         if (!firebaseApp) throw Error("useBuildDataTalkConfig Firebase not initialised");
         const firestore = getFirestore(firebaseApp);
-        if (!firestore || !dashboardsPath) throw Error("useFirestoreConfigurationPersistence Firestore not initialised");
+        if (!firestore || !dashboardsPath) throw Error("useBuildDataTalkConfig Firestore not initialised");
         const dashboard = dashboardsRef.current.find(d => d.id === dashboardId);
         if (!dashboard) throw Error("addDashboardWidget: Dashboard not found");
         const updatedDashboard = {
@@ -310,7 +333,7 @@ export function useBuildDataTalkConfig({
         console.log("updateDashboardPage", dashboardId, pageId, pageData)
         if (!firebaseApp) throw Error("useBuildDataTalkConfig Firebase not initialised");
         const firestore = getFirestore(firebaseApp);
-        if (!firestore || !dashboardsPath) throw Error("useFirestoreConfigurationPersistence Firestore not initialised");
+        if (!firestore || !dashboardsPath) throw Error("useBuildDataTalkConfig Firestore not initialised");
         const dashboard = dashboardsRef.current.find(d => d.id === dashboardId);
         if (!dashboard) throw Error("addDashboardWidget: Dashboard not found");
         const page = dashboard.pages.find(p => p.id === pageId);
@@ -341,6 +364,8 @@ export function useBuildDataTalkConfig({
         updateDashboard,
         updateDashboardPage,
         listenDashboard,
+        addDashboardText,
+        updateDashboardText,
         addDashboardWidget,
         onWidgetResize,
         onWidgetUpdate,

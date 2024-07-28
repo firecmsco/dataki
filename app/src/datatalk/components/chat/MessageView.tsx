@@ -1,7 +1,9 @@
 import { AutoAwesomeIcon, Avatar, cls, Menu, MenuItem, PersonIcon, StorageIcon } from "@firecms/ui";
 import React, { useEffect, useRef, useState } from "react";
-import { ChatMessage, DashboardParams, DataSource, FeedbackSlug } from "../../types";
+import { ChatMessage, DateParams, FeedbackSlug } from "../../types";
 import { SystemMessage } from "./SystemMessage";
+// @ts-ignore
+import MarkdownIt from "markdown-it";
 
 export function MessageView({
                                 message,
@@ -20,7 +22,7 @@ export function MessageView({
     onFeedback?: (reason?: FeedbackSlug, feedbackMessage?: string) => void,
     onUpdatedMessage?: (message: ChatMessage) => void,
     projectId: string,
-    params?: DashboardParams
+    params?: DateParams
 }) {
 
     const ref = useRef<HTMLDivElement>(null);
@@ -93,10 +95,32 @@ export function MessageView({
     </div>;
 }
 
+const md = new MarkdownIt({ html: true });
+
 function UserMessage({ text }: { text: string }) {
-    return <>{text.split("\n").map((line, index) => <p key={index}>{line}</p>)}</>
+    const [html, setHtml] = useState<string | null>(null);
+    useEffect(() => {
+        setHtml(md.render(text));
+    }, [text]);
+    if (!html)
+        return null;
+    return <div
+        className={"max-w-full prose dark:prose-invert prose-headings:font-title text-base text-gray-700 dark:text-gray-200 mb-3"}
+        dangerouslySetInnerHTML={{ __html: html }}/>
+    // return <>{text.split("\n").map((line, index) => <p key={index}>{line}</p>)}</>
 }
 
 function SQLStatementMessage({ text }: { text: string }) {
-    return <code className={"text-sm self-center"}>{text.split("\n").map((line, index) => <p key={index}>{line}</p>)}</code>
+    const [html, setHtml] = useState<string | null>(null);
+    console.log("SQLStatementMessage", html);
+    useEffect(() => {
+        setHtml(md.render(text));
+    }, [text]);
+    if (!html)
+        return null;
+    return <code
+        className={"text-sm self-center max-w-full prose dark:prose-invert prose-headings:font-title text-base text-gray-700 dark:text-gray-200 mb-3"}
+        dangerouslySetInnerHTML={{ __html: html }}
+    >
+    </code>
 }

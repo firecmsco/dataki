@@ -1,16 +1,16 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import equal from "react-fast-compare"
 
-import { hydrateChartConfig, hydrateTableConfig } from "../../api";
+import { makeSQLQuery } from "../../api";
 import { useDataTalk } from "../../DataTalkProvider";
-import { DashboardParams, DashboardWidgetConfig, DryWidgetConfig, WidgetConfig } from "../../types";
+import { DataRow, DateParams, DryWidgetConfig, WidgetConfig } from "../../types";
 import { DataTable } from "./DataTable";
-import { CircularProgressCenter, ErrorBoundary, mergeDeep, useModeController } from "@firecms/core";
+import { ErrorBoundary, useModeController } from "@firecms/core";
 import { format } from "sql-formatter";
-import { DEFAULT_WIDGET_SIZE } from "../../utils/widgets";
-import { ChartView } from "./ChartView";
 import {
     AddIcon,
+    CircularProgress,
+    cls,
     DownloadIcon,
     IconButton,
     RefreshIcon,
@@ -24,21 +24,24 @@ import { AddToDashboardDialog } from "../dashboards/AddToDashboardDialog";
 import { toPng } from "html-to-image";
 import { downloadImage } from "../../utils/downloadImage";
 import { ExecutionErrorView } from "./ExecutionErrorView";
+import { getConfigWithoutSize } from "../utils/widget";
 
-export function DryWidgetConfigView({
-                                        dryConfig,
-                                        params,
-                                        onUpdated,
-                                        onRemoveClick,
-                                        zoom,
-                                        maxWidth
-                                    }: {
+export function DryTableConfigView({
+                                       dryConfig,
+                                       params,
+                                       onUpdated,
+                                       onRemoveClick,
+                                       zoom,
+                                       maxWidth,
+                                       selected
+                                   }: {
     dryConfig: DryWidgetConfig,
-    params?: DashboardParams,
+    params?: DateParams,
     onUpdated?: (newConfig: DryWidgetConfig) => void,
     onRemoveClick?: () => void,
     maxWidth?: number,
     zoom?: number,
+    selected?: boolean
 }) {
 
     const {
@@ -51,13 +54,18 @@ export function DryWidgetConfigView({
     const [configDialogOpen, setConfigDialogOpen] = React.useState(false);
     const [addToDashboardDialogOpen, setAddToDashboardDialogOpen] = React.useState(false);
 
-    const [config, setConfig] = useState<WidgetConfig | null>(null);
-    const [hydrationInProgress, setHydrationInProgress] = useState<boolean>(false);
-    const [hydrationError, setHydrationError] = useState<Error | null>(null);
+    const config = dryConfig as WidgetConfig;
+    const [data, setData] = useState<DataRow[]>([]);
+    const [dataLoading, setDataLoading] = useState<boolean>(false);
+    const [dataLoadingError, setDataloadingError] = useState<Error | null>(null);
 
     const viewRef = React.useRef<HTMLDivElement>(null);
 
-    const loadedConfig = React.useRef<{ dryConfig: DryWidgetConfig, params?: DashboardParams } | null>(null);
+    const loadedConfig = React.useRef<{ dryConfig: DryWidgetConfig, params?: DateParams } | null>(null);
+    const limit = 100;
+
+    const desiredOffset = useRef<number>(0);
+    const currentOffset = useRef<number>(0);
 
     useEffect(() => {
         if (loadedConfig.current && equal(loadedConfig.current, {
@@ -69,6 +77,7 @@ export function DryWidgetConfigView({
 
         if (dryConfig) {
             try {
+                setData([]);
                 loadedConfig.current = {
                     dryConfig: getConfigWithoutSize(dryConfig),
                     params
@@ -78,7 +87,8 @@ export function DryWidgetConfigView({
                     ...dryConfig,
                     sql: formattedDrySQL
                 });
-                makeHydrationRequest(dryConfig);
+                resetPagination();
+                makeHydrationRequest(dryConfig, 0);
             } catch (e) {
                 console.error(dryConfig);
                 console.error("Error parsing dry config", e);
@@ -86,54 +96,67 @@ export function DryWidgetConfigView({
         }
     }, [dryConfig, params]);
 
-    const makeHydrationRequest = async (newDryConfig: DryWidgetConfig) => {
+    const makeHydrationRequest = async (newDryConfig: DryWidgetConfig, offset: number) => {
         const firebaseToken = await getAuthToken();
         if (!newDryConfig) {
             throw Error("makeHydrationRequest: No code provided");
         }
-        setConfig(null);
-        setHydrationInProgress(true);
-        setHydrationError(null);
-        console.log("Hydrating config", newDryConfig);
-        if (newDryConfig.type === "table") {
-            hydrateTableConfig(firebaseToken, apiEndpoint, newDryConfig, params)
-                .then((config) => {
-                    setConfig(mergeDeep(newDryConfig, config));
-                })
-                .catch(setHydrationError)
-                .finally(() => setHydrationInProgress(false));
-        } else if (newDryConfig.type === "chart") {
-            hydrateChartConfig(firebaseToken, apiEndpoint, newDryConfig, params)
-                .then((config) => {
-                    setConfig(mergeDeep(newDryConfig, config));
-                })
-                .catch(setHydrationError)
-                .finally(() => setHydrationInProgress(false));
-        }
+        setDataLoading(true);
+        setDataloadingError(null);
+        console.log("Fetching SQL data", offset, newDryConfig);
+        makeSQLQuery({
+            firebaseAccessToken: firebaseToken,
+            projectId: newDryConfig.projectId,
+            apiEndpoint,
+            sql: newDryConfig.sql,
+            params,
+            limit,
+            offset
+        })
+            .then((data) => {
+                currentOffset.current = offset;
+                setData((existingData) => [...existingData, ...data]);
+            })
+            .catch(setDataloadingError)
+            .finally(() => setDataLoading(false));
     };
 
+    console.log("DryTableConfigView", data);
+
     const downloadFile = () => {
+        // TODO: download as CSV
         toPng(viewRef.current as HTMLElement, {
             backgroundColor: mode === "dark" ? "#18181c" : "#fff",
             width: viewRef.current?.scrollWidth,
-            height: viewRef.current?.scrollHeight,
+            height: viewRef.current?.scrollHeight
         }).then((url) => downloadImage(url, "chart.png"));
+    }
+
+    function resetPagination() {
+        desiredOffset.current = 0;
+        currentOffset.current = 0;
     }
 
     const onConfigUpdated = (newConfig: DryWidgetConfig) => {
         if (!newConfig) return;
-        makeHydrationRequest(newConfig);
+        resetPagination();
+        makeHydrationRequest(newConfig, 0);
         onUpdated?.(newConfig)
     };
+
     return <>
 
         <div
-            className={"group flex flex-col w-full h-full bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 dark:border-opacity-80 rounded-lg overflow-hidden"}>
+            className={cls("group flex flex-col w-full h-full bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 dark:border-opacity-80 rounded-lg overflow-hidden",
+                selected ? "ring-2 ring-primary ring-opacity-75 ring-offset-2" : "")}>
 
             <div
-                className={"flex flex-row w-full border-b border-gray-100 dark:border-gray-800 dark:border-opacity-80"}>
+                className={"flex flex-row w-full border-b border-gray-100 dark:border-gray-800 dark:border-opacity-80 items-center"}>
                 <Typography variant={"label"}
-                            className={"grow pl-4 py-4 line-clamp-1 h-10"}>{config?.title ?? dryConfig.title}</Typography>
+                            className={"grow px-4 line-clamp-1"}>{config?.title ?? dryConfig.title}</Typography>
+
+                {dataLoading && <CircularProgress size={"small"}/>}
+
                 <div className={"m-2.5 mr-0 flex-row gap-1 hidden group-hover:flex nodrag"}>
 
                     <Tooltip title={"Download"}>
@@ -142,7 +165,11 @@ export function DryWidgetConfigView({
                         </IconButton>
                     </Tooltip>
                     <Tooltip title={"Refresh data"}>
-                        <IconButton size={"small"} onClick={() => makeHydrationRequest(dryConfig)}>
+                        <IconButton size={"small"} onClick={() => {
+                            resetPagination();
+                            setData([]);
+                            makeHydrationRequest(dryConfig, 0);
+                        }}>
                             <RefreshIcon size={"small"}/>
                         </IconButton>
                     </Tooltip>
@@ -167,27 +194,27 @@ export function DryWidgetConfigView({
                 </div>
             </div>
 
-            {hydrationInProgress && <CircularProgressCenter/>}
-
-            {!hydrationInProgress && !hydrationError && <>
-                {config?.type === "chart" && config?.chart && (
-                    <ChartView
-                        ref={viewRef}
-                        size={dryConfig?.size ?? DEFAULT_WIDGET_SIZE}
-                        config={config?.chart}/>
-                )}
-
-                {config?.type === "table" && config?.table && (
+            {data && !dataLoadingError && <>
+                {config?.table && (
                     <DataTable
                         ref={viewRef}
-                        config={config?.table}
+                        data={data}
+                        columns={config.table.columns}
                         zoom={zoom}
-                        maxWidth={maxWidth}/>
+                        maxWidth={maxWidth}
+                        loading={dataLoading}
+                        onEndReached={() => {
+                            console.log("End reached", currentOffset.current, desiredOffset.current);
+                            if (currentOffset.current === desiredOffset.current) {
+                                desiredOffset.current = currentOffset.current + limit;
+                                makeHydrationRequest(dryConfig, desiredOffset.current);
+                            }
+                        }}/>
                 )}
             </>}
 
-            {!hydrationInProgress && hydrationError && (
-                <ExecutionErrorView executionError={hydrationError}/>
+            {!dataLoading && dataLoadingError && (
+                <ExecutionErrorView executionError={dataLoadingError}/>
             )}
 
             <ErrorBoundary>
@@ -204,19 +231,3 @@ export function DryWidgetConfigView({
                                          widgetConfig={dryConfig}/>}
     </>;
 }
-
-
-
-function getConfigWithoutSize(config: DryWidgetConfig | DashboardWidgetConfig): DryWidgetConfig {
-    const {
-        // @ts-ignore
-        id,
-        size,
-        // @ts-ignore
-        position,
-        ...rest
-    } = config;
-    return rest;
-}
-
-

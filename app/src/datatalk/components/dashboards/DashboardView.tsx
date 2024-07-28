@@ -28,30 +28,3 @@ export function DashboardView({ dashboard }: { dashboard: Dashboard }) {
     );
 
 }
-
-export function DashboardNameTextField({
-                                           title: titleProp,
-                                           id
-                                       }: { title?: string, id: string }) {
-    const dataTalk = useDataTalk();
-    const savedTitle = useRef(titleProp);
-    const [title, setTitle] = React.useState(titleProp);
-    const deferredTitle = useDeferredValue(title);
-    useEffect(() => {
-        if (deferredTitle !== savedTitle.current) {
-            dataTalk.updateDashboard(id, { title: deferredTitle });
-            savedTitle.current = deferredTitle;
-        }
-    }, [deferredTitle]);
-    return (
-        <TextField
-            className={"font-semibold rounded-xl text-sm"}
-            inputClassName={"rounded-xl"}
-            invisible={true}
-            size={"smallest"}
-            placeholder={"Untitled dashboard"}
-            onChange={(e) => setTitle(e.target.value)}
-            value={title}
-        />
-    );
-}

@@ -1,24 +1,27 @@
 import React from "react";
 import { CellRendererParams, VirtualTable, VirtualTableColumn } from "@firecms/core";
 import { getIn } from "@firecms/formex";
-import { DataType, TableConfig } from "../../types";
+import { DataRow, DataType, TableColumn, TableConfig } from "../../types";
 import { useResizeObserver } from "../../utils/useResizeObserver";
 
 export type DataTableProps = {
-    config: TableConfig;
+    columns: TableColumn[];
+    data?: DataRow[];
     zoom?: number;
     maxWidth?: number;
     ref: React.RefObject<HTMLDivElement | null>,
+    onEndReached?: () => void;
+    loading?: boolean;
 }
 
 export function DataTable({
-                              config: {
-                                  data,
-                                  columns
-                              },
+                              data,
+                              columns,
                               ref,
                               zoom = 1,
-                              maxWidth
+                              maxWidth,
+                              onEndReached,
+                              loading
                           }: DataTableProps) {
 
     const size = useResizeObserver(ref);
@@ -60,26 +63,8 @@ export function DataTable({
                     data={data}
                     columns={tableColumns}
                     cellRenderer={cellRenderer}
-                    // rowHeight={40}
-                    // style={{
-                    //     width: size.width / zoom,
-                    //     height: size.height / zoom
-                    // }}
-                    // onEndReached={loadNextPage}
-                    // onResetPagination={resetPagination}
-                    // error={dataLoadingError}
-                    // paginationEnabled={paginationEnabled}
-                    // onColumnResize={onColumnResize}
-                    // loading={dataLoading}
-                    // filter={filterValues}
-                    // sortBy={sortBy}
-                    // onSortByUpdate={setSortBy as ((sortBy?: [string, "asc" | "desc"]) => void)}
-                    // hoverRow={hoverRow}
-                    // checkFilterCombination={checkFilterCombination}
-                    // className="flex-grow "
-                    // emptyComponent={emptyComponent}
-                    // endAdornment={endAdornment}
-                    // AddColumnComponent={AddColumnComponent}
+                    onEndReached={onEndReached}
+                    endOffset={2000}
                 />
 
             </div>

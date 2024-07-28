@@ -2,8 +2,8 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import ReactFlow, { Background, BackgroundVariant, Node, Panel, useNodesState } from "reactflow";
 
 import "reactflow/dist/style.css";
-import { cls, defaultBorderMixin, useInjectStyles } from "@firecms/ui";
-import { Dashboard, DashboardPage, DashboardParams, DashboardWidgetConfig, Position, WidgetSize } from "../../types";
+import { cls, defaultBorderMixin, Popover, useInjectStyles } from "@firecms/ui";
+import { Dashboard, DashboardItem, DashboardPage, DateParams, Position, WidgetSize } from "../../types";
 import ChartNode, { ChartNodeProps } from "./nodes/ChartNode";
 import { useDataTalk } from "../../DataTalkProvider";
 import PaperNode, { PaperNodeProps } from "./nodes/PaperNode";
@@ -11,51 +11,8 @@ import { DEFAULT_PAPER_SIZE } from "../../utils/widgets";
 import { DashboardMenubar } from "./DashboardMenubar";
 import { DatePickerWithRange } from "../DateRange";
 import { getInitialDateRange } from "../utils/dates";
-
-function convertWidgetsToNodes(widgets: DashboardWidgetConfig[], paperSize: WidgetSize, paperPosition: Position | undefined, dashboardId: string, pageId: string, onRemoveClick: (id: string) => void, params: DashboardParams): Node<ChartNodeProps>[] {
-    const paperData = {
-        width: paperSize.width,
-        height: paperSize.height,
-        x: paperPosition?.x ?? 0,
-        y: paperPosition?.y ?? 0,
-        dashboardId,
-        pageId
-    } satisfies PaperNodeProps;
-    const paperNode: Node<any> = {
-        id: "paper",
-        type: "paper",
-        draggable: false,
-        position: {
-            x: paperPosition?.x ?? 0,
-            y: paperPosition?.y ?? 0
-        },
-        data: paperData
-        // style: {
-        //     width: 800,
-        //     height: 1200,
-        //     border: "none !important",
-        //     backgroundColor: "rgba(127, 127, 127, .1)",
-        // },
-    };
-
-    const widgetNodes = widgets.map((widget) => ({
-        id: widget.id,
-        type: "chart",
-        draggable: true,
-        selectable: true,
-        data: {
-            widgetConfig: widget,
-            params,
-            dashboardId,
-            pageId,
-            onRemoveClick
-        },
-        position: widget.position,
-        parentId: "paper"
-    }));
-
-    return [paperNode, ...widgetNodes];
-}
+import { useUndoRedo } from "../../hooks/useUndoRedo";
+import TextNode, { TextNodeProps } from "./nodes/TextNode";
 
 export const DashboardPageView = function DashboardPageView({
                                                                 page,
@@ -69,14 +26,21 @@ export const DashboardPageView = function DashboardPageView({
 
     const [dateRange, setDateRange] = useState<[Date | null, Date | null]>(getInitialDateRange());
 
-    const params: DashboardParams = useMemo(() => ({
+    const undoRedoState = useUndoRedo(page);
+    useEffect(() => {
+        // console.log("Undo redo state changed", undoRedoState);
+        undoRedoState.actions.set(page);
+    }, [page]);
+
+    const params: DateParams = useMemo(() => ({
         dateStart: dateRange[0] ?? null,
         dateEnd: dateRange[1] ?? null
     }), [dateRange]);
 
     const nodeTypes = useMemo(() => ({
         paper: PaperNode,
-        chart: ChartNode
+        chart: ChartNode,
+        text: TextNode
     }), []);
 
     const dataTalk = useDataTalk();
@@ -120,14 +84,16 @@ export const DashboardPageView = function DashboardPageView({
         dataTalk.onWidgetMove(dashboard.id, page.id, node.id, node.position);
     }, []);
 
-    console.log("paperPosition", paperPosition);
     return (
 
         <ReactFlow
+            onClick={(e) => {
+                console.log("click", e);
+                e.preventDefault();
+            }}
             className={"relative w-full h-full bg-gray-50 dark:bg-gray-950 dark:bg-opacity-80"}
-            // selectionKeyCode={"Shift"}
             panOnScroll={true}
-            // multiSelectionKeyCode={"Shift"}
+            multiSelectionKeyCode={"Control"}
             nodes={nodes}
             selectionOnDrag={true}
             snapToGrid={true}
@@ -161,15 +127,12 @@ export const DashboardPageView = function DashboardPageView({
                 <div
                     className={cls("w-full flex flex-row bg-white dark:bg-gray-900 rounded-2xl border", defaultBorderMixin)}>
                     <DashboardMenubar dashboard={dashboard}
-                                      dateRange={dateRange}
-                                      setDateRange={setDateRange}
-                    />
+                                      undoRedoState={undoRedoState}/>
                 </div>
             </Panel>
             <Panel position="top-right">
                 <div
                     className={cls("w-full flex flex-row bg-white dark:bg-gray-900 rounded-2xl border", defaultBorderMixin)}>
-
                     <DatePickerWithRange dateRange={dateRange} setDateRange={setDateRange}/>
                 </div>
             </Panel>
@@ -185,6 +148,70 @@ export const DashboardPageView = function DashboardPageView({
         </ReactFlow>
     );
 };
+
+function convertWidgetsToNodes(widgets: DashboardItem[], paperSize: WidgetSize, paperPosition: Position | undefined, dashboardId: string, pageId: string, onRemoveClick: (id: string) => void, params: DateParams): Node<ChartNodeProps | TextNodeProps>[] {
+
+    const paperData = {
+        width: paperSize.width,
+        height: paperSize.height,
+        x: paperPosition?.x ?? 0,
+        y: paperPosition?.y ?? 0,
+        dashboardId,
+        pageId
+    } satisfies PaperNodeProps;
+
+    const paperNode: Node<any> = {
+        id: "paper",
+        type: "paper",
+        draggable: false,
+        position: {
+            x: paperPosition?.x ?? 0,
+            y: paperPosition?.y ?? 0
+        },
+        data: paperData
+    };
+
+    const widgetNodes = widgets.map((widget) => {
+        if (widget.type === "text" || widget.type === "title" || widget.type === "subtitle") {
+            return ({
+                id: widget.id,
+                type: "text",
+                draggable: true,
+                selectable: true,
+                data: {
+                    textItem: widget,
+                    params,
+                    dashboardId,
+                    pageId,
+                    onRemoveClick
+                },
+                position: widget.position,
+                parentId: "paper"
+            });
+        } else if (widget.type === "chart" || widget.type === "table") {
+            return ({
+                id: widget.id,
+                type: "chart",
+                draggable: true,
+                selectable: true,
+                data: {
+                    widgetConfig: widget,
+                    params,
+                    dashboardId,
+                    pageId,
+                    onRemoveClick
+                },
+                position: widget.position,
+                parentId: "paper"
+            });
+        } else {
+            console.error("Unknown widget type", widget);
+            throw new Error("Unknown widget type");
+        }
+    });
+
+    return [paperNode, ...widgetNodes];
+}
 
 const styles = `
 

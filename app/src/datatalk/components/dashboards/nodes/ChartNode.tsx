@@ -1,14 +1,16 @@
 import React, { ComponentType, memo, useState } from "react";
 import { NodeProps, NodeResizer, useOnViewportChange, Viewport } from "reactflow";
-import { DashboardParams, DashboardWidgetConfig, WidgetSize } from "../../../types";
+import { DashboardWidgetConfig, DateParams, WidgetSize } from "../../../types";
 import { DEFAULT_WIDGET_SIZE } from "../../../utils/widgets";
-import { DryWidgetConfigView } from "../../widgets/DryWidgetConfigView";
+import { DryChartConfigView } from "../../widgets/DryChartConfigView";
 import { useDataTalk } from "../../../DataTalkProvider";
 import { mergeDeep } from "@firecms/core";
+import { DryTableConfigView } from "../../widgets/DryTableConfigView";
+import { CheckBoxIcon } from "@firecms/ui";
 
 export type ChartNodeProps = {
     widgetConfig: DashboardWidgetConfig;
-    params?: DashboardParams;
+    params?: DateParams;
     dashboardId: string;
     pageId: string;
     onRemoveClick: (widgetId: string) => void;
@@ -56,16 +58,25 @@ function ChartNode(props: NodeProps<ChartNodeProps>) {
                          }}
             />
 
-            <DryWidgetConfigView dryConfig={data.widgetConfig}
-                                 params={data.params}
-                                 zoom={zoom}
-                                 onRemoveClick={() => data.onRemoveClick(data.widgetConfig.id)}
-                                 onUpdated={(newConfig) => {
-                                     const widgetConfig = mergeDeep(data.widgetConfig, newConfig);
-                                     dataTalk.onWidgetUpdate(data.dashboardId, data.pageId, data.widgetConfig.id, widgetConfig);
-                                 }}
+            {data.widgetConfig.type === "chart" && <DryChartConfigView dryConfig={data.widgetConfig}
+                                                                       params={data.params}
+                                                                       selected={props.selected}
+                                                                       zoom={zoom}
+                                                                       onRemoveClick={() => data.onRemoveClick(data.widgetConfig.id)}
+                                                                       onUpdated={(newConfig) => {
+                                                                           const widgetConfig = mergeDeep(data.widgetConfig, newConfig);
+                                                                           dataTalk.onWidgetUpdate(data.dashboardId, data.pageId, data.widgetConfig.id, widgetConfig);
+                                                                       }}/>}
+            {data.widgetConfig.type === "table" && <DryTableConfigView dryConfig={data.widgetConfig}
+                                                                       params={data.params}
+                                                                       selected={props.selected}
+                                                                       zoom={zoom}
+                                                                       onRemoveClick={() => data.onRemoveClick(data.widgetConfig.id)}
+                                                                       onUpdated={(newConfig) => {
+                                                                           const widgetConfig = mergeDeep(data.widgetConfig, newConfig);
+                                                                           dataTalk.onWidgetUpdate(data.dashboardId, data.pageId, data.widgetConfig.id, widgetConfig);
+                                                                       }}/>}
 
-            />
         </div>
     );
 }

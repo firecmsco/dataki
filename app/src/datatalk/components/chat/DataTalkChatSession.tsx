@@ -3,7 +3,7 @@ import { randomString, useAuthController, useSnackbarController } from "@firecms
 import { Button, cls, fieldBackgroundHoverMixin, SendIcon, TextareaAutosize, Typography } from "@firecms/ui";
 import { MessageView } from "./MessageView";
 import { getDataTalkPromptSuggestions, streamDataTalkCommand } from "../../api";
-import { ChatMessage, DashboardParams, DataSource, FeedbackSlug, Session } from "../../types";
+import { ChatMessage, DateParams, DataSource, FeedbackSlug, ChatSession } from "../../types";
 import { PromptSuggestions } from "./PromptSuggestions";
 import { useDataTalk } from "../../DataTalkProvider";
 import { DataSourcesSelection } from "../DataSourcesSelection";
@@ -16,7 +16,7 @@ const DEMO_DATA_SOURCES: DataSource[] = [{
     datasetId: "thelook_ecommerce"
 }];
 
-function getInitialProject(session: Session, uid: string) {
+function getInitialProject(session: ChatSession, uid: string) {
     if (session.projectId)
         return session.projectId;
 
@@ -28,7 +28,7 @@ function getInitialProject(session: Session, uid: string) {
     return DEMO_DATA_SOURCES[0].projectId;
 }
 
-function getInitialDataSources(session: Session, uid: string) {
+function getInitialDataSources(session: ChatSession, uid: string) {
     if (session.dataSources && session.dataSources.length > 0) {
         return session.dataSources;
     }
@@ -47,7 +47,7 @@ export function DataTalkChatSession({
                                         onDataSourcesChange,
                                         onProjectIdChange
                                     }: {
-    session: Session,
+    session: ChatSession,
     initialPrompt?: string,
     onAnalyticsEvent?: (event: string, params?: any) => void,
     onMessagesChange?: (messages: ChatMessage[]) => void,
@@ -78,7 +78,7 @@ export function DataTalkChatSession({
 
     const [dateRange, setDateRange] = useState<[Date | null, Date | null]>(getInitialDateRange());
 
-    const params: DashboardParams = useMemo(() => ({
+    const params: DateParams = useMemo(() => ({
         dateStart: dateRange[0] ?? null,
         dateEnd: dateRange[1] ?? null
     }), [dateRange]);
@@ -387,7 +387,7 @@ export function DataTalkChatSession({
             <div className="h-full overflow-auto"
                  onScroll={handleScroll}
                  ref={scrollContainerRef}>
-                <div className={"absolute top-4 right-4 bg-white dark:bg-gray-800 rounded-lg"}>
+                <div className={"z-20 absolute top-4 right-4 bg-white dark:bg-gray-800 rounded-lg"}>
                     <DatePickerWithRange dateRange={dateRange} setDateRange={setDateRange}/>
                 </div>
 

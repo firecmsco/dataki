@@ -1,4 +1,4 @@
-export type Session = {
+export type ChatSession = {
     id: string;
     name?: string;
     created_at: Date;
@@ -54,6 +54,7 @@ export type BigQueryDataSource = {
 }
 
 export type DryWidgetConfig = {
+    id?: string;
     title: string;
     projectId: string;
     description: string;
@@ -73,6 +74,16 @@ export type WidgetConfig = {
     chart?: ChartConfig,
     table?: TableConfig,
     size?: WidgetSize,
+}
+
+export type DashboardItem = DashboardWidgetConfig | TextItem;
+
+export type TextItem = {
+    id: string;
+    type: "title" | "subtitle" | "text";
+    text: string;
+    position: Position,
+    size: WidgetSize
 }
 
 export type DashboardWidgetConfig = DryWidgetConfig & {
@@ -109,7 +120,6 @@ export type ChartConfig = {
 };
 
 export type TableConfig = {
-    data: DataRow[];
     columns: TableColumn[]
 };
 
@@ -142,7 +152,7 @@ export type DashboardPage = {
         size?: WidgetSize,
         position?: Position
     }
-    widgets: DashboardWidgetConfig[];
+    widgets: DashboardItem[];
 }
 
 export type GCPProject = {
@@ -150,7 +160,6 @@ export type GCPProject = {
     projectId: string; // Unique identifier for the project
     projectNumber: string; // Unique number associated with the project
     createTime: string; // ISO 8601 date string
-    // Using index signature for labels to support various key-value pairs
     labels: {
         [key: string]: string;
     };
@@ -163,7 +172,20 @@ export type GCPProject = {
     linked: boolean;
 }
 
-export type DashboardParams = {
+export type DateParams = {
     dateStart?: Date | null;
     dateEnd?: Date | null;
 }
+
+export type FilterOp =
+    | "<"
+    | "<="
+    | "=="
+    | "!="
+    | ">="
+    | ">"
+// | "array-contains"
+// | "in"
+// | "not-in"
+// | "array-contains-any"
+    ;

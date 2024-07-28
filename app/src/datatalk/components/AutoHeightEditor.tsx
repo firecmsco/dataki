@@ -62,6 +62,7 @@ export function AutoHeightEditor({
             scrollBeyondLastLine: false,
             minimap: { enabled: false },
             readOnly: loading,
+            wordWrap: "on",
             // automaticLayout: true,
             scrollbar: {
                 vertical: "hidden",

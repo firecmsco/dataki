@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
 import JSON5 from "json5";
 import { CircularProgress } from "@firecms/ui";
-import { DashboardParams, DataSource, DryWidgetConfig } from "../../types";
+import { DateParams, DryWidgetConfig } from "../../types";
 import { DEFAULT_WIDGET_SIZE } from "../../utils/widgets";
-import { DryWidgetConfigView } from "../widgets/DryWidgetConfigView";
+import { DryChartConfigView } from "../widgets/DryChartConfigView";
 import { ErrorBoundary } from "@firecms/core";
+import { DryTableConfigView } from "../widgets/DryTableConfigView";
 
 export function WidgetMessageView({
                                       rawDryConfig,
@@ -19,7 +20,7 @@ export function WidgetMessageView({
     maxWidth?: number,
     onContentModified?: (rawDryConfig: string) => void,
     projectId: string,
-    params?: DashboardParams,
+    params?: DateParams,
 }) {
 
     const [dryConfig, setDryConfig] = useState<DryWidgetConfig | null>(null);
@@ -69,7 +70,7 @@ export function WidgetMessageView({
 
             {!loading && dryConfig && (
                 <ErrorBoundary>
-                    <DryWidgetConfigView
+                    {dryConfig.type === "chart" && <DryChartConfigView
                         dryConfig={dryConfig}
                         params={params}
                         onUpdated={(newConfig) => {
@@ -77,7 +78,16 @@ export function WidgetMessageView({
                             onChange(newConfig);
                         }}
                         maxWidth={maxWidth}
-                    />
+                    />}
+                    {dryConfig.type === "table" && <DryTableConfigView
+                        dryConfig={dryConfig}
+                        params={params}
+                        onUpdated={(newConfig) => {
+                            setDryConfig(newConfig);
+                            onChange(newConfig);
+                        }}
+                        maxWidth={maxWidth}
+                    />}
                 </ErrorBoundary>)}
 
             {parsingError && (
