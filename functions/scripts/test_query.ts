@@ -78,7 +78,7 @@ getUserAccessToken(getFirestore(app), "OEX1VYwnyhVFWrF2UFUoYtkVyov1")
         // const projectDataContext = await getProjectDataContext(app.firestore(), "firecms-backend", "analytics_351154604");
         // console.log("Project data context", projectDataContext);
         runSQLQuery(
-            "WITH\n" +
+            {sql : "WITH\n" +
             "  DateSeries AS (\n" +
             "    SELECT\n" +
             "      generate_timestamp_array(\n" +
@@ -112,9 +112,7 @@ getUserAccessToken(getFirestore(app), "OEX1VYwnyhVFWrF2UFUoYtkVyov1")
             "  ExplodedDates AS ed\n" +
             "  LEFT JOIN UserRegistrations AS ur ON ed.date = ur.creation_date\n" +
             "ORDER BY\n" +
-            "  ed.date;",
-            serviceAccountKey,
-            {});
+            "  ed.date;", credentials : serviceAccountKey, params : {}});
         // runSQLQueryRest("SELECT document_id, created_on FROM firecms-backend.firestore_export.users_latest ORDER BY created_on DESC LIMIT 100", "firecms-backend", token);
         // console.log(accessToken)
         // runSQLQuery("SELECT  * FROM bigquery-public-data.thelook_ecommerce.inventory_items LIMIT 5", serviceAccountKey);

@@ -1,29 +1,69 @@
 import { BigQuery, BigQueryDate, BigQueryDatetime, BigQueryInt, BigQueryTimestamp } from "@google-cloud/bigquery";
 // @ts-ignore
 import { Big } from "big.js";
-import { ServiceAccountKey } from "../types/service_account";
-import { DashboardParams, DataSource } from "../types/dashboards";
+import { DataSource, DateParams } from "../types/dashboards";
 import DataTalkException from "../types/exceptions";
-import * as util from "util";
+import { SQLQuery } from "../types/sql";
 
-export async function runSQLQuery(sql: string, credentials?: ServiceAccountKey, params?: DashboardParams) {
+function applyFilterToSQL({
+                              sql,
+                              orderBy,
+                              filter,
+                              limit,
+                              offset
+                          }: SQLQuery): string {
+
+    if (sql.trim().toLowerCase().startsWith("with")) {
+        console.warn("SQL query already has a WITH clause. Make sure it's compatible with the filter and order by clauses.");
+        return sql;
+    }
+
+    let res = `WITH data AS ( ${sql} ) SELECT * FROM data`;
+
+    // Apply filters
+    if (filter && filter.length > 0) {
+        const filterConditions = filter.map(([column, op, value]) => {
+            return `${column} ${op} '${value}'`;
+        }).join(" AND ");
+        res += ` WHERE ${filterConditions}`;
+    }
+
+    // Apply order by
+    if (orderBy && orderBy.length > 0) {
+        const orderConditions = orderBy.map(([column, direction]) => {
+            return `${column} ${direction}`;
+        }).join(", ");
+        res += ` ORDER BY ${orderConditions}`;
+    }
+
+    // Apply limit
+    if (limit !== undefined) {
+        res += ` LIMIT ${limit}`;
+    }
+
+    // Apply offset
+    if (offset !== undefined) {
+        res += ` OFFSET ${offset}`;
+    }
+
+    return res;
+}
+
+export async function runSQLQuery({
+                                      sql,
+                                      credentials,
+                                      params,
+                                      orderBy,
+                                      filter,
+                                      limit,
+                                      offset
+                                  }: SQLQuery) {
 
     try {
         const bigquery = new BigQuery({
             projectId: credentials?.project_id,
             credentials
         });
-
-        console.log("credentials", credentials);
-        console.log("bigquery", util.inspect(bigquery, false, null, true));
-        console.log(bigquery.authClient);
-        console.log(bigquery.makeAuthenticatedRequest.getCredentials((err, cred) => {
-            console.log("INNER: getCredentials", {
-                err,
-                cred
-            });
-        }));
-        console.log("projectId", await bigquery.getProjectId());
 
         const cleanSQL = sql
             .replaceAll("\\n", " ")
@@ -33,10 +73,18 @@ export async function runSQLQuery(sql: string, credentials?: ServiceAccountKey, 
             .replace(/\n/g, "")
             .replace(/\\\\/g, "");
 
+        const filteredSQL = applyFilterToSQL({
+            sql: cleanSQL,
+            orderBy,
+            filter,
+            limit,
+            offset
+        });
+
         const usedParams = convertParams(params);
-        console.log("Running clean query:", cleanSQL, usedParams);
+        console.log("Running clean query:", filteredSQL, usedParams);
         const query = {
-            query: cleanSQL,
+            query: filteredSQL,
             params: usedParams,
             parseJson: true
         };
@@ -53,50 +101,50 @@ export async function runSQLQuery(sql: string, credentials?: ServiceAccountKey, 
 }
 
 // const projectId = "datatalk-443fb";
-export async function runSQLQueryRest(sql: string, projectId: string, accessToken: string) {
-
-    try {
-        const cleanSQL = sql
-            .replaceAll("\\n", " ")
-            .replaceAll("\\\\n", " ")
-            .replaceAll("\n", " ")
-            .replaceAll("\\'", "'")
-            .replace(/\n/g, "")
-            .replace(/\\\\/g, "");
-
-        console.log(`Running query: ${sql}`);
-        console.log(`Running clean query: ${cleanSQL}`);
-
-        const payload = {
-            query: cleanSQL
-        };
-        const response = await fetch(`https://bigquery.googleapis.com/bigquery/v2/projects/${projectId}/queries?prettyPrint=false`, {
-            method: "POST",
-            headers: {
-                "Authorization": `Bearer ${accessToken}`,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(payload)
-        });
-
-        if (!response.ok) {
-            console.error(response);
-            throw new Error(`Error running query: ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        const rows = data.rows; // Assuming the API returns rows in this format
-
-        console.log(`Total rows: ${rows.length}`);
-
-        const result = rows.map(convertBQValues);
-        console.log(result);
-        return result;
-    } catch (e: any) {
-        console.log(typeof e, util.inspect(e, true, null, true));
-        throw new DataTalkException(e.code, e.message, "run-sql");
-    }
-}
+// export async function runSQLQueryRest(sql: string, projectId: string, accessToken: string) {
+//
+//     try {
+//         const cleanSQL = sql
+//             .replaceAll("\\n", " ")
+//             .replaceAll("\\\\n", " ")
+//             .replaceAll("\n", " ")
+//             .replaceAll("\\'", "'")
+//             .replace(/\n/g, "")
+//             .replace(/\\\\/g, "");
+//
+//         console.log(`Running query: ${sql}`);
+//         console.log(`Running clean query: ${cleanSQL}`);
+//
+//         const payload = {
+//             query: cleanSQL
+//         };
+//         const response = await fetch(`https://bigquery.googleapis.com/bigquery/v2/projects/${projectId}/queries?prettyPrint=false`, {
+//             method: "POST",
+//             headers: {
+//                 "Authorization": `Bearer ${accessToken}`,
+//                 "Content-Type": "application/json"
+//             },
+//             body: JSON.stringify(payload)
+//         });
+//
+//         if (!response.ok) {
+//             console.error(response);
+//             throw new Error(`Error running query: ${response.statusText}`);
+//         }
+//
+//         const data = await response.json();
+//         const rows = data.rows; // Assuming the API returns rows in this format
+//
+//         console.log(`Total rows: ${rows.length}`);
+//
+//         const result = rows.map(convertBQValues);
+//         console.log(result);
+//         return result;
+//     } catch (e: any) {
+//         console.log(typeof e, util.inspect(e, true, null, true));
+//         throw new DataTalkException(e.code, e.message, "run-sql");
+//     }
+// }
 
 function convertBQValues(obj: any): any {
     if (obj === null || obj === undefined) return obj;
@@ -158,7 +206,7 @@ export async function getBigQueryDatasets(projectId: string, accessToken: string
     })) || []; // Handle cases where datasets might be empty
 }
 
-function convertParams(params?: DashboardParams): Record<string, any> {
+function convertParams(params?: DateParams): Record<string, any> {
     console.log("Converting params", params);
 
     const threeMonthsAgo = new Date();

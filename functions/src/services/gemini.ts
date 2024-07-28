@@ -18,6 +18,7 @@ import DataTalkException from "../types/exceptions";
 
 const PREFERRED_COLORS = ["#ea5545", "#f46a9b", "#ef9b20", "#edbf33", "#ede15b", "#bdcf32", "#87bc45", "#27aeef", "#b33dc6"];
 
+
 export const getVertexAI = async (): Promise<GenerativeModelPreview> => {
     const model = "gemini-1.5-pro";
     const projectId = await getGoogleProjectId();
@@ -58,11 +59,17 @@ export async function makeGeminiRequest({
     const functions = {
         makeSQLQuery: ({ sql }: { sql: string }) => {
             onSQLQuery && onSQLQuery(sql);
-            return runSQLQuery(sql, credentials)
+            return runSQLQuery({
+                sql: sql,
+                credentials: credentials
+            })
         }
     };
 
     const dataContext = dataContexts.join("\n\n");
+    const colors = [...PREFERRED_COLORS];
+    shuffle(colors);
+
     const instructions = `You are a tool that allows user to query their BigQuery datasets and generate
 charts, tables or give answers in natural language. The charts and tables you generate can be added to dashboards.
 You are able to understand the user's query and generate the SQL query that will fetch the data the user is asking for.
@@ -114,7 +121,7 @@ When you are generating chart configs, the JSON need to look like this:
     "title": "Sample chart title",
     "description" : "Provide a small description of what this widget displays",
     "type": "chart",
-    "sql": "SELECT * FROM table WHERE date BETWEEN @DATE_START AND @DATE_END",
+    "sql": "SELECT label_mapping_key, data_mapping_key, another_mapping_key FROM \`table\` WHERE date BETWEEN @DATE_START AND @DATE_END",
     "chart":{
         "type": "bar",
         "data": {
@@ -122,7 +129,13 @@ When you are generating chart configs, the JSON need to look like this:
             "datasets": [
                 {
                     "label": "Column 1",
-                    "data": [[data_mapping_key]]
+                    "data": "[[data_mapping_key]]",
+                    "backgroundColor": ${colors[0]}
+                },
+                {
+                    "label": "Column 2",
+                    "data": "[[another_mapping_key]]",
+                    "backgroundColor": ${colors[1]}
                 }
             ]
         },
@@ -145,6 +158,9 @@ When you are generating chart configs, the JSON need to look like this:
     }
 }
 \`\`\`
+
+Bar charts use the \`backgroundColor\` property to set the color of the bars. 
+Line charts use the \`borderColor\` property to set the color of the line.
 
 You may also want to generate the labels based on the query. You can specify this format for generating a dataset 
 per entry. If your data has triplets with keys 'sales_date', 'daily_sales' and 'product_category', you can generate
@@ -217,7 +233,7 @@ SQL:
 - The SQL will run in BigQuery. The result of running the SQL must always be an array of objects.
 - Write human-readable SQL queries that are easy to understand, and DO NOT USE keys like t1, t2, t3, etc. Use
 names like 'products', 'sales', 'customers', 'count', 'average', or whatever makes sense.
-- You should tend to apply limits to the number of rows returned by the SQL query to avoid performance issues, unless the user explicitly asks for all the data.
+- Do not worry about applying limits to the SQL queries, the backend will take care of that.
 - If the user asks for the average, sum, count, etc., you should return the result of that operation, by using \`makeSQLQuery(sql:string)\`.
 - Try to include the ID of the row in the result, where applicable.
 - The SQL you generate should be human readable, so INCLUDE line breaks and indentation where appropriate.
@@ -229,6 +245,7 @@ names like 'products', 'sales', 'customers', 'count', 'average', or whatever mak
   make sure the value you are comparing is casted to TIMESTAMP.
 - Be specially careful when generating SQL queries that include dates. Your SQL should be able to handle date ranges,
   CAST TO TIMESTAMP: like 'TIMESTAMP(covid19_open_data.date) BETWEEN @DATE_START AND @DATE_END'
+- Do not use a subquery in a JOIN predicate.
 - When generating tables, include also columns that are useful, typically all the columns from the main
   table being requested, and possibly some additional ones that are useful for the user to understand the data.
   For tables too, include the @DATE_START and @DATE_END parameters in the SQL query, so the user can filter the data by date.
@@ -247,9 +264,7 @@ This process is called hydration. The frontend will use the hydrated JSON to ren
 It is very important that the fields that include placeholders are correctly named and match the keys in the data,
 and they will ALWAYS be replaced with an array mapped to the fetched data. They should not be used for anything else.
 
-Please always use these colors when required: ${PREFERRED_COLORS.join(", ")} (or similar ones if you need more).
-You usually do not need to include the color in the JSON, you only need it for more complex charts.
-
+Please always use these colors when required: ${colors.join(", ")} (or similar ones if you need more).
 
 Important: you can fetch some data from BigQuery using the function makeSQLQuery, for better context on the data you are working with.
 For example, you may want to make a distinct select query for getting the possible values of a column, 
@@ -346,7 +361,7 @@ const makeSQLQueryFunctionDeclaration: Tool = {
         name: "makeSQLQuery",
         parameters: {
             type: FunctionDeclarationSchemaType.OBJECT,
-            description: "Make a BigQuery SQL request, try to limit the number of rows returned.",
+            description: "Make a BigQuery SQL request.",
             properties: {
                 sql: {
                     type: FunctionDeclarationSchemaType.STRING,
@@ -447,4 +462,20 @@ Do not suggest generating maps.
 
 Your output will be parsed by a script so it MUST always be in the same format.
 `;
+}
+
+function shuffle<T>(array: T[]) {
+    let currentIndex = array.length;
+
+    // While there remain elements to shuffle...
+    while (currentIndex != 0) {
+
+        // Pick a remaining element...
+        const randomIndex = Math.floor(Math.random() * currentIndex);
+        currentIndex--;
+
+        // And swap it with the current element.
+        [array[currentIndex], array[randomIndex]] = [
+            array[randomIndex], array[currentIndex]];
+    }
 }

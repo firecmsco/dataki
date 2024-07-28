@@ -7,6 +7,9 @@ import { Credentials } from "google-auth-library";
 import { firestore } from "../firebase";
 import { getAuthUrl, getOauthTokenFromCode, refreshOauthCredentials } from "../services/oauth";
 
+// @ts-ignore
+import etag from "etag";
+
 const oauthRouter = express.Router();
 
 const corsOptions: CorsOptions = {
@@ -54,6 +57,7 @@ function generateAuthUrl(request: Request, response: Response) {
     }
     const authorizationUrl = getAuthUrl(redirect_uri as string);
 
+    response.setHeader("ETag", etag(authorizationUrl))
     response.status(200).send({ data: authorizationUrl });
 }
 

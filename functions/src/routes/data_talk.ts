@@ -1,35 +1,24 @@
 import express, { Request, Response } from "express";
 import { firebaseAuthorization } from "../middlewares";
 import DataTalkException from "../types/exceptions";
-import { DashboardParams, DataSource, DryWidgetConfig } from "../types/dashboards";
+import { DataSource, DateParams, DryWidgetConfig } from "../types/dashboards";
 import { runSQLQuery } from "../services/bigquery";
-import { hydrateChartConfig, hydrateTableConfig } from "../services/hydration";
+import { hydrateChartConfig } from "../services/hydration";
 import { generateSamplePrompts, makeGeminiRequest } from "../services/gemini";
 import { getStoredServiceAccount } from "../services/projects";
 import { firestore } from "../firebase";
 import { getProjectDataContext } from "../services/context_data";
 import { ChatMessage } from "../types/chat";
 
+// @ts-ignore
+import etag from "etag";
+
 export const dataTalkRouter = express.Router();
 
 dataTalkRouter.get("/health", check());
 dataTalkRouter.post("/command", firebaseAuthorization(), processUserCommandRoute);
 dataTalkRouter.post("/hydrate_chart", firebaseAuthorization(), hydrateChartRoute);
-dataTalkRouter.post("/hydrate_table", firebaseAuthorization(), hydrateTableRoute);
 dataTalkRouter.post("/prompt_suggestions", firebaseAuthorization(), samplePromptsRoute);
-
-function getProjectIdFromSources(sources: DataSource[]) {
-    console.log("Getting project id from sources", sources);
-    if (sources.length === 0) {
-        throw new DataTalkException(400, "You must specify at least one source", "Invalid request");
-    }
-    if (!sources.every(source => source.projectId === sources[0].projectId)) {
-        // throw new DataTalkException(400, "All sources must belong to the same project", "Invalid request");
-    }
-
-    return sources[0].projectId;
-
-}
 
 async function processUserCommandRoute(request: Request, response: Response) {
 
@@ -99,38 +88,22 @@ async function hydrateChartRoute(request: Request, response: Response) {
         throw new DataTalkException(400, "Missing sql in the config", "Invalid request");
     }
 
-    const params: DashboardParams | undefined = request.body.params;
+    const params: DateParams | undefined = request.body.params;
 
     console.log("Hydrating chart or table", config);
     const projectId = config.projectId;
     console.log("Got project id", projectId);
     const credentials = await getStoredServiceAccount(firestore, projectId);
 
-    const data = await runSQLQuery(config.sql, credentials, params);
+    const data = await runSQLQuery({
+        sql: config.sql,
+        credentials: credentials,
+        params: params
+    });
     const res = hydrateChartConfig(config, data);
 
-    response.json({ data: res });
-}
-
-async function hydrateTableRoute(request: Request, response: Response) {
-    if (!request.body.config) {
-        throw new DataTalkException(400, "Missing config param in the body", "Invalid request");
-    }
-
-    const config: DryWidgetConfig = request.body.config;
-
-    if (!config.sql) {
-        throw new DataTalkException(400, "Missing sql in the config", "Invalid request");
-    }
-
-    const params: DashboardParams | undefined = request.body.params;
-
-    const projectId = config.projectId;
-    const credentials = await getStoredServiceAccount(firestore, projectId);
-
-    const data = await runSQLQuery(config.sql, credentials, params);
-    const res = hydrateTableConfig(config, data);
-
+    response.setHeader("Cache-Control", "public, max-age=31536000");
+    response.setHeader("ETag", etag(JSON.stringify(res)));
     response.json({ data: res });
 }
 
@@ -159,6 +132,7 @@ function check() {
             "endpoint": request.path,
             "message": "Health check"
         }))
+
         response.status(200).json({ "message": "Ok" });
     }
 }

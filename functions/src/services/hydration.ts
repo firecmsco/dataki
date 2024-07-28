@@ -28,8 +28,8 @@ export const hydrateChartConfig = (config: DryWidgetConfig, data: DataRow[]): Wi
         : [labels];
 
     const datasets = config.chart.data.datasets.map(dataset => {
-        if (typeof dataset.data !== "string") {
-            throw new Error("Invalid dataset data");
+        if (Array.isArray(dataset.data)) {
+           return dataset as unknown as DataSet;
         }
         return processDataSet(dataset, data);
 
@@ -71,6 +71,7 @@ function convertValueForChart(value: any) {
 }
 
 function replacePlaceholders(str: string, data: DataRow[]): string | string[] {
+    if (typeof str !== "string") return str;
     const replacedKey = str.replace(/\[\[|]]/g, "");
     if (replacedKey === str) return str; // No placeholders found
     return data.map(row => {
@@ -104,8 +105,9 @@ export function processDataSet(dataset: DryDataset, data: DataRow[]): DataSet[] 
 
     dataMap.forEach((extractedValues, category) => {
         result.push({
+            ...dataset,
             data: extractedValues,
-            label: category.toString()
+            label: category?.toString()
         });
     });
 

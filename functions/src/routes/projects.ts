@@ -5,6 +5,9 @@ import { getUserAccessToken, listUserProjects } from "../services/users";
 import { firestore } from "../firebase";
 import { createServiceAccountLink, deleteServiceAccountLink } from "../services/projects";
 
+// @ts-ignore
+import etag from "etag";
+
 export const projectsRouter = express.Router();
 
 projectsRouter.get("/:projectId/datasets", firebaseAuthorization(), getDatasetsRoute);
@@ -23,6 +26,7 @@ async function getDatasetsRoute(request: Request, response: Response) {
         throw new Error("Admin token not found");
     }
     const data = await getBigQueryDatasets(projectId, accessToken);
+    response.setHeader("ETag", etag(JSON.stringify(data)))
     response.json({ data: data });
 }
 
@@ -44,6 +48,8 @@ async function getUserGCPProjectsRoute(request: Request, response: Response) {
             };
         }
     ));
+
+    response.setHeader("ETag", etag(JSON.stringify(projectsWithServiceAccounts)));
     response.json({ data: projectsWithServiceAccounts });
 }
 
