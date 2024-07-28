@@ -47,6 +47,7 @@ export type DataTalkConfig = {
     onWidgetUpdate: (dashboardId: string, pageId: string, id: string, widgetConfig: DashboardWidgetConfig) => void;
     onWidgetMove: (dashboardId: string, pageId: string, id: string, position: Position) => void;
     onWidgetRemove: (dashboardId: string, pageId: string, id: string) => void;
+    onWidgetsRemove: (dashboardId: string, pageId: string, id: string[]) => void;
     updateDashboardPage: (id: string, pageId: string, dashboard: Partial<DashboardPage>) => void;
 
     firebaseApp?: FirebaseApp;
@@ -237,6 +238,16 @@ export function useBuildDataTalkConfig({
         return saveDashboard(dashboard);
     }, [saveDashboard]);
 
+    const onWidgetsRemove = useCallback((dashboardId: string, pageId: string, ids: string[]) => {
+        const dashboard = dashboardsRef.current.find(d => d.id === dashboardId);
+        if (!dashboard) throw Error("addDashboardWidget: Dashboard not found");
+        const page = dashboard.pages.find(p => p.id === pageId);
+        if (!page) throw Error("addDashboardWidget: Page not found");
+        const widgets = page.widgets.filter(w => !ids.includes(w.id));
+        page.widgets = widgets;
+        return saveDashboard(dashboard);
+    }, [saveDashboard]);
+
     const onWidgetUpdate = useCallback((dashboardId: string, pageId: string, id: string, widgetConfig: DashboardWidgetConfig) => {
         const dashboard = dashboardsRef.current.find(d => d.id === dashboardId);
         if (!dashboard) throw Error("addDashboardWidget: Dashboard not found");
@@ -371,6 +382,7 @@ export function useBuildDataTalkConfig({
         onWidgetUpdate,
         onWidgetMove,
         onWidgetRemove,
+        onWidgetsRemove,
         firebaseApp
     };
 }

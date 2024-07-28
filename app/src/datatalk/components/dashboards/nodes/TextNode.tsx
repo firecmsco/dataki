@@ -1,5 +1,5 @@
 import React, { ComponentType, memo, useState } from "react";
-import { NodeProps, NodeResizer, NodeToolbar, Position } from "reactflow";
+import { NodeProps, NodeResizer } from "reactflow";
 import { DateParams, TextItem, WidgetSize } from "../../../types";
 import { cls, IconButton, RemoveIcon, TextField, Tooltip } from "@firecms/ui";
 import { useDataTalk } from "../../../DataTalkProvider";
@@ -40,20 +40,16 @@ function TextNode(props: NodeProps<TextNodeProps>) {
     return (
         <div className={cls(textClass, "relative group")}>
 
-            <NodeToolbar
-                isVisible={undefined}
-                position={Position.Top}
-            >
-                <Tooltip title={"Remove this view"}
-                         className={"h-[32px] rounded-full bg-gray-50 dark:bg-gray-950 invisible group-hover:visible z-10"}>
-                    <IconButton
-                        onClick={() => dataTalk.onWidgetRemove(data.dashboardId, data.pageId, data.textItem.id)}
-                        size={"small"}>
-                        <RemoveIcon
-                            size={"small"}/>
-                    </IconButton>
-                </Tooltip>
-            </NodeToolbar>
+            <Tooltip title={"Remove this view"}
+                     className={cls("absolute -top-4 -right-4 h-[32px] rounded-full bg-gray-50 dark:bg-gray-950 group-hover:visible z-10",
+                         props.selected ? "visible" : "invisible")}>
+                <IconButton
+                    onClick={() => dataTalk.onWidgetRemove(data.dashboardId, data.pageId, data.textItem.id)}
+                    size={"small"}>
+                    <RemoveIcon
+                        size={"small"}/>
+                </IconButton>
+            </Tooltip>
 
             <TextField value={text}
                        size={fieldSize}

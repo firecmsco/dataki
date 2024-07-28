@@ -1,8 +1,16 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import ReactFlow, { Background, BackgroundVariant, Node, Panel, useNodesState } from "reactflow";
+import ReactFlow, {
+    Background,
+    BackgroundVariant,
+    Node,
+    NodeChange,
+    NodePositionChange,
+    Panel,
+    useNodesState
+} from "reactflow";
 
 import "reactflow/dist/style.css";
-import { cls, defaultBorderMixin, Popover, useInjectStyles } from "@firecms/ui";
+import { cls, defaultBorderMixin, useInjectStyles } from "@firecms/ui";
 import { Dashboard, DashboardItem, DashboardPage, DateParams, Position, WidgetSize } from "../../types";
 import ChartNode, { ChartNodeProps } from "./nodes/ChartNode";
 import { useDataTalk } from "../../DataTalkProvider";
@@ -56,6 +64,27 @@ export const DashboardPageView = function DashboardPageView({
         y: 0
     };
 
+    const updateWidgetsBasedOnChange = (changes: NodeChange[]) => {
+        const positionChanges = changes.filter((change) => change.type === "position" && !change.dragging) as NodePositionChange[];
+        const updatedWidgets: DashboardItem[] = [];
+        // check the positions are the same in the node and the widgets
+        positionChanges.forEach((change) => {
+            const node = nodes.find((node) => node.id === change.id);
+            if (node) {
+                const widget = page.widgets.find((widget) => widget.id === change.id);
+                if (widget && (widget?.position?.x !== node.position.x || widget?.position?.y !== node.position.y)) {
+                    widget.position.x = node.position.x;
+                    widget.position.y = node.position.y;
+                    updatedWidgets.push(widget);
+                }
+            }
+        });
+        if (updatedWidgets.length > 0) {
+            console.log("!!!!! Updating widgets", updatedWidgets);
+            dataTalk.updateDashboardPage(dashboard.id, page.id, page);
+        }
+    };
+
     const [nodes, setNodes, onNodesChange] = useNodesState(convertWidgetsToNodes(
         page.widgets,
         paperSize,
@@ -65,8 +94,14 @@ export const DashboardPageView = function DashboardPageView({
         onRemoveClick,
         params));
 
+    const nodesRef = React.useRef(nodes);
     useEffect(() => {
-        console.log("Page widgets changed", page.widgets);
+        nodesRef.current = nodes;
+    }, [nodes]);
+
+    useEffect(() => {
+        const selectedNodeIds = nodesRef.current.filter((node) => node.selected).map((node) => node.id);
+
         setNodes(convertWidgetsToNodes(
             page.widgets,
             paperSize,
@@ -74,23 +109,20 @@ export const DashboardPageView = function DashboardPageView({
             dashboard.id,
             page.id,
             onRemoveClick,
-            params));
+            params,
+            selectedNodeIds));
     }, [page.widgets, params]);
 
     useInjectStyles("dashboard", styles);
 
     const onNodeDragStop = useCallback((_: any, node: Node, nodes: Node[]) => {
-        console.log("Node moved:", node);
-        dataTalk.onWidgetMove(dashboard.id, page.id, node.id, node.position);
+        // console.log("Node moved:", node);
+        // dataTalk.onWidgetMove(dashboard.id, page.id, node.id, node.position);
     }, []);
 
     return (
 
         <ReactFlow
-            onClick={(e) => {
-                console.log("click", e);
-                e.preventDefault();
-            }}
             className={"relative w-full h-full bg-gray-50 dark:bg-gray-950 dark:bg-opacity-80"}
             panOnScroll={true}
             multiSelectionKeyCode={"Control"}
@@ -107,12 +139,17 @@ export const DashboardPageView = function DashboardPageView({
                 y: -paperPosition.y + 100,
                 zoom: 1
             }}
+            onNodesDelete={(nodes) => {
+                const deletedIds = nodes.map((node) => node.id);
+                dataTalk.onWidgetsRemove(dashboard.id, page.id, deletedIds);
+            }}
             preventScrolling={false}
             // edges={edges}
             onNodeDragStop={onNodeDragStop}
+
             onNodesChange={(change) => {
-                // console.log("change", change);
-                onNodesChange(change)
+                onNodesChange(change);
+                updateWidgetsBasedOnChange(change);
             }}
             nodeTypes={nodeTypes}
             // onEdgesChange={onEdgesChange}
@@ -149,7 +186,7 @@ export const DashboardPageView = function DashboardPageView({
     );
 };
 
-function convertWidgetsToNodes(widgets: DashboardItem[], paperSize: WidgetSize, paperPosition: Position | undefined, dashboardId: string, pageId: string, onRemoveClick: (id: string) => void, params: DateParams): Node<ChartNodeProps | TextNodeProps>[] {
+function convertWidgetsToNodes(widgets: DashboardItem[], paperSize: WidgetSize, paperPosition: Position | undefined, dashboardId: string, pageId: string, onRemoveClick: (id: string) => void, params: DateParams, selectedNodeIds?: string[]): Node<ChartNodeProps | TextNodeProps>[] {
 
     const paperData = {
         width: paperSize.width,
@@ -178,6 +215,7 @@ function convertWidgetsToNodes(widgets: DashboardItem[], paperSize: WidgetSize, 
                 type: "text",
                 draggable: true,
                 selectable: true,
+                selected: selectedNodeIds?.includes(widget.id),
                 data: {
                     textItem: widget,
                     params,
@@ -194,6 +232,7 @@ function convertWidgetsToNodes(widgets: DashboardItem[], paperSize: WidgetSize, 
                 type: "chart",
                 draggable: true,
                 selectable: true,
+                selected: selectedNodeIds?.includes(widget.id),
                 data: {
                     widgetConfig: widget,
                     params,
@@ -236,11 +275,4 @@ const styles = `
 .react-flow__resize-control.line.bottom {
     border-bottom-width: 10px;
 }
-// .react-flow__renderer {
-//     overflow: hidden;
-// }
-// .react-flow__panel.top.center {
-//     top: -50px;
-//     z-index: 100;
-// }
 `;

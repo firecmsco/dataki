@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { useEffect, useRef } from "react"
-import DatePicker, { CalendarContainer } from "react-datepicker";
+import DatePicker from "react-datepicker";
 import {
     CalendarMonthIcon,
     cls,
@@ -12,6 +12,7 @@ import {
     IconButton,
     Label,
     paperMixin,
+    Popover,
     useInjectStyles
 } from "@firecms/ui";
 
@@ -34,7 +35,6 @@ export function DatePickerWithRange({
     const ref = useRef(null);
 
     const inputRef = useRef(null);
-    const [focused, setFocused] = React.useState(document.activeElement === inputRef.current);
 
     const [open, setOpen] = React.useState(false);
 
@@ -64,121 +64,191 @@ export function DatePickerWithRange({
         defaultBorderMixin
     );
 
-    const MyContainer = ({
-                             className,
-                             children
-                         }: any) => {
-        return (
-            <div className={"flex flex-col"}>
-                <div className={cls("border rounded bg-gray-50 dark:bg-gray-900 flex flex-col gap-1", defaultBorderMixin)}>
-                    <Label
-                        onClick={() => {
-                            const date = new Date();
-                            date.setDate(date.getDate() - 7);
-                            setDateRangeInternal([date, new Date()]);
-                            setDateRange([date, new Date()]);
-                            setOpen(false);
-                        }}
-                        className={"px-3 py-2 font-semibold"}>
-                        Last 7 days
-                    </Label>
-                    <Label
-                        onClick={() => {
-                            const date = new Date();
-                            date.setDate(date.getDate() - 30);
-                            setDateRangeInternal([date, new Date()]);
-                            setDateRange([date, new Date()]);
-                            setOpen(false);
-                        }}
-                        className={"px-3 py-2 font-semibold"}>
-                        Last 30 days
-                    </Label>
-                    <Label
-                        onClick={() => {
-                            const date = new Date();
-                            date.setDate(date.getDate() - 90);
-                            setDateRangeInternal([date, new Date()]);
-                            setDateRange([date, new Date()]);
-                            setOpen(false);
-                        }}
-                        className={"px-3 py-2 font-semibold"}>
-                        Last 90 days
-                    </Label>
-                    <Label
-                        onClick={() => {
-                            //  Year to date
-                            const date = new Date();
-                            date.setMonth(0);
-                            date.setDate(1);
-                            setDateRangeInternal([date, new Date()]);
-                            setDateRange([date, new Date()]);
-                            setOpen(false);
-                        }}
-                        className={"px-3 py-2 font-semibold"}>
-                        Year to date
-                    </Label>
-                </div>
-                <CalendarContainer className={cls(paperMixin, "my-4 shadow relative")}>
-                    {children}
-                </CalendarContainer>
-            </div>
-        );
-    };
+    const [inputText, setInputText] = React.useState<string>(startDate && endDate ? `${startDate.toLocaleDateString()} - ${endDate?.toLocaleDateString()}` : "");
+    useEffect(() => {
+        if (startDate && endDate) {
+            setInputText(`${startDate.toLocaleDateString()} - ${endDate?.toLocaleDateString()}`);
+        } else {
+            setInputText("");
+        }
+    }, [startDate, endDate]);
+
     return (
         <>
 
-            <div
-                style={{
-                    width: "300px"
+            <Popover
+                open={open}
+                onOpenChange={(open) => {
+                    setOpen(open);
                 }}
-                className={cls(
-                    "relative max-w-full rounded-xl min-h-[40px]",
-                    // fieldBackgroundMixin,
-                    fieldBackgroundHoverMixin,
-                )}>
+                className={"border-0 bg-transparent dark:bg-transparent"}
+                trigger={
+                    <div
+                        style={{
+                            width: "300px"
+                        }}
+                        className={cls(
+                            "relative max-w-full rounded-xl min-h-[40px]",
+                            // fieldBackgroundMixin,
+                            fieldBackgroundHoverMixin
+                        )}>
 
-                <DatePicker
-                    open={open}
-                    onInputClick={() => {
-                        setOpen(true);
-                    }}
-                    calendarContainer={MyContainer}
-                    onCalendarOpen={() => setOpen(true)}
-                    onCalendarClose={() => {
-                        setOpen(false);
-                        setDateRange(dateRangeInternal);
-                    }}
-                    selectsRange={true}
-                    ref={ref}
-                    onChange={(update) => {
-                        setDateRangeInternal(update);
-                    }}
-                    onClickOutside={() => {
-                        setOpen(false);
-                    }}
-                    startDate={startDate ?? undefined}
-                    endDate={endDate ?? undefined}
-                    onFocus={() => setFocused(true)}
-                    onBlur={() => {
-                        setFocused(false);
-                    }}
-                    preventOpenOnFocus={true}
-                    className={className}
-                />
+                        <input
+                            ref={inputRef}
+                            value={inputText}
+                            onClick={(event) => {
+                                // @ts-ignore
+                                inputRef.current?.focus();
+                                setOpen(true);
+                            }}
+                            onChange={(event) => {
+                                // parse text input only if it matches the date format
+                                const value = event.target.value;
+                                const dates = value.split(" - ");
+                                setInputText(value);
+                                console.log(dates);
+                                if (dates.length === 2) {
+                                    const startDate = parseDateString(dates[0]);
+                                    const endDate = parseDateString(dates[1]);
+                                    console.log(startDate, endDate);
+                                    if (startDate && endDate) {
+                                        setDateRange([startDate, endDate]);
+                                        setDateRangeInternal([startDate, endDate]);
+                                    }
+                                }
+                            }}
+                            className={className}
+                        />
 
-                <IconButton
-                    onClick={() => {
-                        // @ts-ignore
-                        return ref.current?.setOpen(true);
-                    }}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 !text-slate-500 ">
-                    <CalendarMonthIcon color={"disabled"}/>
-                </IconButton>
+                        <IconButton
+                            onClick={() => {
+                                setOpen(true);
+                            }}
+                            className="absolute right-3 top-1/2 transform -translate-y-1/2 !text-slate-500 ">
+                            <CalendarMonthIcon color={"disabled"}/>
+                        </IconButton>
 
-            </div>
+                    </div>}
+            >
+                <div className={"flex flex-col"}>
+                    <div
+                        className={cls("border rounded bg-gray-50 dark:bg-gray-900 flex flex-col gap-1 text-text-primary dark:text-text-primary-dark", defaultBorderMixin)}>
+                        <Label
+                            onClick={() => {
+                                const date = new Date();
+                                date.setDate(date.getDate() - 7);
+                                setDateRangeInternal([date, new Date()]);
+                                setDateRange([date, new Date()]);
+                                setOpen(false);
+                            }}
+                            className={"px-3 py-2 font-semibold"}>
+                            Last 7 days
+                        </Label>
+                        <Label
+                            onClick={() => {
+                                const date = new Date();
+                                date.setDate(date.getDate() - 30);
+                                setDateRangeInternal([date, new Date()]);
+                                setDateRange([date, new Date()]);
+                                setOpen(false);
+                            }}
+                            className={"px-3 py-2 font-semibold"}>
+                            Last 30 days
+                        </Label>
+                        <Label
+                            onClick={() => {
+                                const date = new Date();
+                                date.setDate(date.getDate() - 90);
+                                setDateRangeInternal([date, new Date()]);
+                                setDateRange([date, new Date()]);
+                                setOpen(false);
+                            }}
+                            className={"px-3 py-2 font-semibold"}>
+                            Last 90 days
+                        </Label>
+                        <Label
+                            onClick={() => {
+                                //  Year to date
+                                const date = new Date();
+                                date.setMonth(0);
+                                date.setDate(1);
+                                setDateRangeInternal([date, new Date()]);
+                                setDateRange([date, new Date()]);
+                                setOpen(false);
+                            }}
+                            className={"px-3 py-2 font-semibold"}>
+                            Year to date
+                        </Label>
+                        <Label
+                            onClick={() => {
+                                //  Year to date
+                                const date = new Date();
+                                date.setMonth(0);
+                                date.setDate(1);
+                                date.setFullYear(date.getFullYear() - 1);
+                                const endDate = new Date();
+                                endDate.setMonth(11);
+                                endDate.setDate(31);
+                                endDate.setFullYear(endDate.getFullYear() - 1);
+                                setDateRangeInternal([date, endDate]);
+                                setDateRange([date, endDate]);
+                                setOpen(false);
+                            }}
+                            className={"px-3 py-2 font-semibold"}>
+                            Previous year
+                        </Label>
+                    </div>
+                    <div className={cls(paperMixin, "my-4 relative")}>
+                        <DatePicker
+                            inline
+                            selectsRange={true}
+                            ref={ref}
+                            onChange={(update) => {
+                                setDateRangeInternal(update);
+                                if (update[0] && update[1]) {
+                                    setDateRange(update);
+                                    setOpen(false);
+                                }
+                            }}
+                            startDate={startDate ?? undefined}
+                            endDate={endDate ?? undefined}
+                            preventOpenOnFocus={true}
+                            className={className}
+                        />
+                    </div>
+                </div>
+
+            </Popover>
 
         </>
     );
+}
+
+function parseDateString(dateString: string): Date | null {
+    // Regular expression to match the DD/MM/YYYY format
+    const datePattern = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+
+    // Validate the format with the regex
+    const match = dateString.match(datePattern);
+    if (!match) {
+        // Return null or throw an error if the format is invalid
+        console.error("Invalid date format");
+        return null;
+    }
+
+    // Extract the day, month, and year from the match
+    const [, day, month, year] = match;
+
+    // Create a new Date object (note: months are 0-indexed in JavaScript's Date object)
+    const date = new Date(parseInt(year, 10), parseInt(month, 10) - 1, parseInt(day, 10));
+
+    // Check if the created date is valid
+    if (isNaN(date.getTime())) {
+        console.error("Invalid date");
+        return null;
+    }
+
+    return date;
 }
 
 const datePickerCss = `
