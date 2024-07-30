@@ -2,7 +2,7 @@ import React, { useDeferredValue, useEffect, useRef } from "react";
 import { Button, ForumIcon, IconButton, Separator, ShareIcon, TextField, TitleIcon, Tooltip } from "@firecms/ui";
 import { Dashboard } from "../../types";
 import { DownloadButton } from "./DownloadButton";
-import { useDataTalk } from "../../DataTalkProvider";
+import { useDataki } from "../../DatakiProvider";
 import { UndoRedoState } from "../../hooks/useUndoRedo";
 import { randomString } from "@firecms/core";
 import { DEFAULT_GRID_SIZE, SUBTITLE_HEIGHT, TEXT_WIDTH, TITLE_HEIGHT } from "../../utils/widgets";
@@ -21,7 +21,7 @@ export const DashboardMenubar = ({
 }) => {
 
     const navigate = useNavigate();
-    const dataTalk = useDataTalk();
+    const datakiConfig = useDataki();
     const viewport = useViewport();
     // const [checkedSelection, setCheckedSelection] = React.useState([CHECK_ITEMS[1]]);
     // const [radioSelection, setRadioSelection] = React.useState(RADIO_ITEMS[2]);
@@ -46,7 +46,7 @@ export const DashboardMenubar = ({
                 <Tooltip title={"Add title"}>
                     <IconButton variant="ghost"
                                 onClick={() => {
-                                    dataTalk.addDashboardText(dashboard.id, dashboard.pages[0].id, {
+                                    datakiConfig.addDashboardText(dashboard.id, dashboard.pages[0].id, {
                                         id: randomString(20),
                                         type: "title",
                                         text: "",
@@ -66,7 +66,7 @@ export const DashboardMenubar = ({
                 <Tooltip title={"Add heading"}>
                     <IconButton variant="ghost"
                                 onClick={() => {
-                                    dataTalk.addDashboardText(dashboard.id, dashboard.pages[0].id, {
+                                    datakiConfig.addDashboardText(dashboard.id, dashboard.pages[0].id, {
                                         id: randomString(20),
                                         type: "subtitle",
                                         text: "",
@@ -90,7 +90,7 @@ export const DashboardMenubar = ({
                 size={"small"}
                 variant={"text"}
                 onClick={async () => {
-                    const sessionId = await dataTalk.createSessionId();
+                    const sessionId = await datakiConfig.createSessionId();
                     navigate(`/chat/${sessionId}`);
                 }}>
                 <ForumIcon size={"small"}/>
@@ -299,13 +299,13 @@ function DashboardNameTextField({
                                     title: titleProp,
                                     id
                                 }: { title?: string, id: string }) {
-    const dataTalk = useDataTalk();
+    const datakiConfig = useDataki();
     const savedTitle = useRef(titleProp);
     const [title, setTitle] = React.useState(titleProp);
     const deferredTitle = useDeferredValue(title);
     useEffect(() => {
         if (deferredTitle !== savedTitle.current) {
-            dataTalk.updateDashboard(id, { title: deferredTitle });
+            datakiConfig.updateDashboard(id, { title: deferredTitle });
             savedTitle.current = deferredTitle;
         }
     }, [deferredTitle]);

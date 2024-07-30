@@ -1,15 +1,15 @@
 import React, { useEffect, useState } from "react";
-import { DataTalkConfig } from "../DataTalkProvider";
+import { DatakiConfig } from "../DatakiProvider";
 import { CircularProgressCenter } from "@firecms/core";
 import { useLocation, useParams } from "react-router-dom";
-import { DataTalkChatSession } from "../components/chat/DataTalkChatSession";
+import { DatakiChatSession } from "../components/chat/DatakiChatSession";
 import { ChatMessage, DataSource, ChatSession } from "../types";
 
 export function ChatSessionRoute({
-                                     dataTalkConfig,
+                                     datakiConfig,
                                      onAnalyticsEvent,
                                  }: {
-    dataTalkConfig: DataTalkConfig,
+    datakiConfig: DatakiConfig,
     onAnalyticsEvent?: (event: string, params?: any) => void,
 }) {
 
@@ -21,7 +21,7 @@ export function ChatSessionRoute({
     return <ChatRouteInner
         key={sessionId}
         sessionId={sessionId}
-        dataTalkConfig={dataTalkConfig}
+        datakiConfig={datakiConfig}
         onAnalyticsEvent={onAnalyticsEvent}
         autoRunCode={autoRunCode}
         setAutoRunCode={setAutoRunCode}/>
@@ -29,21 +29,15 @@ export function ChatSessionRoute({
 
 interface ChatRouteInnerProps {
     sessionId: any;
-    dataTalkConfig: DataTalkConfig;
+    datakiConfig: DatakiConfig;
     onAnalyticsEvent?: (event: string, params?: any) => void,
     autoRunCode: any;
     setAutoRunCode: any;
 }
 
-type WidgetReference = {
-    dashboardId: string;
-    pageId: string;
-    widgetId: string;
-}
-
 function ChatRouteInner({
                             sessionId,
-                            dataTalkConfig,
+                            datakiConfig,
                             onAnalyticsEvent,
                             autoRunCode,
                             setAutoRunCode
@@ -59,7 +53,7 @@ function ChatRouteInner({
 
     useEffect(() => {
         setLoading(true);
-        dataTalkConfig.getSession(sessionId)
+        datakiConfig.getSession(sessionId)
             .then(session => {
                 setSession(session);
                 setLoading(false);
@@ -84,7 +78,7 @@ function ChatRouteInner({
             messages
         };
         setSession(newSession);
-        dataTalkConfig.saveSession(newSession);
+        datakiConfig.saveSession(newSession);
     };
 
     const onDataSourcesChange = (dataSources: DataSource[]) => {
@@ -93,7 +87,7 @@ function ChatRouteInner({
             dataSources
         };
         setSession(newSession);
-        dataTalkConfig.saveSession(newSession);
+        datakiConfig.saveSession(newSession);
     }
 
     const onProjectIdChange = (projectId: string) => {
@@ -102,11 +96,11 @@ function ChatRouteInner({
             projectId
         };
         setSession(newSession);
-        dataTalkConfig.saveSession(newSession);
+        datakiConfig.saveSession(newSession);
     }
 
     return (
-        <DataTalkChatSession
+        <DatakiChatSession
             onAnalyticsEvent={onAnalyticsEvent}
             session={usedSession}
             initialPrompt={initialPrompt ?? undefined}

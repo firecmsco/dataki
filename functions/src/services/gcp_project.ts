@@ -1,5 +1,5 @@
 import axios from "axios";
-import DataTalkException from "../types/exceptions";
+import DatakiException from "../types/exceptions";
 import { IAMPolicy, ServiceAccountInfo, ServiceAccountKey } from "../types/service_account";
 
 const SA_ACCOUNT_ID = "datatalk";
@@ -26,7 +26,7 @@ export const createServiceAccount = async (accessToken: string, projectId: strin
         if (response.status < 300) {
             return response.data;
         } else {
-            throw new DataTalkException(response.status, response.data);
+            throw new DatakiException(response.status, response.data);
         }
     } catch (error: any) {
         if (axios.isAxiosError(error) && error.response?.status === 409) {
@@ -35,9 +35,9 @@ export const createServiceAccount = async (accessToken: string, projectId: strin
         }
         if (axios.isAxiosError(error)) {
             console.error(error.response?.data);
-            throw new DataTalkException(error.response?.status ?? 500, error.message);
+            throw new DatakiException(error.response?.status ?? 500, error.message);
         }
-        throw new DataTalkException(500, "Error creating service account");
+        throw new DatakiException(500, "Error creating service account");
     }
 }
 
@@ -55,16 +55,16 @@ export const getServiceAccount = async (accessToken: string, projectId: string):
         if (response.status < 300)
             return response.data;
         else {
-            throw new DataTalkException(response.status, response.data);
+            throw new DatakiException(response.status, response.data);
         }
     } catch (error) {
         if (error instanceof Error)
             console.error(error.message);
 
         if (axios.isAxiosError(error))
-            throw new DataTalkException(error.response?.status ?? 500, error.message);
+            throw new DatakiException(error.response?.status ?? 500, error.message);
 
-        throw new DataTalkException(500, "Error getting service account");
+        throw new DatakiException(500, "Error getting service account");
     }
 }
 
@@ -77,9 +77,9 @@ export const createServiceAccountKey = async (accessToken: string, projectId: st
         console.error("Error creating service account key");
 
         if (axios.isAxiosError(error))
-            throw new DataTalkException(error.response?.status ?? 500, error.message);
+            throw new DatakiException(error.response?.status ?? 500, error.message);
 
-        throw new DataTalkException(500, "Error creating service account key");
+        throw new DatakiException(500, "Error creating service account key");
     }
 }
 
@@ -116,12 +116,12 @@ export const getIAMPolicy = async (accessToken: string, projectId: string): Prom
         if (response.status < 300)
             return response.data;
         else
-            throw new DataTalkException(response.status, "Error getting IAM policy");
+            throw new DatakiException(response.status, "Error getting IAM policy");
     } catch (error: any) {
         if (axios.isAxiosError(error))
-            throw new DataTalkException(error.response?.status ?? 500, error.message);
+            throw new DatakiException(error.response?.status ?? 500, error.message);
 
-        throw new DataTalkException(500, "Error getting IAM policy");
+        throw new DatakiException(500, "Error getting IAM policy");
 
     }
 
@@ -137,14 +137,14 @@ export const updateIAMPolicy = async (accessToken: string, projectId: string, po
             return response.data;
         } else {
             console.error("Error updateIAMPolicy", response.data);
-            throw new DataTalkException(response.status, "Error updating IAM policy");
+            throw new DatakiException(response.status, "Error updating IAM policy");
         }
     } catch (error: any) {
         console.error("Error updateIAMPolicy", error.response?.data);
 
         if (axios.isAxiosError(error))
-            throw new DataTalkException(error.response?.status ?? 500, error.message);
+            throw new DatakiException(error.response?.status ?? 500, error.message);
 
-        throw new DataTalkException(500, "Error updating IAM policy");
+        throw new DatakiException(500, "Error updating IAM policy");
     }
 }

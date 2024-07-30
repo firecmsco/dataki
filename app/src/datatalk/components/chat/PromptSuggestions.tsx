@@ -22,7 +22,9 @@ export function PromptSuggestions({
         <div className={"my-8"}>
 
             <Typography paragraph={true} className={"ml-4 my-2 mb-6"}>
-                Here are some examples of things you can ask:
+                Dataki can access your data and help you generate visualizations and insights.
+                It generates <b>charts and tables</b> based on your questions. Add your generated views
+                to <b>dashboards</b> to share them with your team.
             </Typography>
 
             <div className={"flex gap-1 overflow-auto no-scrollbar"}>
@@ -38,6 +40,12 @@ export function PromptSuggestions({
 
             <Typography variant={"caption"} color={"secondary"} paragraph={true} className={"ml-4 my-2"}>
                 Note that these sample prompts are just suggestions.
+            </Typography>
+
+            <Typography color={"secondary"} paragraph={true} className={"ml-4 my-4"}>
+                Let Dataki help you by asking: <b className={"cursor-pointer"} onClick={() => {
+                onPromptSuggestionClick("What can you do?");
+            }}>What can you do?</b>
             </Typography>
 
         </div>

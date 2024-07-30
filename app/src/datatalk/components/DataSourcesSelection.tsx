@@ -26,7 +26,7 @@ import {
 } from "@firecms/ui";
 import { DataSource, GCPProject } from "../types";
 import React, { useEffect } from "react";
-import { useDataTalk } from "../DataTalkProvider";
+import { useDataki } from "../DatakiProvider";
 import {
     createServiceAccountLink,
     deleteServiceAccountLink,
@@ -34,6 +34,7 @@ import {
     fetchGCPProjects
 } from "../api";
 import { useSnackbarController } from "@firecms/core";
+import { OnboardingTooltip } from "./OnboardingTooltip";
 
 const PREVIEW_DATASOURCES_COUNT = 3;
 
@@ -52,7 +53,7 @@ function renderSelectProject(project: GCPProject) {
             <div className={"flex flex-row items-center"}>
                 <p className={"font-semibold"}>{project.name}</p>
                 {project.linked
-                    ? <Tooltip title={"This project is linked to DataTalk"}
+                    ? <Tooltip title={"This project is linked to Dataki"}
                                side={"right"}>
                         <LinkIcon className={"ml-2"} size={"smallest"} color={"primary"}/>
                     </Tooltip>
@@ -82,16 +83,16 @@ export function DataSourcesSelection({
     }, [dataSources]);
 
     const [dialogOpen, setDialogOpen] = React.useState(false);
-    const dataTalk = useDataTalk();
+    const datakiConfig = useDataki();
     const [projects, setProjects] = React.useState<GCPProject[]>([]);
     const [loadingProjects, setLoadingProjects] = React.useState(false);
     const [projectError, setProjectError] = React.useState<string | undefined>(undefined);
 
     async function loadProjects() {
-        const accessToken = await dataTalk.getAuthToken();
+        const accessToken = await datakiConfig.getAuthToken();
         setLoadingProjects(true);
         setProjectError(undefined);
-        fetchGCPProjects(accessToken, dataTalk.apiEndpoint)
+        fetchGCPProjects(accessToken, datakiConfig.apiEndpoint)
             .then((result) => {
                 const sortedLinked = result.sort((a, b) => {
                     if (a.linked && !b.linked) {
@@ -117,14 +118,17 @@ export function DataSourcesSelection({
 
     useEffect(() => {
         loadProjects();
+        if (projectId) {
+            loadDataSourcesFor(projectId);
+        }
     }, [])
 
     async function loadDataSourcesFor(projectId: string) {
-        const accessToken = await dataTalk.getAuthToken();
+        const accessToken = await datakiConfig.getAuthToken();
         setLoadingDataSources(true);
         setProjectDataSources([]);
         setProjectDataSourcesError(undefined);
-        return fetchDataSourcesForProject(accessToken, dataTalk.apiEndpoint, projectId)
+        return fetchDataSourcesForProject(accessToken, datakiConfig.apiEndpoint, projectId)
             .then(setProjectDataSources)
             .catch(setProjectDataSourcesError)
             .finally(() => setLoadingDataSources(false));
@@ -138,9 +142,9 @@ export function DataSourcesSelection({
     const [unlinkLoading, setUnlinkLoading] = React.useState(false);
 
     async function unlinkProject(projectId: string) {
-        const token = await dataTalk.getAuthToken();
+        const token = await datakiConfig.getAuthToken();
         setUnlinkLoading(true);
-        deleteServiceAccountLink(token, dataTalk.apiEndpoint, projectId)
+        deleteServiceAccountLink(token, datakiConfig.apiEndpoint, projectId)
             .then(res => {
                 if (res) {
                     snackbar.open({
@@ -165,12 +169,16 @@ export function DataSourcesSelection({
     }
 
     return (
-        <>
+        <OnboardingTooltip
+            id={"data_sources_selection"}
+            className={"shrink-0"}
+            title={"Select the data you would like to query, or use the demo data"}
+            side={"right"}>
             <Label
                 onClick={() => {
                     setDialogOpen(true);
                 }}
-                className={cls("shrink-0 bg-white dark:bg-gray-800 flex-wrap w-fit font-normal border cursor-pointer rounded-md p-2 px-3 flex items-center gap-2 [&:has(:checked)]:bg-gray-100 dark:[&:has(:checked)]:bg-gray-800", className)}
+                className={cls("bg-white dark:bg-gray-800 flex-wrap w-fit font-normal border cursor-pointer rounded-md p-2 px-3 flex items-center gap-2 [&:has(:checked)]:bg-gray-100 dark:[&:has(:checked)]:bg-gray-800", className)}
             >
 
                 <StorageIcon size={"small"} color={"primary"}/>
@@ -199,101 +207,6 @@ export function DataSourcesSelection({
                         e.preventDefault();
                     }}>
                 <DialogContent className={"flex flex-col lg:flex-row gap-12 my-8 mx-6"}>
-                    <div className={"flex flex-col gap-4 flex-grow lg:w-1/2"}>
-                        <Typography variant={"subtitle2"}>
-                            Session project
-                        </Typography>
-                        <Typography variant={"caption"}>
-                            All BigQuery queries will be executed in the selected project
-                        </Typography>
-                        <Select placeholder={"Select a project"}
-                                value={projectId ?? ""}
-                                disabled={projectDisabled}
-                                renderValue={(value) => {
-                                    if (!value) {
-                                        return "Select a project";
-                                    }
-                                    const project = projects.find((p) => p.projectId === value);
-                                    return project ? renderSelectProject(project) : value;
-                                }}
-                                onValueChange={(value) => {
-                                    setProjectId(value);
-                                    loadDataSourcesFor(value);
-                                }}>
-                            {projects.map((project) => (
-                                <SelectItem key={project.projectId} value={project.projectId}>
-                                    {renderSelectProject(project)}
-                                </SelectItem>
-                            ))}
-                        </Select>
-
-                        {selectedProject && !selectedProject.linked && (
-                            <>
-
-                                <Typography variant={"caption"}>
-                                    You need to link your project to DataTalk before using it.
-                                    A service account named DataTalk will be created in your project
-                                </Typography>
-                                <LinkProjectButton projectId={selectedProject.projectId}
-                                                   onSuccess={() => {
-                                                       loadDataSourcesFor(selectedProject.projectId);
-                                                       setProjects((prev) => {
-                                                           const newProjects = [...prev];
-                                                           const projectIndex = newProjects.findIndex((p) => p.projectId === selectedProject.projectId);
-                                                           if (projectIndex === -1) {
-                                                               return newProjects;
-                                                           }
-                                                           newProjects[projectIndex] = {
-                                                               ...newProjects[projectIndex],
-                                                               linked: true
-                                                           };
-                                                           return newProjects;
-                                                       });
-                                                   }}/>
-                            </>
-                        )}
-
-                        <Separator orientation={"horizontal"}/>
-
-                        <Typography variant={"subtitle2"}>
-                            Selected data sources
-                        </Typography>
-
-                        <Typography>
-                            The data sets will be used to query data from BigQuery. You can select
-                            multiple datasets.
-                        </Typography>
-
-                        <div className={"flex flex-col gap-2"}>
-                            {dataSourcesInternal.map((dataSource, index) => (
-                                <Label
-                                    key={dataSource.datasetId}
-                                    className="w-full border cursor-pointer rounded-md p-2 px-3 flex items-center gap-2 [&:has(:checked)]:bg-gray-100 dark:[&:has(:checked)]:bg-gray-800 font-normal"
-                                >
-                                    <StorageIcon size={"small"} color={"primary"}/>
-                                    <div className={"inline-block flex-grow"}>
-                                        <span>{dataSource.projectId + "."}</span>
-                                        <span className={"font-semibold"}>{dataSource.datasetId}</span>
-                                    </div>
-                                    <IconButton
-                                        size={"small"}
-                                        onClick={() => {
-                                            const newSources = [...dataSourcesInternal];
-                                            newSources.splice(index, 1);
-                                            setDataSourcesInternal(newSources);
-                                        }}>
-                                        <CloseIcon/>
-                                    </IconButton>
-                                </Label>
-                            ))}
-                            {dataSourcesInternal.length === 0 && (
-                                <Typography color={"secondary"} className={"flex flex-row gap-2 items-center m-3"}>
-                                    <InfoIcon size={"small"}/> No data sources selected
-                                </Typography>
-                            )}
-                        </div>
-                    </div>
-
                     <div className={"flex flex-col gap-4 flex-grow lg:w-1/2"}>
 
 
@@ -424,21 +337,120 @@ export function DataSourcesSelection({
                             </IconButton>
                         </form>}
 
+                        <Button variant={"text"}
+                                size={"small"}
+                                onClick={() => {
+                                    setProjectId("bigquery-public-data");
+                                    setDataSourcesInternal([{
+                                        projectId: "bigquery-public-data",
+                                        datasetId: "thelook_ecommerce"
+                                    }]);
+                                }}>
+                            Use demo e-commerce data source
+                        </Button>
+
                     </div>
+
+                    <div className={"flex flex-col gap-4 flex-grow lg:w-1/2"}>
+                        <Typography variant={"subtitle2"}>
+                            Session project
+                        </Typography>
+                        <Typography variant={"caption"}>
+                            All BigQuery queries will be executed in the selected project
+                        </Typography>
+                        <OnboardingTooltip id={"project_select"} title={"Select your GCP project"} side={"left"}>
+                            <Select placeholder={"Select a project"}
+                                    value={projectId ?? ""}
+                                    disabled={projectDisabled}
+                                    renderValue={(value) => {
+                                        if (!value) {
+                                            return "Select a project";
+                                        }
+                                        const project = projects.find((p) => p.projectId === value);
+                                        return project ? renderSelectProject(project) : value;
+                                    }}
+                                    onValueChange={(value) => {
+                                        setProjectId(value);
+                                        loadDataSourcesFor(value);
+                                    }}>
+                                {projects.map((project) => (
+                                    <SelectItem key={project.projectId} value={project.projectId}>
+                                        {renderSelectProject(project)}
+                                    </SelectItem>
+                                ))}
+                            </Select>
+                        </OnboardingTooltip>
+
+                        {selectedProject && !selectedProject.linked && (
+                            <>
+
+                                <Typography variant={"caption"}>
+                                    You need to link your project to Dataki before using it.
+                                    A service account named Dataki will be created in your project
+                                </Typography>
+                                <LinkProjectButton projectId={selectedProject.projectId}
+                                                   onSuccess={() => {
+                                                       loadDataSourcesFor(selectedProject.projectId);
+                                                       setProjects((prev) => {
+                                                           const newProjects = [...prev];
+                                                           const projectIndex = newProjects.findIndex((p) => p.projectId === selectedProject.projectId);
+                                                           if (projectIndex === -1) {
+                                                               return newProjects;
+                                                           }
+                                                           newProjects[projectIndex] = {
+                                                               ...newProjects[projectIndex],
+                                                               linked: true
+                                                           };
+                                                           return newProjects;
+                                                       });
+                                                   }}/>
+                            </>
+                        )}
+
+                        <Separator orientation={"horizontal"}/>
+
+                        <Typography variant={"subtitle2"}>
+                            Session data sources
+                        </Typography>
+
+                        <Typography>
+                            The data sets will be used to query data from BigQuery. You can select
+                            multiple datasets.
+                        </Typography>
+
+                        <div className={"flex flex-col gap-2"}>
+                            {dataSourcesInternal.map((dataSource, index) => (
+                                <Label
+                                    key={dataSource.datasetId}
+                                    className="w-full border cursor-pointer rounded-md p-2 px-3 flex items-center gap-2 [&:has(:checked)]:bg-gray-100 dark:[&:has(:checked)]:bg-gray-800 font-normal"
+                                >
+                                    <StorageIcon size={"small"} color={"primary"}/>
+                                    <div className={"inline-block flex-grow"}>
+                                        <span>{dataSource.projectId + "."}</span>
+                                        <span className={"font-semibold"}>{dataSource.datasetId}</span>
+                                    </div>
+                                    <IconButton
+                                        size={"small"}
+                                        onClick={() => {
+                                            const newSources = [...dataSourcesInternal];
+                                            newSources.splice(index, 1);
+                                            setDataSourcesInternal(newSources);
+                                        }}>
+                                        <CloseIcon/>
+                                    </IconButton>
+                                </Label>
+                            ))}
+                            {dataSourcesInternal.length === 0 && (
+                                <Typography color={"secondary"} className={"flex flex-row gap-2 items-center m-3"}>
+                                    <InfoIcon size={"small"}/> No data sources selected
+                                </Typography>
+                            )}
+                        </div>
+                    </div>
+
 
                 </DialogContent>
                 <DialogActions>
-                    <Button variant={"text"}
-                            size={"small"}
-                            onClick={() => {
-                                setProjectId("bigquery-public-data");
-                                setDataSourcesInternal([{
-                                    projectId: "bigquery-public-data",
-                                    datasetId: "thelook_ecommerce"
-                                }]);
-                            }}>
-                        Use demo e-commerce data source
-                    </Button>
                     <div className={"flex-grow"}></div>
                     <Button
                         variant={"text"}
@@ -458,7 +470,7 @@ export function DataSourcesSelection({
                     </Button>
                 </DialogActions>
             </Dialog>
-        </>
+        </OnboardingTooltip>
     )
         ;
 }
@@ -472,13 +484,13 @@ function LinkProjectButton({
 }) {
     const [loading, setLoading] = React.useState(false);
     const [error, setError] = React.useState<any | undefined>(undefined);
-    const dataTalk = useDataTalk();
+    const datakiConfig = useDataki();
 
     async function linkProject() {
-        const token = await dataTalk.getAuthToken();
+        const token = await datakiConfig.getAuthToken();
         setLoading(true);
         setError(undefined);
-        createServiceAccountLink(token, dataTalk.apiEndpoint, projectId)
+        createServiceAccountLink(token, datakiConfig.apiEndpoint, projectId)
             .then(res => {
                 if (res) {
                     onSuccess();
@@ -497,7 +509,7 @@ function LinkProjectButton({
                            fullWidth={true}
                            onClick={linkProject}>
                 {!loading && <LinkIcon/>}
-                Link project to DataTalk
+                Link project to Dataki
             </LoadingButton>
         </>
     );

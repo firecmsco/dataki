@@ -1,16 +1,18 @@
 import React, { useEffect, useState } from "react";
 import { BooleanSwitchWithLabel, Button, CenteredView, cls, Typography } from "@firecms/ui";
-import { DataTalkAuthController, OauthParams } from "./useDataTalkAuthController";
-import { ErrorView, FireCMSLogo } from "@firecms/core";
+import { DatakiAuthController, OauthParams } from "./useDatakiAuthController";
+import { ErrorView } from "@firecms/core";
 import { generateAuthUrl } from "./api";
-import { DataTalkConfig } from "./DataTalkProvider";
+import { DatakiConfig } from "./DatakiProvider";
 
-export function DataTalkLogin({
-                                  authController,
-                                  dataTalk
-                              }: {
-    dataTalk: DataTalkConfig,
-    authController: DataTalkAuthController
+import Logo from "./dataki_logo.svg";
+
+export function DatakiLogin({
+                                authController,
+                                datakiConfig
+                            }: {
+    datakiConfig: DatakiConfig,
+    authController: DatakiAuthController
 }) {
 
     useEffect(() => {
@@ -42,7 +44,7 @@ export function DataTalkLogin({
     const [oauthUrl, setOauthUrl] = useState<string | undefined>();
 
     useEffect(() => {
-        generateAuthUrl(window.location.origin, dataTalk.apiEndpoint)
+        generateAuthUrl(window.location.origin, datakiConfig.apiEndpoint)
             .then((res) => {
                 setOauthUrl(res.data);
             });
@@ -82,17 +84,23 @@ export function DataTalkLogin({
     return <CenteredView maxWidth={"lg"}>
         <div className="flex flex-col items-center justify-center min-w-full p-2">
             <div className={"m-4"} style={{
-                width: "260px",
-                height: "260px"
+                width: "290px",
+                height: "240px"
             }}>
-                <FireCMSLogo/>
+                <img src={Logo} alt="Dataki logo"/>
             </div>
 
             <Typography variant={"h4"}
                         color={"primary"}
-                        className="mb-4 font-moon">
-                DATATALK
+                        className="mb-4 font-mono text-center">
+                DATAKI
             </Typography>
+
+            <Typography paragraph={true} variant={"body2"}>
+                Dataki is a platform that helps you generate visualizations and <b>dashboards</b> from
+                your <b>BigQuery</b> data, powered by <b>Gemini</b>.
+            </Typography>
+
 
             {buildErrorView()}
 
@@ -138,7 +146,7 @@ export function DataTalkLogin({
                     error={"You need to grant additional permissions in order to manage your Google Cloud projects"}/>}
 
             <Typography variant={"caption"}>
-                DataTalk use and transfer to any other app of
+                Dataki use and transfer to any other app of
                 information
                 received from Google APIs will adhere to <a
                 target="_blank"
@@ -283,7 +291,7 @@ const subscribeNewsletter = (email: string) => {
         },
         body: JSON.stringify({
             email_address: email,
-            source: "datatalk"
+            source: "dataki"
         })
     }).then((res) => {
         console.log("newsletter response", res);

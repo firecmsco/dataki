@@ -11,4 +11,4 @@ setGlobalOptions({
 });
 
 // Expose Express API as a single Cloud Function:
-exports.datatalkapi = onRequest(expressApp);
+exports.datakiapi = onRequest(expressApp);

@@ -13,7 +13,7 @@ import "reactflow/dist/style.css";
 import { cls, defaultBorderMixin, useInjectStyles } from "@firecms/ui";
 import { Dashboard, DashboardItem, DashboardPage, DateParams, Position, WidgetSize } from "../../types";
 import ChartNode, { ChartNodeProps } from "./nodes/ChartNode";
-import { useDataTalk } from "../../DataTalkProvider";
+import { useDataki } from "../../DatakiProvider";
 import PaperNode, { PaperNodeProps } from "./nodes/PaperNode";
 import { DEFAULT_GRID_SIZE, DEFAULT_PAPER_SIZE } from "../../utils/widgets";
 import { DashboardMenubar } from "./DashboardMenubar";
@@ -53,10 +53,10 @@ export const DashboardPageView = function DashboardPageView({
         text: TextNode
     }), []);
 
-    const dataTalk = useDataTalk();
+    const datakiConfig = useDataki();
 
     const onRemoveClick = useCallback((id: string) => {
-        dataTalk.onWidgetRemove(dashboard.id, page.id, id);
+        datakiConfig.onWidgetRemove(dashboard.id, page.id, id);
         setNodes((nodes) => nodes.filter((node) => node.id !== id));
     }, [dashboard.id, page.id])
 
@@ -83,7 +83,7 @@ export const DashboardPageView = function DashboardPageView({
         });
         if (updatedWidgets.length > 0) {
             console.log("!!!!! Updating widgets", updatedWidgets);
-            dataTalk.updateDashboardPage(dashboard.id, page.id, page);
+            datakiConfig.updateDashboardPage(dashboard.id, page.id, page);
         }
     };
 
@@ -146,7 +146,7 @@ export const DashboardPageView = function DashboardPageView({
             }}
             onNodesDelete={(nodes) => {
                 const deletedIds = nodes.map((node) => node.id);
-                dataTalk.onWidgetsRemove(dashboard.id, page.id, deletedIds);
+                datakiConfig.onWidgetsRemove(dashboard.id, page.id, deletedIds);
             }}
             preventScrolling={false}
             // edges={edges}

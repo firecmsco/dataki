@@ -2,7 +2,7 @@ import React, { ComponentType, memo, useState } from "react";
 import { NodeProps, NodeResizer } from "reactflow";
 import { DateParams, TextItem, WidgetSize } from "../../../types";
 import { cls, IconButton, RemoveIcon, TextField, Tooltip } from "@firecms/ui";
-import { useDataTalk } from "../../../DataTalkProvider";
+import { useDataki } from "../../../DatakiProvider";
 import { TEXT_WIDTH, TITLE_HEIGHT } from "../../../utils/widgets";
 
 export type TextNodeProps = {
@@ -23,7 +23,7 @@ function TextNode(props: NodeProps<TextNodeProps>) {
         height: TITLE_HEIGHT
     });
 
-    const dataTalk = useDataTalk();
+    const datakiConfig = useDataki();
 
     const [resizing, setResizing] = useState<boolean>(false);
     let textClass: string;
@@ -44,7 +44,7 @@ function TextNode(props: NodeProps<TextNodeProps>) {
                      className={cls("absolute -top-4 -right-4 h-[32px] rounded-full bg-gray-50 dark:bg-gray-950 group-hover:visible z-10",
                          props.selected ? "visible" : "invisible")}>
                 <IconButton
-                    onClick={() => dataTalk.onWidgetRemove(data.dashboardId, data.pageId, data.textItem.id)}
+                    onClick={() => datakiConfig.onWidgetRemove(data.dashboardId, data.pageId, data.textItem.id)}
                     size={"small"}>
                     <RemoveIcon
                         size={"small"}/>
@@ -63,7 +63,7 @@ function TextNode(props: NodeProps<TextNodeProps>) {
                            props.selected || resizing ? "ring-offset-transparent ring-2 ring-primary ring-opacity-75 ring-offset-2" : "")}
                        onChange={(e) => {
                            setText(e.target.value);
-                           dataTalk.updateDashboardText(data.dashboardId, data.pageId, data.textItem.id, {
+                           datakiConfig.updateDashboardText(data.dashboardId, data.pageId, data.textItem.id, {
                                ...data.textItem,
                                text: e.target.value
                            });
@@ -91,8 +91,8 @@ function TextNode(props: NodeProps<TextNodeProps>) {
                                  y: params.y
                              };
                              setSize(updatedSize);
-                             dataTalk.onWidgetMove(data.dashboardId, data.pageId, data.textItem.id, position);
-                             dataTalk.onWidgetResize(data.dashboardId, data.pageId, data.textItem.id, updatedSize);
+                             datakiConfig.onWidgetMove(data.dashboardId, data.pageId, data.textItem.id, position);
+                             datakiConfig.onWidgetResize(data.dashboardId, data.pageId, data.textItem.id, updatedSize);
                          }}
             />
 

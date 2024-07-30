@@ -1,4 +1,4 @@
-export default class DataTalkException extends Error {
+export default class DatakiException extends Error {
     status: number;
     message: string;
     code?: string;

@@ -1,15 +1,15 @@
 import React, { useEffect } from "react";
-import { DataTalkConfig } from "../DataTalkProvider";
+import { DatakiConfig } from "../DatakiProvider";
 import { CircularProgressCenter, EntityCollection } from "@firecms/core";
 import { useLocation, useParams } from "react-router-dom";
 import { Dashboard, Position } from "../types";
 import { DashboardView } from "../components/dashboards/DashboardView";
 
 export function DashboardRoute({
-                                   dataTalkConfig,
+                                   datakiConfig,
                                    onAnalyticsEvent,
                                }: {
-    dataTalkConfig: DataTalkConfig,
+    datakiConfig: DatakiConfig,
     onAnalyticsEvent?: (event: string, params?: any) => void,
 }) {
 
@@ -19,25 +19,25 @@ export function DashboardRoute({
     return <DashboardRouteInner
         key={dashboardId}
         dashboardId={dashboardId}
-        dataTalkConfig={dataTalkConfig}
+        datakiConfig={datakiConfig}
         onAnalyticsEvent={onAnalyticsEvent}/>
 }
 
 interface DashboardRouteInnerProps {
     dashboardId: any;
-    dataTalkConfig: DataTalkConfig;
+    datakiConfig: DatakiConfig;
     onAnalyticsEvent?: (event: string, params?: any) => void,
     collections?: EntityCollection[]
 }
 
 function DashboardRouteInner({
                                  dashboardId,
-                                 dataTalkConfig,
+                                 datakiConfig,
                                  onAnalyticsEvent,
                              }: DashboardRouteInnerProps) {
 
     const location = useLocation();
-    
+
     const initialViewPosition = location.state?.initialViewPosition as Position | undefined;
 
     const params = new URLSearchParams(location.search);
@@ -47,7 +47,7 @@ function DashboardRouteInner({
 
     useEffect(() => {
         setLoading(true);
-        return dataTalkConfig.listenDashboard(dashboardId, (dashboard) => {
+        return datakiConfig.listenDashboard(dashboardId, (dashboard) => {
             setDashboard(dashboard);
             setLoading(false);
         });

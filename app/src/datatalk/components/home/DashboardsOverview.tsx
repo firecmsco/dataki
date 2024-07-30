@@ -1,15 +1,15 @@
 import React from "react";
 import { CircularProgressCenter } from "@firecms/core";
-import { useDataTalk } from "../../DataTalkProvider";
+import { useDataki } from "../../DatakiProvider";
 import { AddIcon, Button, Typography } from "@firecms/ui";
 import { DashboardPreviewCard } from "../dashboards/DashboardPreviewCard";
 import { useNavigate } from "react-router-dom";
 import { getDashboardPath } from "../../navigation";
 
 export function DashboardsOverview() {
-    const dataTalkConfig = useDataTalk();
+    const datakiConfig = useDataki();
     const navigate = useNavigate();
-    if (dataTalkConfig.loading) {
+    if (datakiConfig.loading) {
         return <CircularProgressCenter/>
     }
 
@@ -22,7 +22,7 @@ export function DashboardsOverview() {
                 </Typography>
                 <Button variant={"outlined"}
                         onClick={async () => {
-                            const dashboard = await dataTalkConfig.createDashboard();
+                            const dashboard = await datakiConfig.createDashboard();
                             navigate(getDashboardPath(dashboard.id));
                         }}>
                     <AddIcon/>
@@ -30,7 +30,7 @@ export function DashboardsOverview() {
                 </Button>
             </div>
             <div className={"flex flex-row flex-wrap font-mono container mx-auto min-h-48 flex-1 gap-2 my-4"}>
-                {dataTalkConfig.dashboards.map((dashboard, index) => (
+                {datakiConfig.dashboards.map((dashboard, index) => (
                     <DashboardPreviewCard
                         key={dashboard.id}
                         dashboard={dashboard}
@@ -39,7 +39,7 @@ export function DashboardsOverview() {
                             navigate(getDashboardPath(dashboard.id));
                         }}/>
                 ))}
-                {dataTalkConfig.dashboards.length === 0 && (
+                {datakiConfig.dashboards.length === 0 && (
                     <Typography variant={"body2"} className={"text-gray-500 self-center w-full text-center"} component={"div"}>
                         No dashboards yet
                     </Typography>

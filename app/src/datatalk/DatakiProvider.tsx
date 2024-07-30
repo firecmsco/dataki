@@ -26,7 +26,7 @@ import { DEFAULT_GRID_SIZE, DEFAULT_WIDGET_SIZE } from "./utils/widgets";
 import { randomString, User } from "@firecms/core";
 import equal from "react-fast-compare"
 
-export type DataTalkConfig = {
+export type DatakiConfig = {
     loading: boolean;
     apiEndpoint: string;
     getAuthToken: () => Promise<string>;
@@ -53,7 +53,7 @@ export type DataTalkConfig = {
     firebaseApp?: FirebaseApp;
 };
 
-export interface DataTalkConfigParams {
+export interface DatakiConfigParams {
     enabled?: boolean;
     firebaseApp?: FirebaseApp;
     dashboardsPath?: string;
@@ -63,9 +63,9 @@ export interface DataTalkConfigParams {
     user: User | null
 }
 
-const DataTalkConfigContext = React.createContext<DataTalkConfig>({} as any);
+const DatakiConfigContext = React.createContext<DatakiConfig>({} as any);
 
-export function useBuildDataTalkConfig({
+export function useBuildDatakiConfig({
                                            enabled = true,
                                            firebaseApp,
                                            userSessionsPath,
@@ -73,7 +73,7 @@ export function useBuildDataTalkConfig({
                                            getAuthToken,
                                            apiEndpoint,
                                            user
-                                       }: DataTalkConfigParams): DataTalkConfig {
+                                       }: DatakiConfigParams): DatakiConfig {
 
     const [sessions, setSessions] = useState<ChatSession[]>([]);
     const [sessionsLoading, setSessionsLoading] = useState<boolean>(true);
@@ -88,16 +88,16 @@ export function useBuildDataTalkConfig({
     }
 
     const createSessionId = useCallback(async (): Promise<string> => {
-        if (!firebaseApp) throw Error("useBuildDataTalkConfig Firebase not initialised");
+        if (!firebaseApp) throw Error("useBuildDatakiConfig Firebase not initialised");
         const firestore = getFirestore(firebaseApp);
-        if (!firestore || !userSessionsPath) throw Error("useBuildDataTalkConfig Firestore not initialised");
+        if (!firestore || !userSessionsPath) throw Error("useBuildDatakiConfig Firestore not initialised");
         return doc(collection(firestore, userSessionsPath)).id;
     }, [firebaseApp, userSessionsPath]);
 
     const saveSession = useCallback(async (session: ChatSession) => {
-        if (!firebaseApp) throw Error("useBuildDataTalkConfig Firebase not initialised");
+        if (!firebaseApp) throw Error("useBuildDatakiConfig Firebase not initialised");
         const firestore = getFirestore(firebaseApp);
-        if (!firestore || !userSessionsPath) throw Error("useBuildDataTalkConfig Firestore not initialised");
+        if (!firestore || !userSessionsPath) throw Error("useBuildDatakiConfig Firestore not initialised");
         const {
             id,
             ...sessionData
@@ -114,9 +114,9 @@ export function useBuildDataTalkConfig({
     }, [sessions])
 
     const saveDashboard = useCallback(async (dashBoard: Dashboard) => {
-        if (!firebaseApp) throw Error("useBuildDataTalkConfig Firebase not initialised");
+        if (!firebaseApp) throw Error("useBuildDatakiConfig Firebase not initialised");
         const firestore = getFirestore(firebaseApp);
-        if (!firestore || !dashboardsPath) throw Error("useBuildDataTalkConfig Firestore not initialised");
+        if (!firestore || !dashboardsPath) throw Error("useBuildDatakiConfig Firestore not initialised");
         const {
             id,
             ...dashboardData
@@ -129,9 +129,9 @@ export function useBuildDataTalkConfig({
     }, [dashboardsPath, firebaseApp]);
 
     const listenDashboard = useCallback((id: string, onDashboardUpdate: (dashboard: Dashboard) => void) => {
-        if (!firebaseApp) throw Error("useBuildDataTalkConfig Firebase not initialised");
+        if (!firebaseApp) throw Error("useBuildDatakiConfig Firebase not initialised");
         const firestore = getFirestore(firebaseApp);
-        if (!firestore || !dashboardsPath) throw Error("useBuildDataTalkConfig Firestore not initialised");
+        if (!firestore || !dashboardsPath) throw Error("useBuildDatakiConfig Firestore not initialised");
         return onSnapshot(doc(firestore, dashboardsPath, id).withConverter(timestampToDateConverter), {
             next: (snapshot) => {
                 const dashboard = {
@@ -151,9 +151,9 @@ export function useBuildDataTalkConfig({
         if (user === null)
             throw Error("User not found");
         if (!firebaseApp)
-            throw Error("useBuildDataTalkConfig Firebase not initialised");
+            throw Error("useBuildDatakiConfig Firebase not initialised");
         const firestore = getFirestore(firebaseApp);
-        if (!firestore || !dashboardsPath) throw Error("useBuildDataTalkConfig Firestore not initialised");
+        if (!firestore || !dashboardsPath) throw Error("useBuildDatakiConfig Firestore not initialised");
         const documentReference = doc(collection(firestore, dashboardsPath));
         const id = documentReference.id;
         const data = initializeDashboard(id, user.uid);
@@ -164,9 +164,9 @@ export function useBuildDataTalkConfig({
     }, [firebaseApp, dashboardsPath, user]);
 
     const deleteDashboard = useCallback(async (id: string) => {
-        if (!firebaseApp) throw Error("useBuildDataTalkConfig Firebase not initialised");
+        if (!firebaseApp) throw Error("useBuildDatakiConfig Firebase not initialised");
         const firestore = getFirestore(firebaseApp);
-        if (!firestore || !dashboardsPath) throw Error("useBuildDataTalkConfig Firestore not initialised");
+        if (!firestore || !dashboardsPath) throw Error("useBuildDatakiConfig Firestore not initialised");
         const dashboard = dashboardsRef.current.find(d => d.id === id);
         if (!dashboard) throw Error("deleteDashboard: Dashboard not found");
         dashboard.deleted = true;
@@ -277,7 +277,7 @@ export function useBuildDataTalkConfig({
 
     useEffect(() => {
         if (!enabled) return;
-        if (!firebaseApp) throw Error("useBuildDataTalkConfig Firebase not initialised");
+        if (!firebaseApp) throw Error("useBuildDatakiConfig Firebase not initialised");
         const firestore = getFirestore(firebaseApp);
         if (!firestore || !userSessionsPath) return;
         const collectionReference = collection(firestore, userSessionsPath);
@@ -308,7 +308,7 @@ export function useBuildDataTalkConfig({
     useEffect(() => {
         if (!enabled) return;
         if (!user?.uid) return;
-        if (!firebaseApp) throw Error("useBuildDataTalkConfig Firebase not initialised");
+        if (!firebaseApp) throw Error("useBuildDatakiConfig Firebase not initialised");
         const firestore = getFirestore(firebaseApp);
         if (!firestore || !dashboardsPath) return;
 
@@ -317,7 +317,7 @@ export function useBuildDataTalkConfig({
                 collection(firestore, dashboardsPath).withConverter(timestampToDateConverter),
                 where("deleted", "==", false),
                 where("users", "array-contains", user.uid),
-                orderBy("created_at", "desc")
+                orderBy("updated_at", "desc")
             ),
             {
                 next: (snapshot) => {
@@ -339,9 +339,9 @@ export function useBuildDataTalkConfig({
 
     const updateDashboard = useCallback((dashboardId: string, dashboardData: Partial<Dashboard>) => {
         console.log("updateDashboard", dashboardId, dashboardData)
-        if (!firebaseApp) throw Error("useBuildDataTalkConfig Firebase not initialised");
+        if (!firebaseApp) throw Error("useBuildDatakiConfig Firebase not initialised");
         const firestore = getFirestore(firebaseApp);
-        if (!firestore || !dashboardsPath) throw Error("useBuildDataTalkConfig Firestore not initialised");
+        if (!firestore || !dashboardsPath) throw Error("useBuildDatakiConfig Firestore not initialised");
         const dashboard = dashboardsRef.current.find(d => d.id === dashboardId);
         if (!dashboard) throw Error("addDashboardWidget: Dashboard not found");
         const updatedDashboard = {
@@ -353,9 +353,9 @@ export function useBuildDataTalkConfig({
 
     const updateDashboardPage = useCallback((dashboardId: string, pageId: string, pageData: Partial<DashboardPage>) => {
         console.log("updateDashboardPage", dashboardId, pageId, pageData)
-        if (!firebaseApp) throw Error("useBuildDataTalkConfig Firebase not initialised");
+        if (!firebaseApp) throw Error("useBuildDatakiConfig Firebase not initialised");
         const firestore = getFirestore(firebaseApp);
-        if (!firestore || !dashboardsPath) throw Error("useBuildDataTalkConfig Firestore not initialised");
+        if (!firestore || !dashboardsPath) throw Error("useBuildDatakiConfig Firestore not initialised");
         const dashboard = dashboardsRef.current.find(d => d.id === dashboardId);
         if (!dashboard) throw Error("addDashboardWidget: Dashboard not found");
         const page = dashboard.pages.find(p => p.id === pageId);
@@ -398,16 +398,16 @@ export function useBuildDataTalkConfig({
     };
 }
 
-export const useDataTalk = () => useContext(DataTalkConfigContext);
+export const useDataki = () => useContext(DatakiConfigContext);
 
-export function DataTalkProvider({
+export function DatakiProvider({
                                      config,
                                      children,
-                                 }: { config: DataTalkConfig, children: React.ReactNode }) {
+                                 }: { config: DatakiConfig, children: React.ReactNode }) {
 
-    return <DataTalkConfigContext.Provider value={config}>
+    return <DatakiConfigContext.Provider value={config}>
         {children}
-    </DataTalkConfigContext.Provider>;
+    </DatakiConfigContext.Provider>;
 }
 
 const timestampToDateConverter = {

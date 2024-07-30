@@ -1,5 +1,5 @@
 export * from "./types";
-export * from "./DataTalkRoutes";
-export * from "./DataTalkProvider";
-export * from "./components/DataTalkDrawer";
+export * from "./DatakiRoutes";
+export * from "./DatakiProvider";
+export * from "./components/DatakiDrawer";
 export { ChatSessionRoute } from "./routes/ChatSessionRoute";

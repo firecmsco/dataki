@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import equal from "react-fast-compare"
 
 import { makeSQLQuery } from "../../api";
-import { useDataTalk } from "../../DataTalkProvider";
+import { useDataki } from "../../DatakiProvider";
 import { DataRow, DateParams, DryWidgetConfig, WidgetConfig } from "../../types";
 import { DataTable } from "./DataTable";
 import { ErrorBoundary, useModeController } from "@firecms/core";
@@ -54,7 +54,7 @@ export function DryTableConfigView({
     const {
         apiEndpoint,
         getAuthToken
-    } = useDataTalk();
+    } = useDataki();
 
     const { mode } = useModeController();
 

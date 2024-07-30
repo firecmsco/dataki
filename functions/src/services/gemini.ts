@@ -14,7 +14,7 @@ import { ServiceAccountKey } from "../types/service_account";
 import { CommandMessage } from "../types/command";
 import { DataSource, DryWidgetConfig } from "../types/dashboards";
 import { getProjectDataContext } from "./context_data";
-import DataTalkException from "../types/exceptions";
+import DatakiException from "../types/exceptions";
 
 const PREFERRED_COLORS = ["#ea5545", "#f46a9b", "#ef9b20", "#edbf33", "#ede15b", "#bdcf32", "#87bc45", "#27aeef", "#b33dc6"];
 
@@ -407,7 +407,7 @@ export const generateSamplePrompts = async (
                                                                   }) => {
         return getProjectDataContext(firestore, projectId, datasetId);
     })).catch((error: any) => {
-        throw new DataTalkException(error.code, error.message, "internal");
+        throw new DatakiException(error.code, error.message, "internal");
     });
 
     const systemInstruction = buildSamplePromptsSystemInstructions(dataContexts, initialWidgetConfig)
@@ -447,8 +447,8 @@ export const generateSamplePrompts = async (
 }
 
 export const buildSamplePromptsSystemInstructions = (dataContexts: string[], initialWidgetConfig?: DryWidgetConfig): string => {
-    return `I need you to give me 4 sample prompts for a ChatBot named DATATALK.
-DATATALK allows users to make questions to their BigQuery datasets in natural language.
+    return `I need you to give me 4 sample prompts for a ChatBot named DATAKI.
+DATAKI allows users to make questions to their BigQuery datasets in natural language.
 
 Here is a summary of the collections and fields you have in your database.
 BIGQUERY DATASETS:
@@ -485,7 +485,7 @@ In this particular instance of the chat, the user is modifying this widget:
 \`\`\`
 
 All your suggestions must revolve around how to modify or improve this widget.
-Remember you are making suggestions as if you are the user. Each suggestion is a command to DataTalk`
+Remember you are making suggestions as if you are the user. Each suggestion is a command to DATAKI`
         : "");
 }
 

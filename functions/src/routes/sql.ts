@@ -1,6 +1,6 @@
 import express, { Request, Response } from "express";
 import { firebaseAuthorization } from "../middlewares";
-import DataTalkException from "../types/exceptions";
+import DatakiException from "../types/exceptions";
 import { DateParams } from "../types/dashboards";
 import { runSQLQuery } from "../services/bigquery";
 import { getStoredServiceAccount } from "../services/projects";
@@ -20,10 +20,10 @@ async function sqlRequestRoute(request: Request, response: Response) {
     const projectId: string | undefined = request.body.projectId;
 
     if (!sql) {
-        throw new DataTalkException(400, "Missing sql in the body", "Invalid request");
+        throw new DatakiException(400, "Missing sql in the body", "Invalid request");
     }
     if (!projectId) {
-        throw new DataTalkException(400, "Missing projectId in the body", "Invalid request");
+        throw new DatakiException(400, "Missing projectId in the body", "Invalid request");
     }
     const params: DateParams | undefined = request.body.params;
     const orderBy: OrderBy | undefined = request.body.orderBy;

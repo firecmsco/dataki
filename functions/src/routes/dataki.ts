@@ -1,6 +1,6 @@
 import express, { Request, Response } from "express";
 import { firebaseAuthorization } from "../middlewares";
-import DataTalkException from "../types/exceptions";
+import DatakiException from "../types/exceptions";
 import { DataSource, DateParams, DryWidgetConfig } from "../types/dashboards";
 import { runSQLQuery } from "../services/bigquery";
 import { hydrateChartConfig } from "../services/hydration";
@@ -13,23 +13,23 @@ import { ChatMessage } from "../types/chat";
 // @ts-ignore
 import etag from "etag";
 
-export const dataTalkRouter = express.Router();
+export const datakiRouter = express.Router();
 
-dataTalkRouter.get("/health", check());
-dataTalkRouter.post("/command", firebaseAuthorization(), processUserCommandRoute);
-dataTalkRouter.post("/hydrate_chart", firebaseAuthorization(), hydrateChartRoute);
-dataTalkRouter.post("/prompt_suggestions", firebaseAuthorization(), samplePromptsRoute);
+datakiRouter.get("/health", check());
+datakiRouter.post("/command", firebaseAuthorization(), processUserCommandRoute);
+datakiRouter.post("/hydrate_chart", firebaseAuthorization(), hydrateChartRoute);
+datakiRouter.post("/prompt_suggestions", firebaseAuthorization(), samplePromptsRoute);
 
 async function processUserCommandRoute(request: Request, response: Response) {
 
     console.log(`Received request for command ${request.body.command}`);
     if (!request.body.command) {
-        throw new DataTalkException(400, "Missing command param in the body", "Invalid request");
+        throw new DatakiException(400, "Missing command param in the body", "Invalid request");
     }
 
     const sources: DataSource[] = request.body.sources;
     if (!sources) {
-        throw new DataTalkException(400, "You must specify data sources in the body", "Invalid request");
+        throw new DatakiException(400, "You must specify data sources in the body", "Invalid request");
     }
 
     const initialWidgetConfig: DryWidgetConfig | undefined = request.body.initialWidgetConfig;
@@ -43,7 +43,7 @@ async function processUserCommandRoute(request: Request, response: Response) {
                                                               }) => {
         return getProjectDataContext(firestore, projectId, datasetId);
     })).catch((error: any) => {
-        throw new DataTalkException(error.code, error.message, "internal");
+        throw new DatakiException(error.code, error.message, "internal");
     });
 
     response.writeHead(200, {
@@ -82,13 +82,13 @@ async function processUserCommandRoute(request: Request, response: Response) {
 
 async function hydrateChartRoute(request: Request, response: Response) {
     if (!request.body.config) {
-        throw new DataTalkException(400, "Missing config param in the body", "Invalid request");
+        throw new DatakiException(400, "Missing config param in the body", "Invalid request");
     }
 
     const config: DryWidgetConfig = request.body.config;
 
     if (!config.sql) {
-        throw new DataTalkException(400, "Missing sql in the config", "Invalid request");
+        throw new DatakiException(400, "Missing sql in the config", "Invalid request");
     }
 
     const params: DateParams | undefined = request.body.params;
@@ -112,7 +112,7 @@ async function hydrateChartRoute(request: Request, response: Response) {
 
 async function samplePromptsRoute(request: Request, response: Response) {
     if (!request.body.dataSources) {
-        throw new DataTalkException(400, "Missing dataSources param in the body", "Invalid request");
+        throw new DatakiException(400, "Missing dataSources param in the body", "Invalid request");
     }
 
     const dataSources: DataSource[] = request.body.dataSources;

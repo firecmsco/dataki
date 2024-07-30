@@ -14,7 +14,7 @@ import {
     MoreVertIcon,
     Typography
 } from "@firecms/ui";
-import { useDataTalk } from "../../DataTalkProvider";
+import { useDataki } from "../../DatakiProvider";
 
 export type DashboardCardProps = {
     dashboard: Dashboard;
@@ -31,7 +31,7 @@ export function DashboardPreviewCard({
         description
     } = dashboard;
 
-    const datatalk = useDataTalk();
+    const datakiConfig = useDataki();
 
     return (<Card
         className={cls("m-0 p-4 cursor-pointer h-[180px] w-[300px]")}
@@ -65,7 +65,7 @@ export function DashboardPreviewCard({
                                 onClick={(event) => {
                                     event.preventDefault();
                                     event.stopPropagation();
-                                    datatalk.deleteDashboard(dashboard.id);
+                                    datakiConfig.deleteDashboard(dashboard.id);
                                     // setDeleteRequested(true);
                                 }}>
                                 <DeleteIcon size={"small"}/>
@@ -107,7 +107,7 @@ export function NewDashboardCard({
     onClick: (dashboard: Dashboard) => void
 }) {
 
-    const dataTalkConfig = useDataTalk();
+    const datakiConfig = useDataki();
     const [isPending, startTransition] = useTransition();
 
     return (
@@ -116,7 +116,7 @@ export function NewDashboardCard({
                   ? undefined
                   : () => {
                       startTransition(() => {
-                          dataTalkConfig.createDashboard().then((dashboard) => {
+                          datakiConfig.createDashboard().then((dashboard) => {
                               onClick(dashboard);
                           });
                       });

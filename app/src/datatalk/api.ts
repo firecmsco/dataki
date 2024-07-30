@@ -10,8 +10,9 @@ import {
     WidgetConfig
 } from "./types";
 import { LLMOutputParser } from "./utils/llm_parser";
+import JSON5 from "json5";
 
-interface StreamDataTalkCommandParams {
+interface StreamDatakiCommandParams {
     firebaseAccessToken: string;
     command: string;
     apiEndpoint: string;
@@ -24,7 +25,7 @@ interface StreamDataTalkCommandParams {
     onSQLQuery: (sqlQuery: string) => void;
 }
 
-export async function streamDataTalkCommand({
+export async function streamDatakiCommand({
                                                 firebaseAccessToken,
                                                 command,
                                                 apiEndpoint,
@@ -35,7 +36,7 @@ export async function streamDataTalkCommand({
                                                 messages,
                                                 onDelta,
                                                 onSQLQuery
-                                            }: StreamDataTalkCommandParams
+                                            }: StreamDatakiCommandParams
 ): Promise<string> {
 
     const parser = new LLMOutputParser((v) => console.log("Delta:", v));
@@ -44,7 +45,7 @@ export async function streamDataTalkCommand({
     return new Promise<string>(async (resolve, reject) => {
         try {
             const history = messages.filter(message => message.user === "USER" || message.user === "SYSTEM");
-            const response = await fetch(apiEndpoint + "/datatalk/command", {
+            const response = await fetch(apiEndpoint + "/dataki/command", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -96,7 +97,7 @@ export async function streamDataTalkCommand({
                     // Process complete messages
                     parts.forEach(part => {
                         try {
-                            const message = JSON.parse(part);
+                            const message = JSON5.parse(part);
                             if (message.type === "delta") {
                                 result.push(message.data.delta);
                                 onDelta(message.data.delta);
@@ -131,7 +132,7 @@ export function hydrateChartConfig(firebaseAccessToken: string,
                                    config: DryWidgetConfig,
                                    params?: DateParams
 ): Promise<WidgetConfig> {
-    return fetch(apiEndpoint + "/datatalk/hydrate_chart" + (config.id ? "?id=" + config.id : ""), {
+    return fetch(apiEndpoint + "/dataki/hydrate_chart" + (config.id ? "?id=" + config.id : ""), {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
@@ -204,14 +205,14 @@ export function makeSQLQuery({
         .then(data => data.data);
 }
 
-export function getDataTalkPromptSuggestions(firebaseAccessToken: string,
-                                             apiEndpoint: string,
-                                             dataSources: DataSource[],
-                                             messages?: ChatMessage[],
-                                             initialWidgetConfig?: DryWidgetConfig
+export function getDatakiPromptSuggestions(firebaseAccessToken: string,
+                                           apiEndpoint: string,
+                                           dataSources: DataSource[],
+                                           messages?: ChatMessage[],
+                                           initialWidgetConfig?: DryWidgetConfig
 ): Promise<string[]> {
     const history = (messages ?? []).filter(message => message.user === "USER" || message.user === "SYSTEM");
-    return fetch(apiEndpoint + "/datatalk/prompt_suggestions", {
+    return fetch(apiEndpoint + "/dataki/prompt_suggestions", {
         method: "POST",
         headers: {
             "Content-Type": "application/json",

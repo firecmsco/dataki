@@ -6,7 +6,7 @@ import { DEFAULT_WIDGET_SIZE } from "../../utils/widgets";
 import { DryChartConfigView } from "../widgets/DryChartConfigView";
 import { ErrorBoundary } from "@firecms/core";
 import { DryTableConfigView } from "../widgets/DryTableConfigView";
-import { useChatSession } from "./DataTalkChatSession";
+import { useChatSession } from "./DatakiChatSession";
 import { format } from "sql-formatter";
 
 export function WidgetMessageView({

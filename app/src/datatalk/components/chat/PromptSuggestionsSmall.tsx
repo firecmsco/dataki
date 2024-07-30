@@ -11,7 +11,7 @@ export function PromptSuggestionsSmall({
 }) {
 
     return (
-        <div className={"shrink flex-no-wrap flex flex-row gap-2 overflow-auto no-scrollbar"}>
+        <>
             {!loading && (suggestions ?? []).length > 0 && (suggestions ?? []).map((prompt, index) => (
                 <PromptSuggestionSmall key={index} onClick={onPromptSuggestionClick} prompt={prompt}/>
             ))}
@@ -21,7 +21,7 @@ export function PromptSuggestionsSmall({
                         key={index} width={297} height={36} className={"grow-0 shrink-0"}/>
                 ))
             )}
-        </div>
+        </>
     );
 }
 

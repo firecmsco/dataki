@@ -1,13 +1,13 @@
 import { NextFunction, Request, RequestHandler, Response } from "express";
-import DataTalkException from "./types/exceptions";
+import DatakiException from "./types/exceptions";
 import { ErrorReporting } from "@google-cloud/error-reporting";
 import { verifyFirebaseToken } from "./auth/auth";
 
 const errors = new ErrorReporting();
 
 export function errorMiddleware(error: Error, request: Request, response: Response, next: NextFunction) {
-    if (error instanceof DataTalkException) {
-        console.log("A DataTalkException happened", error);
+    if (error instanceof DatakiException) {
+        console.log("A DatakiException happened", error);
         response.status(error.status).json({
             message: error.message,
             code: error.code,

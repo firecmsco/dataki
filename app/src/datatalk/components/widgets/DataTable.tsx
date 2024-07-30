@@ -56,11 +56,6 @@ export function DataTable({
                  }}
                  ref={ref}>
 
-                {data?.length === 0 && loading &&
-                <div className="absolute flex-grow flex items-center justify-center">
-                    <p className="text-gray-500 dark:text-gray-400">No data available</p>
-                </div>}
-
                 <VirtualTable
                     loading={loading}
                     data={data}

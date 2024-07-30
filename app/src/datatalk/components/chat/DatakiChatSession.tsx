@@ -2,10 +2,10 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ErrorBoundary, randomString, useAuthController, useSnackbarController } from "@firecms/core";
 import { Button, cls, fieldBackgroundHoverMixin, SendIcon, TextareaAutosize, Typography } from "@firecms/ui";
 import { MessageView } from "./MessageView";
-import { getDataTalkPromptSuggestions, streamDataTalkCommand } from "../../api";
+import { getDatakiPromptSuggestions, streamDatakiCommand } from "../../api";
 import { ChatMessage, ChatSession, DataSource, DateParams, DryWidgetConfig, FeedbackSlug } from "../../types";
 import { PromptSuggestions } from "./PromptSuggestions";
-import { useDataTalk } from "../../DataTalkProvider";
+import { useDataki } from "../../DatakiProvider";
 import { DataSourcesSelection } from "../DataSourcesSelection";
 import { PromptSuggestionsSmall } from "./PromptSuggestionsSmall";
 import { DatePickerWithRange } from "../DateRange";
@@ -56,7 +56,7 @@ function getInitialDataSources(session: ChatSession, uid: string) {
     return DEMO_DATA_SOURCES;
 }
 
-export function DataTalkChatSession({
+export function DatakiChatSession({
                                         session,
                                         initialPrompt,
                                         onAnalyticsEvent,
@@ -116,7 +116,7 @@ export function DataTalkChatSession({
                 ongoingPromptSuggestionRequest.current = true;
                 getAuthToken().then((firebaseToken) => {
                     setSamplePromptsLoading(true);
-                    getDataTalkPromptSuggestions(firebaseToken, apiEndpoint, dataSources, messages, initialWidgetConfig)
+                    getDatakiPromptSuggestions(firebaseToken, apiEndpoint, dataSources, messages, initialWidgetConfig)
                         .then(setSamplePrompts)
                         .finally(() => {
                             ongoingPromptSuggestionRequest.current = false;
@@ -142,7 +142,7 @@ export function DataTalkChatSession({
     const {
         apiEndpoint,
         getAuthToken
-    } = useDataTalk();
+    } = useDataki();
 
     useEffect(() => {
         scrollToBottom();
@@ -257,7 +257,7 @@ export function DataTalkChatSession({
         let currentMessageResponse = "";
 
         setMessageLoading(true);
-        streamDataTalkCommand({
+        streamDatakiCommand({
             firebaseAccessToken: firebaseToken,
             command: messageText,
             apiEndpoint,
@@ -421,14 +421,14 @@ export function DataTalkChatSession({
                 <div className="h-full overflow-auto"
                      onScroll={handleScroll}
                      ref={scrollContainerRef}>
-                    <div className={"z-20 absolute top-4 right-4 bg-white dark:bg-gray-800 rounded-lg"}>
+                    <div className={"z-20 absolute top-4 right-4 bg-white dark:bg-gray-800 rounded-xl"}>
                         <DatePickerWithRange dateRange={dateRange} setDateRange={setDateRange}/>
                     </div>
 
                     <div className="container mx-auto px-4 md:px-6 pt-8 flex-1 flex flex-col gap-4 mt-12">
 
                         {!initialWidgetConfig && (messages ?? []).length === 0 &&
-                            <div className={"my-0"}>
+                            <div className={"my-4"}>
                                 <Typography variant={"h3"} gutterBottom={true} className={"font-mono ml-4 my-2"}>
                                     How can I help you?
                                 </Typography>
@@ -497,7 +497,7 @@ export function DataTalkChatSession({
                     className="w-full sticky bottom-0 right-0 left-0 pt-3 pb-6 dark:bg-gray-800 dark:bg-opacity-20 rounded-lg">
 
                     <div className={"container mx-auto px-4 md:px-6 flex flex-col gap-2"}>
-                        <div className={"flex flex-row gap-4"}>
+                        <div className={" flex-no-wrap flex flex-row gap-2 overflow-auto no-scrollbar"}>
                             <DataSourcesSelection projectId={projectId}
                                                   setProjectId={updateProjectId}
                                                   projectDisabled={messages.length > 0}

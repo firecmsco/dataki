@@ -9,7 +9,7 @@
     "shell": "yarpm run build && firebase functions:shell",
     "start": "yarpm run shell",
     "test": "jest",
-    "deploy": "yarpm run build && firebase deploy --only functions:datatalkapi --project=datatalk-443fb",
+    "deploy": "yarpm run build && firebase deploy --only functions:datakiapi --project=datatalk-443fb",
     "logs": "firebase functions:log"
   },
   "engines": {

@@ -15,7 +15,7 @@ import { FirebaseApp } from "@firebase/app";
 import { AuthController, Role, User } from "@firecms/core";
 import { exchangeCodeForToken, postUserCredentials } from "./api";
 
-export interface DataTalkAuthControllerProps {
+export interface DatakiAuthControllerProps {
     loading?: boolean;
     firebaseApp?: FirebaseApp;
     apiEndpoint: string;
@@ -23,7 +23,7 @@ export interface DataTalkAuthControllerProps {
     defineRolesFor?: (user: User) => Promise<Role[] | undefined> | Role[] | undefined;
 }
 
-export type DataTalkAuthController = AuthController<FirebaseUser> & {
+export type DatakiAuthController = AuthController<FirebaseUser> & {
     // googleLogin: () => Promise<FirebaseUser | null>;
     authProviderError?: any;
     permissionsNotGrantedError: boolean;
@@ -42,13 +42,13 @@ export interface OauthParams {
  * Use this hook to build an {@link AuthController} based on Firebase Auth
  * @group Firebase
  */
-export const useDataTalkAuthController = ({
+export const useDatakiAuthController = ({
                                               loading,
                                               firebaseApp,
                                               apiEndpoint,
                                               onSignOut: onSignOutProp,
                                               defineRolesFor
-                                          }: DataTalkAuthControllerProps): DataTalkAuthController => {
+                                          }: DatakiAuthControllerProps): DatakiAuthController => {
 
     const [loggedUser, setLoggedUser] = useState<FirebaseUser | null | undefined>(undefined); // logged user, anonymous or logged out
     const [authError, setAuthError] = useState<any>();

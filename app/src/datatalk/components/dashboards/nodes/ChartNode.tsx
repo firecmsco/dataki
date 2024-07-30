@@ -3,7 +3,7 @@ import { NodeProps, NodeResizer, useOnViewportChange, Viewport } from "reactflow
 import { DashboardWidgetConfig, DateParams, DryWidgetConfig, WidgetSize } from "../../../types";
 import { DEFAULT_WIDGET_SIZE } from "../../../utils/widgets";
 import { DryChartConfigView } from "../../widgets/DryChartConfigView";
-import { useDataTalk } from "../../../DataTalkProvider";
+import { useDataki } from "../../../DatakiProvider";
 import { ErrorBoundary, mergeDeep } from "@firecms/core";
 import { DryTableConfigView } from "../../widgets/DryTableConfigView";
 import { Button, ForumIcon } from "@firecms/ui";
@@ -20,7 +20,7 @@ export type ChartNodeProps = {
 function ChartNode(props: NodeProps<ChartNodeProps>) {
 
     const { data } = props;
-    const dataTalk = useDataTalk();
+    const datakiConfig = useDataki();
     const widgetConfig = data.widgetConfig;
     const [size, setSize] = useState<WidgetSize>(widgetConfig.size ?? DEFAULT_WIDGET_SIZE);
 
@@ -43,7 +43,7 @@ function ChartNode(props: NodeProps<ChartNodeProps>) {
     const onUpdated = (newConfig: DryWidgetConfig) => {
         const updatedConfig = mergeDeep(widgetConfig, newConfig);
         console.log("onUpdated", updatedConfig, newConfig);
-        dataTalk.onWidgetUpdate(data.dashboardId, data.pageId, widgetConfig.id, updatedConfig);
+        datakiConfig.onWidgetUpdate(data.dashboardId, data.pageId, widgetConfig.id, updatedConfig);
     };
     return (
         <div
@@ -68,9 +68,9 @@ function ChartNode(props: NodeProps<ChartNodeProps>) {
                                  x: params.x,
                                  y: params.y
                              };
-                             dataTalk.onWidgetMove(data.dashboardId, data.pageId, widgetConfig.id, position);
+                             datakiConfig.onWidgetMove(data.dashboardId, data.pageId, widgetConfig.id, position);
                              setSize(updatedSize);
-                             dataTalk.onWidgetResize(data.dashboardId, data.pageId, widgetConfig.id, updatedSize);
+                             datakiConfig.onWidgetResize(data.dashboardId, data.pageId, widgetConfig.id, updatedSize);
                          }}
             />
 

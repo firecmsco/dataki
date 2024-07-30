@@ -1,7 +1,7 @@
 import { NodeProps, NodeResizer } from "reactflow";
 import { ComponentType, memo, useState } from "react";
 import { WidgetSize } from "../../../types";
-import { useDataTalk } from "../../../DataTalkProvider";
+import { useDataki } from "../../../DatakiProvider";
 
 export type PaperNodeProps = {
     dashboardId: string;
@@ -14,7 +14,7 @@ export type PaperNodeProps = {
 
 function PaperNode(props: NodeProps<PaperNodeProps>) {
 
-    const dataTalk = useDataTalk();
+    const datakiConfig = useDataki();
 
     const { data } = props;
     const [size, setSize] = useState<WidgetSize>({
@@ -49,7 +49,7 @@ function PaperNode(props: NodeProps<PaperNodeProps>) {
                                  y: params.y
                              };
                              setSize(updatedSize);
-                             dataTalk.updateDashboardPage(data.dashboardId, data.pageId, {
+                             datakiConfig.updateDashboardPage(data.dashboardId, data.pageId, {
                                  paper: { size: updatedSize, position: updatedPosition }
                              });
                          }}

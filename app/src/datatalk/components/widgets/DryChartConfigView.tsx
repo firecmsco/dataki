@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import equal from "react-fast-compare"
 
 import { hydrateChartConfig } from "../../api";
-import { useDataTalk } from "../../DataTalkProvider";
+import { useDataki } from "../../DatakiProvider";
 import { DashboardWidgetConfig, DateParams, DryWidgetConfig, WidgetConfig } from "../../types";
 import { CircularProgressCenter, ErrorBoundary, mergeDeep, useModeController } from "@firecms/core";
 import { DEFAULT_WIDGET_SIZE } from "../../utils/widgets";
@@ -53,7 +53,7 @@ export function DryChartConfigView({
     const {
         apiEndpoint,
         getAuthToken
-    } = useDataTalk();
+    } = useDataki();
 
     const { mode } = useModeController();
 

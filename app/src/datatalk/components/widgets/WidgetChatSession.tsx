@@ -2,7 +2,7 @@ import { ChatMessage, ChatSession, DashboardWidgetConfig, DataSource, DryWidgetC
 
 import React from "react";
 import { Sheet } from "@firecms/ui";
-import { DataTalkChatSession } from "../chat/DataTalkChatSession";
+import { DatakiChatSession } from "../chat/DatakiChatSession";
 
 export function WidgetChatSession({
                                       dryConfig: dryConfigProp,
@@ -58,7 +58,7 @@ export function WidgetChatSession({
         open={open}
         onOpenChange={setOpen}
     >
-        <DataTalkChatSession
+        <DatakiChatSession
             className={"h-[95vh]"}
             session={session}
             initialWidgetConfig={dryConfigProp}

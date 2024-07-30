@@ -2,7 +2,7 @@ import { BigQuery, BigQueryDate, BigQueryDatetime, BigQueryInt, BigQueryTimestam
 // @ts-ignore
 import { Big } from "big.js";
 import { DataSource, DateParams } from "../types/dashboards";
-import DataTalkException from "../types/exceptions";
+import DatakiException from "../types/exceptions";
 import { SQLQuery } from "../types/sql";
 
 function applyFilterToSQL({
@@ -96,7 +96,7 @@ export async function runSQLQuery({
         console.log(result);
         return result;
     } catch (e: any) {
-        throw new DataTalkException(e.code, e.message, "run-sql");
+        throw new DatakiException(e.code, e.message, "run-sql");
     }
 }
 

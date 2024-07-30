@@ -21,9 +21,10 @@ import { useFirebaseStorageSource, useFirestoreDelegate, useInitialiseFirebase }
 import { firebaseConfig } from "./firebase_config";
 import { useImportExportPlugin } from "@firecms/data_import_export";
 import { Typography } from "@firecms/ui";
-import { DataTalkDrawer, DataTalkProvider, DataTalkRoutes, useBuildDataTalkConfig } from "./datatalk";
-import { useDataTalkAuthController } from "./datatalk/useDataTalkAuthController";
-import { DataTalkLogin } from "./datatalk/DataTalkLogin";
+import { DatakiDrawer, DatakiProvider, DatakiRoutes, useBuildDatakiConfig } from "./datatalk";
+import { useDatakiAuthController } from "./datatalk/useDatakiAuthController";
+import { DatakiLogin } from "./datatalk/DatakiLogin";
+import Logo from "./datatalk/dataki_logo.svg";
 
 const API_ENDPOINT = import.meta.env.VITE_API_ENDPOINT;
 if (!API_ENDPOINT) {
@@ -47,7 +48,7 @@ export function App() {
     /**
      * Controller for managing authentication
      */
-    const authController = useDataTalkAuthController({
+    const authController = useDatakiAuthController({
         firebaseApp,
         apiEndpoint: API_ENDPOINT,
     });
@@ -93,7 +94,7 @@ export function App() {
         dataSourceDelegate: firestoreDelegate
     });
 
-    const dataTalkConfig = useBuildDataTalkConfig({
+    const datakiConfig = useBuildDatakiConfig({
         enabled: authController.user !== null,
         firebaseApp,
         userSessionsPath: `/users/${authController.user?.uid}/datatalk_sessions`,
@@ -119,8 +120,8 @@ export function App() {
     return (
         <SnackbarProvider>
             <ModeControllerProvider value={modeController}>
-                <DataTalkProvider
-                    config={dataTalkConfig}>
+                <DatakiProvider
+                    config={datakiConfig}>
                     <FireCMS
                         navigationController={navigationController}
                         authController={authController}
@@ -141,20 +142,21 @@ export function App() {
                             } else {
                                 if (!canAccessMainView) {
                                     component = (
-                                        <DataTalkLogin authController={authController}
-                                                       dataTalk={dataTalkConfig}/>
+                                        <DatakiLogin authController={authController}
+                                                     datakiConfig={datakiConfig}/>
                                     );
                                 } else {
                                     component = (
                                         <Scaffold>
-                                            <AppBar title={<Typography variant="subtitle1"
+                                            <AppBar logo={Logo}
+                                                    title={<Typography variant="subtitle1"
                                                                        className={"ml-2 !font-sm uppercase font-mono"}>
-                                                DataTalk
-                                            </Typography>}/>
+                                                        DATAKI
+                                                    </Typography>}/>
                                             <Drawer>
-                                                <DataTalkDrawer/>
+                                                <DatakiDrawer/>
                                             </Drawer>
-                                            <DataTalkRoutes
+                                            <DatakiRoutes
                                                 onAnalyticsEvent={(event, params) => {
                                                     console.log("DataTalk event", event, params);
                                                 }}/>
@@ -169,7 +171,7 @@ export function App() {
                             return component;
                         }}
                     </FireCMS>
-                </DataTalkProvider>
+                </DatakiProvider>
             </ModeControllerProvider>
         </SnackbarProvider>
     );
