@@ -19,7 +19,7 @@ import {
     Tooltip,
     Typography
 } from "@firecms/ui";
-import { DateParams, FeedbackSlug } from "../../types";
+import { FeedbackSlug } from "../../types";
 import { WidgetMessageView } from "./WidgetMessageView";
 
 export function SystemMessage({
@@ -30,8 +30,6 @@ export function SystemMessage({
                                   canRegenerate,
                                   onFeedback,
                                   onUpdatedMessage,
-                                  params,
-                                  projectId
                               }: {
     text?: string,
     loading?: boolean,
@@ -40,8 +38,6 @@ export function SystemMessage({
     canRegenerate?: boolean,
     onFeedback?: (reason?: FeedbackSlug, feedbackMessage?: string) => void,
     onUpdatedMessage?: (message: string) => void,
-    projectId: string,
-    params?: DateParams
 }) {
 
     const [parsedElements, setParsedElements] = useState<MarkdownElement[] | null>();
@@ -78,8 +74,6 @@ export function SystemMessage({
                                           loading={loading}
                                           rawDryConfig={element.content}
                                           maxWidth={containerWidth ? containerWidth - 90 : undefined}
-                                          projectId={projectId}
-                                          params={params}
                                           onContentModified={(updatedContent) => {
                                               console.log("Updated content", updatedContent);
                                               if (equal(updatedContent, parsedElements[index].content)) {

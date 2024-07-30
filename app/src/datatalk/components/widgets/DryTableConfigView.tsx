@@ -9,6 +9,7 @@ import { ErrorBoundary, useModeController } from "@firecms/core";
 import { format } from "sql-formatter";
 import {
     AddIcon,
+    Button,
     CircularProgress,
     cls,
     DownloadIcon,
@@ -33,7 +34,10 @@ export function DryTableConfigView({
                                        onRemoveClick,
                                        zoom,
                                        maxWidth,
-                                       selected
+                                       selected,
+                                       largeAddToDashboardButton,
+                                       actions,
+                                       className
                                    }: {
     dryConfig: DryWidgetConfig,
     params?: DateParams,
@@ -41,7 +45,10 @@ export function DryTableConfigView({
     onRemoveClick?: () => void,
     maxWidth?: number,
     zoom?: number,
-    selected?: boolean
+    selected?: boolean,
+    largeAddToDashboardButton?: boolean,
+    actions?: React.ReactNode,
+    className?: string
 }) {
 
     const {
@@ -96,11 +103,17 @@ export function DryTableConfigView({
         }
     }, [dryConfig, params]);
 
+    const ongoingRequest = useRef(false);
+
     const makeHydrationRequest = async (newDryConfig: DryWidgetConfig, offset: number) => {
+        if (ongoingRequest.current) {
+            return;
+        }
         const firebaseToken = await getAuthToken();
         if (!newDryConfig) {
             throw Error("makeHydrationRequest: No code provided");
         }
+        ongoingRequest.current = true;
         setDataLoading(true);
         setDataloadingError(null);
         console.log("Fetching SQL data", offset, newDryConfig);
@@ -115,6 +128,7 @@ export function DryTableConfigView({
         })
             .then((data) => {
                 currentOffset.current = offset;
+                ongoingRequest.current = false;
                 setData((existingData) => [...existingData, ...data]);
             })
             .catch(setDataloadingError)
@@ -148,17 +162,17 @@ export function DryTableConfigView({
 
         <div
             className={cls("group flex flex-col w-full h-full bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 dark:border-opacity-80 rounded-lg overflow-hidden",
-                selected ? "ring-2 ring-primary ring-opacity-75 ring-offset-2" : "")}>
+                selected ? "ring-offset-transparent ring-2 ring-primary ring-opacity-75 ring-offset-2" : "",
+                className)}>
 
             <div
-                className={"flex flex-row w-full border-b border-gray-100 dark:border-gray-800 dark:border-opacity-80 items-center"}>
+                className={"min-h-[54px] flex flex-row w-full border-b border-gray-100 dark:border-gray-800 dark:border-opacity-80"}>
                 <Typography variant={"label"}
-                            className={"grow px-4 line-clamp-1"}>{config?.title ?? dryConfig.title}</Typography>
+                            className={"grow px-3 py-4 line-clamp-1 h-10"}>{config?.title ?? dryConfig.title}</Typography>
 
                 {dataLoading && <CircularProgress size={"small"}/>}
 
-                <div className={"m-2.5 mr-0 flex-row gap-1 hidden group-hover:flex nodrag"}>
-
+                <div className={"m-2.5 flex-row gap-1 hidden group-hover:flex nodrag"}>
                     <Tooltip title={"Download"}>
                         <IconButton size={"small"} onClick={downloadFile}>
                             <DownloadIcon size={"small"}/>
@@ -178,19 +192,28 @@ export function DryTableConfigView({
                             <RemoveIcon size={"small"}/>
                         </IconButton>
                     </Tooltip>}
-                </div>
 
-                <div className={"m-2.5 ml-1 flex flex-row gap-1 nodrag"}>
-                    <Tooltip title={"Edit widget configuration"}>
+                    {onUpdated && <Tooltip title={"Edit widget configuration"}>
                         <IconButton size={"small"} onClick={() => setConfigDialogOpen(true)}>
                             <SettingsIcon size={"small"}/>
                         </IconButton>
-                    </Tooltip>
+                    </Tooltip>}
+
                     <Tooltip title={"Add this view to a dashboard"}>
-                        <IconButton size={"small"} onClick={() => setAddToDashboardDialogOpen(true)}>
-                            <AddIcon size={"small"}/>
-                        </IconButton>
+                        {largeAddToDashboardButton
+                            ? <Button variant={"outlined"}
+                                      size={"small"}
+                                      onClick={() => setAddToDashboardDialogOpen(true)}>
+                                Add to dashboard
+                            </Button>
+                            : <IconButton size={"small"}
+                                          onClick={() => setAddToDashboardDialogOpen(true)}>
+                                <AddIcon size={"small"}/>
+                            </IconButton>}
                     </Tooltip>
+
+                    {actions}
+
                 </div>
             </div>
 
@@ -226,8 +249,9 @@ export function DryTableConfigView({
             </ErrorBoundary>
         </div>
 
-        {config && <AddToDashboardDialog open={addToDashboardDialogOpen}
-                                         setOpen={setAddToDashboardDialogOpen}
-                                         widgetConfig={dryConfig}/>}
+
+        {largeAddToDashboardButton && config && <AddToDashboardDialog open={addToDashboardDialogOpen}
+                                                                      setOpen={setAddToDashboardDialogOpen}
+                                                                      widgetConfig={dryConfig}/>}
     </>;
 }

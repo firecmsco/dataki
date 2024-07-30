@@ -1,12 +1,13 @@
 import React, { ComponentType, memo, useState } from "react";
 import { NodeProps, NodeResizer, useOnViewportChange, Viewport } from "reactflow";
-import { DashboardWidgetConfig, DateParams, WidgetSize } from "../../../types";
+import { DashboardWidgetConfig, DateParams, DryWidgetConfig, WidgetSize } from "../../../types";
 import { DEFAULT_WIDGET_SIZE } from "../../../utils/widgets";
 import { DryChartConfigView } from "../../widgets/DryChartConfigView";
 import { useDataTalk } from "../../../DataTalkProvider";
-import { mergeDeep } from "@firecms/core";
+import { ErrorBoundary, mergeDeep } from "@firecms/core";
 import { DryTableConfigView } from "../../widgets/DryTableConfigView";
-import { CheckBoxIcon } from "@firecms/ui";
+import { Button, ForumIcon } from "@firecms/ui";
+import { WidgetChatSession } from "../../widgets/WidgetChatSession";
 
 export type ChartNodeProps = {
     widgetConfig: DashboardWidgetConfig;
@@ -20,18 +21,33 @@ function ChartNode(props: NodeProps<ChartNodeProps>) {
 
     const { data } = props;
     const dataTalk = useDataTalk();
-    const [size, setSize] = useState<WidgetSize>(data.widgetConfig.size ?? DEFAULT_WIDGET_SIZE);
+    const widgetConfig = data.widgetConfig;
+    const [size, setSize] = useState<WidgetSize>(widgetConfig.size ?? DEFAULT_WIDGET_SIZE);
 
     const [zoom, setZoom] = useState<number>(1);
+
+    const [chatDialogOpen, setChatDialogOpen] = React.useState(false);
 
     useOnViewportChange({
         // onStart: (viewport: Viewport) => console.log("start", viewport),
         // onChange: (viewport: Viewport) => setZoom(viewport.zoom),
         onEnd: (viewport: Viewport) => setZoom(viewport.zoom),
     });
+
+    const actions = <Button variant={"outlined"} size={"small"}
+                            onClick={() => setChatDialogOpen(true)}>
+        <ForumIcon size="small"/>
+        Edit
+    </Button>;
+
+    const onUpdated = (newConfig: DryWidgetConfig) => {
+        const updatedConfig = mergeDeep(widgetConfig, newConfig);
+        console.log("onUpdated", updatedConfig, newConfig);
+        dataTalk.onWidgetUpdate(data.dashboardId, data.pageId, widgetConfig.id, updatedConfig);
+    };
     return (
         <div
-            key={data.widgetConfig.id}
+            key={widgetConfig.id}
             style={{
                 width: size.width,
                 height: size.height
@@ -52,30 +68,39 @@ function ChartNode(props: NodeProps<ChartNodeProps>) {
                                  x: params.x,
                                  y: params.y
                              };
-                             dataTalk.onWidgetMove(data.dashboardId, data.pageId, data.widgetConfig.id, position);
+                             dataTalk.onWidgetMove(data.dashboardId, data.pageId, widgetConfig.id, position);
                              setSize(updatedSize);
-                             dataTalk.onWidgetResize(data.dashboardId, data.pageId, data.widgetConfig.id, updatedSize);
+                             dataTalk.onWidgetResize(data.dashboardId, data.pageId, widgetConfig.id, updatedSize);
                          }}
             />
 
-            {data.widgetConfig.type === "chart" && <DryChartConfigView dryConfig={data.widgetConfig}
-                                                                       params={data.params}
-                                                                       selected={props.selected}
-                                                                       zoom={zoom}
-                                                                       onRemoveClick={() => data.onRemoveClick(data.widgetConfig.id)}
-                                                                       onUpdated={(newConfig) => {
-                                                                           const widgetConfig = mergeDeep(data.widgetConfig, newConfig);
-                                                                           dataTalk.onWidgetUpdate(data.dashboardId, data.pageId, data.widgetConfig.id, widgetConfig);
-                                                                       }}/>}
-            {data.widgetConfig.type === "table" && <DryTableConfigView dryConfig={data.widgetConfig}
-                                                                       params={data.params}
-                                                                       selected={props.selected}
-                                                                       zoom={zoom}
-                                                                       onRemoveClick={() => data.onRemoveClick(data.widgetConfig.id)}
-                                                                       onUpdated={(newConfig) => {
-                                                                           const widgetConfig = mergeDeep(data.widgetConfig, newConfig);
-                                                                           dataTalk.onWidgetUpdate(data.dashboardId, data.pageId, data.widgetConfig.id, widgetConfig);
-                                                                       }}/>}
+            {widgetConfig.type === "chart" && <DryChartConfigView dryConfig={widgetConfig}
+                                                                  actions={actions}
+                                                                  params={data.params}
+                                                                  selected={props.selected}
+                                                                  zoom={zoom}
+                                                                  largeAddToDashboardButton={false}
+                                                                  className={props.selected ? "" : ""}
+                                                                  onRemoveClick={() => data.onRemoveClick(widgetConfig.id)}
+                                                                  onUpdated={onUpdated}/>}
+
+            {widgetConfig.type === "table" && <DryTableConfigView dryConfig={widgetConfig}
+                                                                  actions={actions}
+                                                                  params={data.params}
+                                                                  selected={props.selected}
+                                                                  className={props.selected ? "" : ""}
+                                                                  zoom={zoom}
+                                                                  largeAddToDashboardButton={false}
+                                                                  onRemoveClick={() => data.onRemoveClick(widgetConfig.id)}
+                                                                  onUpdated={onUpdated}/>}
+
+            <ErrorBoundary>
+                {widgetConfig && <WidgetChatSession open={chatDialogOpen}
+                                                    setOpen={setChatDialogOpen}
+                                                    dryConfig={widgetConfig}
+                                                    onUpdate={onUpdated}
+                />}
+            </ErrorBoundary>
 
         </div>
     );

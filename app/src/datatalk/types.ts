@@ -9,7 +9,7 @@ export type ChatSession = {
 };
 
 export type LLMOutput = {
-    items: Item[];
+    items: ChatSessionItem[];
     text: string;
 }
 
@@ -36,7 +36,7 @@ export type FeedbackSlug = "not_helpful"
     | "other"
     | null;
 
-export type Item = LoadingItem | DryWidgetConfig | MarkdownTextItem;
+export type ChatSessionItem = LoadingItem | DryWidgetConfig | MarkdownTextItem;
 
 export type LoadingItem = {
     type: "loading";
@@ -57,6 +57,7 @@ export type DryWidgetConfig = {
     id?: string;
     title: string;
     projectId: string;
+    dataSources: DataSource[];
     description: string;
     sql: string;
     type: "chart" | "table";
@@ -68,6 +69,7 @@ export type DryWidgetConfig = {
 export type WidgetConfig = {
     title: string;
     projectId: string;
+    dataSources: DataSource[];
     description: string;
     sql: string;
     type: "chart" | "table";
@@ -115,7 +117,7 @@ export type ChartConfig = {
                 position: string;
             }
         },
-        scales?: {}
+        scales?: object
     }
 };
 

@@ -58,8 +58,8 @@ function generateContextForLLM(datasets: Array<DatasetConfig>, projectId: string
             context += "Columns:\n";
 
             table.metadata.schema.fields.forEach((field: any) => {
-                context += `  - Name: ${field.name}, Type: ${field.type} ${field.description
-                    ? ", Description: " + field.description
+                context += ` - ${field.name}: ${field.type} ${field.description
+                    ? "- " + field.description
                     : ""}\n`;
             });
 

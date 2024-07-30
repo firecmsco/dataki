@@ -35,6 +35,12 @@ interface ChatRouteInnerProps {
     setAutoRunCode: any;
 }
 
+type WidgetReference = {
+    dashboardId: string;
+    pageId: string;
+    widgetId: string;
+}
+
 function ChatRouteInner({
                             sessionId,
                             dataTalkConfig,

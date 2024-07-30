@@ -1,8 +1,7 @@
 import React from "react";
 import { CellRendererParams, VirtualTable, VirtualTableColumn } from "@firecms/core";
 import { getIn } from "@firecms/formex";
-import { DataRow, DataType, TableColumn, TableConfig } from "../../types";
-import { useResizeObserver } from "../../utils/useResizeObserver";
+import { DataRow, DataType, TableColumn } from "../../types";
 
 export type DataTableProps = {
     columns: TableColumn[];
@@ -24,8 +23,6 @@ export function DataTable({
                               loading
                           }: DataTableProps) {
 
-    const size = useResizeObserver(ref);
-
     function cellRenderer({
                               columns,
                               column,
@@ -37,7 +34,7 @@ export function DataTable({
 
         const entry = getIn(rowData, column.key);
         return (
-            <div className="px-3 py-1 flex items-center max-h-full overflow-scroll" style={{ width: column.width }}>
+            <div className="px-3 py-0.5 flex items-center max-h-full overflow-scroll" style={{ width: column.width }}>
                 {entry}
             </div>
         );
@@ -59,8 +56,15 @@ export function DataTable({
                  }}
                  ref={ref}>
 
+                {data?.length === 0 && loading &&
+                <div className="absolute flex-grow flex items-center justify-center">
+                    <p className="text-gray-500 dark:text-gray-400">No data available</p>
+                </div>}
+
                 <VirtualTable
+                    loading={loading}
                     data={data}
+                    rowHeight={48}
                     columns={tableColumns}
                     cellRenderer={cellRenderer}
                     onEndReached={onEndReached}

@@ -32,6 +32,8 @@ async function processUserCommandRoute(request: Request, response: Response) {
         throw new DataTalkException(400, "You must specify data sources in the body", "Invalid request");
     }
 
+    const initialWidgetConfig: DryWidgetConfig | undefined = request.body.initialWidgetConfig;
+
     const projectId = request.body.projectId;
     const credentials = await getStoredServiceAccount(firestore, projectId);
 
@@ -54,6 +56,7 @@ async function processUserCommandRoute(request: Request, response: Response) {
         dataContexts,
         history: request.body.history || [],
         credentials,
+        initialWidgetConfig,
         onDelta: (delta) => {
             console.log("Got delta", delta);
             response.write("&$# " + JSON.stringify({
@@ -114,10 +117,13 @@ async function samplePromptsRoute(request: Request, response: Response) {
 
     const dataSources: DataSource[] = request.body.dataSources;
     const chatHistory: ChatMessage[] = request.body.history;
+    const initialWidgetConfig: DryWidgetConfig | undefined = request.body.initialWidgetConfig;
+
     const res = await generateSamplePrompts({
         firestore: firestore,
         history: chatHistory,
-        dataSources: dataSources
+        dataSources: dataSources,
+        initialWidgetConfig
     })
 
     response.json({ data: res });

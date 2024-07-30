@@ -3,13 +3,13 @@ import equal from "react-fast-compare"
 
 import { hydrateChartConfig } from "../../api";
 import { useDataTalk } from "../../DataTalkProvider";
-import { DateParams, DryWidgetConfig, WidgetConfig } from "../../types";
+import { DashboardWidgetConfig, DateParams, DryWidgetConfig, WidgetConfig } from "../../types";
 import { CircularProgressCenter, ErrorBoundary, mergeDeep, useModeController } from "@firecms/core";
-import { format } from "sql-formatter";
 import { DEFAULT_WIDGET_SIZE } from "../../utils/widgets";
 import { ChartView } from "./ChartView";
 import {
     AddIcon,
+    Button,
     cls,
     DownloadIcon,
     IconButton,
@@ -33,15 +33,21 @@ export function DryChartConfigView({
                                        onRemoveClick,
                                        zoom,
                                        maxWidth,
-                                       selected
+                                       selected,
+                                       largeAddToDashboardButton,
+                                       actions,
+                                       className
                                    }: {
-    dryConfig: DryWidgetConfig,
+    dryConfig: DryWidgetConfig | DashboardWidgetConfig,
     params?: DateParams,
-    onUpdated?: (newConfig: DryWidgetConfig) => void,
+    onUpdated?: (newConfig: DryWidgetConfig | DashboardWidgetConfig) => void,
     onRemoveClick?: () => void,
     maxWidth?: number,
     zoom?: number,
-    selected?: boolean
+    selected?: boolean,
+    largeAddToDashboardButton?: boolean,
+    actions?: React.ReactNode,
+    className?: string
 }) {
 
     const {
@@ -76,11 +82,6 @@ export function DryChartConfigView({
                     dryConfig: getConfigWithoutSize(dryConfig),
                     params
                 };
-                const formattedDrySQL = format(dryConfig.sql, { language: "bigquery" })
-                onUpdated?.({
-                    ...dryConfig,
-                    sql: formattedDrySQL
-                });
                 makeHydrationRequest(dryConfig);
             } catch (e) {
                 console.error(dryConfig);
@@ -122,15 +123,16 @@ export function DryChartConfigView({
     return <>
 
         <div
-            className={cls("group flex flex-col w-full h-full bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 dark:border-opacity-80 rounded-lg overflow-hidden",
-                selected ? "ring-offset-transparent ring-2 ring-primary ring-opacity-75 ring-offset-2" : "")}>
+            className={cls("group flex flex-col w-full h-full bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 dark:border-opacity-80 rounded-lg overflow-hidden",
+                selected ? " ring-offset-transparent ring-2 ring-primary ring-opacity-75 ring-offset-2" : "",
+                className)}>
 
             <div
-                className={"flex flex-row w-full border-b border-gray-100 dark:border-gray-800 dark:border-opacity-80"}>
+                className={"min-h-[54px] flex flex-row w-full border-b border-gray-100 dark:border-gray-800 dark:border-opacity-80"}>
                 <Typography variant={"label"}
-                            className={"grow pl-4 py-4 line-clamp-1 h-10"}>{config?.title ?? dryConfig.title}</Typography>
-                <div className={"m-2.5 mr-0 flex-row gap-1 hidden group-hover:flex nodrag"}>
+                            className={"grow px-3 py-4 line-clamp-1 h-10"}>{config?.title ?? dryConfig.title}</Typography>
 
+                <div className={cls("m-2.5 flex-row gap-1 group-hover:flex nodrag", selected ? "flex" : "hidden")}>
                     <Tooltip title={"Download"}>
                         <IconButton size={"small"} onClick={downloadFile}>
                             <DownloadIcon size={"small"}/>
@@ -146,20 +148,30 @@ export function DryChartConfigView({
                             <RemoveIcon size={"small"}/>
                         </IconButton>
                     </Tooltip>}
-                </div>
 
-                <div className={"m-2.5 ml-1 flex flex-row gap-1 nodrag"}>
-                    <Tooltip title={"Edit widget configuration"}>
+                    {onUpdated && <Tooltip title={"Edit widget configuration"}>
                         <IconButton size={"small"} onClick={() => setConfigDialogOpen(true)}>
                             <SettingsIcon size={"small"}/>
                         </IconButton>
-                    </Tooltip>
+                    </Tooltip>}
+
                     <Tooltip title={"Add this view to a dashboard"}>
-                        <IconButton size={"small"} onClick={() => setAddToDashboardDialogOpen(true)}>
-                            <AddIcon size={"small"}/>
-                        </IconButton>
+                        {largeAddToDashboardButton
+                            ? <Button variant={"outlined"}
+                                      size={"small"}
+                                      onClick={() => setAddToDashboardDialogOpen(true)}>
+                                Add to dashboard
+                            </Button>
+                            : <IconButton size={"small"}
+                                          onClick={() => setAddToDashboardDialogOpen(true)}>
+                                <AddIcon size={"small"}/>
+                            </IconButton>}
                     </Tooltip>
+
+                    {actions}
+
                 </div>
+
             </div>
 
             {hydrationInProgress && <CircularProgressCenter/>}
@@ -191,7 +203,3 @@ export function DryChartConfigView({
                                          widgetConfig={dryConfig}/>}
     </>;
 }
-
-
-
-

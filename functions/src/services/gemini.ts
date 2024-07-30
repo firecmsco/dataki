@@ -6,18 +6,17 @@ import {
     GenerateContentResponse,
     GenerativeModelPreview,
     Tool,
-    VertexAI,
+    VertexAI
 } from "@google-cloud/vertexai";
 import { Part } from "@google/generative-ai";
 import * as util from "util";
 import { ServiceAccountKey } from "../types/service_account";
 import { CommandMessage } from "../types/command";
-import { DataSource } from "../types/dashboards";
+import { DataSource, DryWidgetConfig } from "../types/dashboards";
 import { getProjectDataContext } from "./context_data";
 import DataTalkException from "../types/exceptions";
 
 const PREFERRED_COLORS = ["#ea5545", "#f46a9b", "#ef9b20", "#edbf33", "#ede15b", "#bdcf32", "#87bc45", "#27aeef", "#b33dc6"];
-
 
 export const getVertexAI = async (): Promise<GenerativeModelPreview> => {
     const model = "gemini-1.5-pro";
@@ -33,8 +32,8 @@ export const getVertexAI = async (): Promise<GenerativeModelPreview> => {
             temperature: 1,
             topP: 0.95
         },
-        tools: [makeSQLQueryFunctionDeclaration],
-    }, { apiClient: "v1beta" },);
+        tools: [makeSQLQueryFunctionDeclaration]
+    }, { apiClient: "v1beta" });
 }
 
 export async function makeGeminiRequest({
@@ -43,7 +42,8 @@ export async function makeGeminiRequest({
                                             onDelta,
                                             onSQLQuery,
                                             history,
-                                            credentials
+                                            credentials,
+                                            initialWidgetConfig
                                         }:
                                             {
                                                 userQuery: string,
@@ -51,7 +51,8 @@ export async function makeGeminiRequest({
                                                 onDelta: (delta: string) => void,
                                                 onSQLQuery?: (sql: string) => void,
                                                 history: ChatMessage[],
-                                                credentials?: ServiceAccountKey
+                                                credentials?: ServiceAccountKey,
+                                                initialWidgetConfig?: DryWidgetConfig
                                             }): Promise<string> {
 
     const geminiModel = await getVertexAI();
@@ -252,6 +253,8 @@ names like 'products', 'sales', 'customers', 'count', 'average', or whatever mak
 - Remember to write SQL queries in valid BigQuery SQL syntax, and make sure the table names you use have been provided in the context data.
 - Whenever you are generating SQL queries, TEST IT (with VERY limited results), using \`makeSQLQuery(sql:string)\`. Make sure the query is correct and returns the data you expect.
 You do NOT need to include the used SQL in the responses.
+- Usually when generating charts, the timestamps should be in the x-axis, and converted to days, months, or years, depending on the data,
+unless the user asks otherwise.
 
 ---
 Hydration:
@@ -273,7 +276,18 @@ or a count query to get the number of rows in a table.
 You should not return \`\`\`sql blocks in your response, only \`\`\`json with chart or table configs, or answers in natural language.
 IMPORTANT: You should proactively make calls to makeSQLQuery to fetch the data you need to answer the user's question. Also to verify
 the SQL is correct.
-`;
+
+` + (
+        initialWidgetConfig
+            ? `
+In this particular instance of the chat, your goal is to modify an existing widget:
+\`\`\`
+${JSON.stringify(initialWidgetConfig)}
+\`\`\`
+
+All your interactions should be aimed at returning different versions of the widget, based on the user requests.
+In this mode, the config you generate should always include the provided id: ${initialWidgetConfig.id}`
+            : "");
 
     const chat = geminiModel.startChat({
         systemInstruction: {
@@ -365,7 +379,7 @@ const makeSQLQueryFunctionDeclaration: Tool = {
             properties: {
                 sql: {
                     type: FunctionDeclarationSchemaType.STRING,
-                    description: "The SQL query to run in BigQuery",
+                    description: "The SQL query to run in BigQuery"
                 }
             },
             required: ["sql"]
@@ -377,11 +391,13 @@ export const generateSamplePrompts = async (
     {
         firestore,
         history,
-        dataSources
+        dataSources,
+        initialWidgetConfig
     }: {
         firestore: FirebaseFirestore.Firestore,
         history: Array<CommandMessage> | undefined,
-        dataSources: DataSource[]
+        dataSources: DataSource[],
+        initialWidgetConfig?: DryWidgetConfig
     }
 ): Promise<string[]> => {
 
@@ -394,7 +410,7 @@ export const generateSamplePrompts = async (
         throw new DataTalkException(error.code, error.message, "internal");
     });
 
-    const systemInstruction = buildSamplePromptsSystemInstructions(dataContexts)
+    const systemInstruction = buildSamplePromptsSystemInstructions(dataContexts, initialWidgetConfig)
 
     const geminiModel = await getVertexAI();
     const chat = geminiModel.startChat({
@@ -430,7 +446,7 @@ export const generateSamplePrompts = async (
     throw new Error("No prompts found");
 }
 
-export const buildSamplePromptsSystemInstructions = (dataContexts: string[]): string => {
+export const buildSamplePromptsSystemInstructions = (dataContexts: string[], initialWidgetConfig?: DryWidgetConfig): string => {
     return `I need you to give me 4 sample prompts for a ChatBot named DATATALK.
 DATATALK allows users to make questions to their BigQuery datasets in natural language.
 
@@ -461,7 +477,16 @@ for questions the user may want to make based on the data you have in the BigQue
 Do not suggest generating maps.
 
 Your output will be parsed by a script so it MUST always be in the same format.
-`;
+` + (initialWidgetConfig
+        ? `
+In this particular instance of the chat, the user is modifying this widget:
+\`\`\`
+    ${JSON.stringify(initialWidgetConfig)}
+\`\`\`
+
+All your suggestions must revolve around how to modify or improve this widget.
+Remember you are making suggestions as if you are the user. Each suggestion is a command to DataTalk`
+        : "");
 }
 
 function shuffle<T>(array: T[]) {

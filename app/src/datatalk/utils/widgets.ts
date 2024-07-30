@@ -11,3 +11,5 @@ export const DEFAULT_PAPER_SIZE = {
 export const TITLE_HEIGHT = 64;
 export const SUBTITLE_HEIGHT = 48;
 export const TEXT_WIDTH = 600;
+
+export const DEFAULT_GRID_SIZE = 25;

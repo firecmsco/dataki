@@ -31,9 +31,13 @@ export function AddToDashboardDialog({
 
             <NewDashboardCard
                 onClick={(dashboard) => {
-                    dataTalkConfig.addDashboardWidget(dashboard.id, widgetConfig);
+                    const dashboardWidget = dataTalkConfig.addDashboardWidget(dashboard.id, widgetConfig);
+                    navigate(getDashboardPath(dashboard.id), {
+                        state: {
+                            initialViewPosition: dashboardWidget.position
+                        }
+                    });
                     setOpen(false);
-                    navigate(getDashboardPath(dashboard.id));
                 }}/>
 
             <div className={"flex flex-row gap-2 flex-wrap"}>
@@ -42,9 +46,12 @@ export function AddToDashboardDialog({
                         key={index}
                         dashboard={dashboard}
                         onClick={() => {
-                            console.log("Navigate to dashboard", dashboard.id);
-                            dataTalkConfig.addDashboardWidget(dashboard.id, widgetConfig);
-                            navigate(getDashboardPath(dashboard.id));
+                            const dashboardWidget = dataTalkConfig.addDashboardWidget(dashboard.id, widgetConfig);
+                            navigate(getDashboardPath(dashboard.id), {
+                                state: {
+                                    initialViewPosition: dashboardWidget.position
+                                }
+                            });
                             setOpen(false);
                         }}/>
                 ))}

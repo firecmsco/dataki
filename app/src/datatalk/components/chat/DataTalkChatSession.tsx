@@ -1,15 +1,32 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { randomString, useAuthController, useSnackbarController } from "@firecms/core";
+import { ErrorBoundary, randomString, useAuthController, useSnackbarController } from "@firecms/core";
 import { Button, cls, fieldBackgroundHoverMixin, SendIcon, TextareaAutosize, Typography } from "@firecms/ui";
 import { MessageView } from "./MessageView";
 import { getDataTalkPromptSuggestions, streamDataTalkCommand } from "../../api";
-import { ChatMessage, DateParams, DataSource, FeedbackSlug, ChatSession } from "../../types";
+import { ChatMessage, ChatSession, DataSource, DateParams, DryWidgetConfig, FeedbackSlug } from "../../types";
 import { PromptSuggestions } from "./PromptSuggestions";
 import { useDataTalk } from "../../DataTalkProvider";
 import { DataSourcesSelection } from "../DataSourcesSelection";
 import { PromptSuggestionsSmall } from "./PromptSuggestionsSmall";
 import { DatePickerWithRange } from "../DateRange";
 import { getInitialDateRange } from "../utils/dates";
+import { DryChartConfigView } from "../widgets/DryChartConfigView";
+import { DryTableConfigView } from "../widgets/DryTableConfigView";
+import { DEFAULT_WIDGET_SIZE } from "../../utils/widgets";
+
+export type ChatSessionState = {
+    session: ChatSession,
+    params: DateParams
+    projectId: string | undefined,
+    dataSources: DataSource[],
+    initialWidgetConfig?: DryWidgetConfig,
+    onInitialWidgetConfigChange?: (newConfig: DryWidgetConfig) => void
+}
+
+// react context for the chat session
+const ChatSessionContext = React.createContext<ChatSessionState>({} as any);
+
+export const useChatSession = () => React.use(ChatSessionContext);
 
 const DEMO_DATA_SOURCES: DataSource[] = [{
     projectId: "bigquery-public-data",
@@ -45,14 +62,20 @@ export function DataTalkChatSession({
                                         onAnalyticsEvent,
                                         onMessagesChange,
                                         onDataSourcesChange,
-                                        onProjectIdChange
+                                        onProjectIdChange,
+                                        initialWidgetConfig,
+                                        onInitialWidgetConfigChange,
+                                        className
                                     }: {
     session: ChatSession,
     initialPrompt?: string,
     onAnalyticsEvent?: (event: string, params?: any) => void,
     onMessagesChange?: (messages: ChatMessage[]) => void,
     onDataSourcesChange?: (dataSources: DataSource[]) => void,
-    onProjectIdChange?: (projectId: string) => void
+    onProjectIdChange?: (projectId: string) => void,
+    initialWidgetConfig?: DryWidgetConfig,
+    onInitialWidgetConfigChange?: (newConfig: DryWidgetConfig) => void
+    className?: string
 }) {
 
     const authController = useAuthController();
@@ -63,13 +86,11 @@ export function DataTalkChatSession({
 
     const snackbar = useSnackbarController();
 
-    const [projectId, setProjectId] = useState<string | undefined>(getInitialProject(session, uid));
-    // const [projectId, setProjectId] = useState<string | undefined>("bigquery-public-data");
+    const [projectId, setProjectId] = useState<string | undefined>(initialWidgetConfig?.projectId ?? getInitialProject(session, uid));
+    const [dataSources, setDataSources] = useState<DataSource[]>(initialWidgetConfig?.dataSources ?? getInitialDataSources(session, uid));
 
     const [samplePrompts, setSamplePrompts] = useState<string[]>([]);
     const [samplePromptsLoading, setSamplePromptsLoading] = useState<boolean>(false);
-
-    const [dataSources, setDataSources] = useState<DataSource[]>(getInitialDataSources(session, uid));
 
     const [textInput, setTextInput] = useState<string>("");
 
@@ -95,7 +116,7 @@ export function DataTalkChatSession({
                 ongoingPromptSuggestionRequest.current = true;
                 getAuthToken().then((firebaseToken) => {
                     setSamplePromptsLoading(true);
-                    getDataTalkPromptSuggestions(firebaseToken, apiEndpoint, dataSources, messages)
+                    getDataTalkPromptSuggestions(firebaseToken, apiEndpoint, dataSources, messages, initialWidgetConfig)
                         .then(setSamplePrompts)
                         .finally(() => {
                             ongoingPromptSuggestionRequest.current = false;
@@ -236,14 +257,16 @@ export function DataTalkChatSession({
         let currentMessageResponse = "";
 
         setMessageLoading(true);
-        streamDataTalkCommand(firebaseToken,
-            messageText,
+        streamDataTalkCommand({
+            firebaseAccessToken: firebaseToken,
+            command: messageText,
             apiEndpoint,
-            session.id,
             projectId,
-            dataSources,
-            baseMessages,
-            (newDelta) => {
+            initialWidgetConfig,
+            sessionId: session.id,
+            sources: dataSources,
+            messages: baseMessages,
+            onDelta: (newDelta) => {
                 currentMessageResponse += newDelta;
                 setMessages([
                     ...currentMessages,
@@ -259,7 +282,7 @@ export function DataTalkChatSession({
                     scrollToBottom();
                 }
             },
-            (sqlQuery) => {
+            onSQLQuery: (sqlQuery) => {
                 console.log("Got SQL query", sqlQuery);
                 const newMessages = [...currentMessages];
                 // this message must go before the one with id systemMessageId
@@ -274,7 +297,8 @@ export function DataTalkChatSession({
                 currentMessages = newMessages;
                 setMessages(newMessages);
 
-            })
+            }
+        })
             .then((newMessage) => {
                 const updatedMessages: ChatMessage[] = [
                     ...currentMessages,
@@ -381,102 +405,137 @@ export function DataTalkChatSession({
     const lastMessage = (messages ?? []).length > 0 ? messages[messages.length - 1] : null;
     const lastMessageByUser = lastMessage?.user === "USER";
 
+    const widgetHeight = initialWidgetConfig?.size?.height ?? DEFAULT_WIDGET_SIZE.height;
+    const widgetMaxWidth = initialWidgetConfig?.type === "table" ? undefined : initialWidgetConfig?.size?.width ?? DEFAULT_WIDGET_SIZE.width;
+
     return (
-
-        <div className="relative h-full w-full flex flex-col ">
-            <div className="h-full overflow-auto"
-                 onScroll={handleScroll}
-                 ref={scrollContainerRef}>
-                <div className={"z-20 absolute top-4 right-4 bg-white dark:bg-gray-800 rounded-lg"}>
-                    <DatePickerWithRange dateRange={dateRange} setDateRange={setDateRange}/>
-                </div>
-
-                <div className="container mx-auto px-4 md:px-6 pt-8 flex-1 flex flex-col gap-4 mt-12">
-
-                    {(messages ?? []).length === 0 &&
-
-                        <div className={"my-8"}>
-                            <Typography variant={"h3"} gutterBottom={true} className={"font-mono ml-4 my-2"}>
-                                How can I help you?
-                            </Typography>
-                            <PromptSuggestions
-                                loading={samplePromptsLoading}
-                                suggestions={samplePrompts}
-                                onPromptSuggestionClick={(prompt) => submitMessage(prompt)}/>
-                        </div>}
-
-                    {projectId && messages.map((message, index) => {
-                        return <MessageView key={message.date.toISOString() + index}
-                                            onRemove={() => {
-                                                const newMessages = [...messages];
-                                                newMessages.splice(index, 1);
-                                                setMessages(newMessages);
-                                                onMessagesChange?.(newMessages);
-                                            }}
-                                            params={params}
-                                            onFeedback={(reason, feedbackMessage) => {
-                                                saveFeedback(message, reason, feedbackMessage, index);
-                                            }}
-                                            onUpdatedMessage={(message) => {
-                                                updateMessage(message, index);
-                                            }}
-                                            projectId={projectId}
-                                            message={message}
-                                            canRegenerate={index === messages.length - 1 && message.user === "SYSTEM"}
-                                            onRegenerate={() => onRegenerate(message, index)}/>;
-                    })}
-
-                    {!messageLoading && lastMessageByUser &&
-                        <Button className={"ml-20"} variant={"outlined"} size={"small"}
-                                onClick={() => onReSend(lastMessage, messages.length - 1)}>
-                            Resend
-                        </Button>}
-
-                </div>
-
-                <div ref={messagesEndRef} style={{ height: 8 }}/>
-            </div>
-
-            <div
-                className="w-full sticky bottom-0 right-0 left-0 pt-3 pb-6 dark:bg-gray-800 dark:bg-opacity-20 rounded-lg">
-
-                <div className={"container mx-auto px-4 md:px-6 flex flex-col gap-2"}>
-                    <div className={"flex flex-row gap-4"}>
-                        <DataSourcesSelection projectId={projectId}
-                                              setProjectId={updateProjectId}
-                                              projectDisabled={messages.length > 0}
-                                              dataSources={dataSources}
-                                              setDataSources={updateDataSources}/>
-
-                        {projectId && messages.length > 0 && <PromptSuggestionsSmall loading={samplePromptsLoading}
-                                                                                     suggestions={samplePrompts}
-                                                                                     onPromptSuggestionClick={(prompt) => submitMessage(prompt)}/>}
+        <ChatSessionContext value={{
+            session,
+            params,
+            projectId,
+            dataSources,
+            initialWidgetConfig,
+            onInitialWidgetConfigChange
+        }}>
+            <div className={cls("relative h-full w-full flex flex-col", className)}>
+                <div className="h-full overflow-auto"
+                     onScroll={handleScroll}
+                     ref={scrollContainerRef}>
+                    <div className={"z-20 absolute top-4 right-4 bg-white dark:bg-gray-800 rounded-lg"}>
+                        <DatePickerWithRange dateRange={dateRange} setDateRange={setDateRange}/>
                     </div>
-                    <form
-                        noValidate
-                        onSubmit={(e: React.FormEvent) => {
-                            e.preventDefault();
-                            if (!messageLoading && textInput && projectId)
-                                submitMessage(textInput);
-                        }}
-                        autoComplete="off"
-                        className="relative bg-white dark:bg-gray-800 rounded-full flex items-center gap-2 ">
-                        <TextareaAutosize
-                            value={textInput}
-                            autoFocus={true}
-                            onKeyDown={handleKeyDown}
-                            onChange={(e) => setTextInput(e.target.value)}
-                            className={cls(fieldBackgroundHoverMixin, "flex-1 resize-none rounded-3xl p-4 border-none focus:ring-0 dark:bg-gray-800 dark:text-gray-200 pr-[80px] pl-8")}
-                            placeholder="Type your message..."
-                        />
-                        <Button className={"rounded-3xl absolute right-0 top-0 m-1.5"} variant="text" type={"submit"}
-                                disabled={!textInput || messageLoading || !projectId}>
-                            <SendIcon color={"primary"}/>
-                        </Button>
-                    </form>
+
+                    <div className="container mx-auto px-4 md:px-6 pt-8 flex-1 flex flex-col gap-4 mt-12">
+
+                        {!initialWidgetConfig && (messages ?? []).length === 0 &&
+                            <div className={"my-0"}>
+                                <Typography variant={"h3"} gutterBottom={true} className={"font-mono ml-4 my-2"}>
+                                    How can I help you?
+                                </Typography>
+                                <PromptSuggestions
+                                    loading={samplePromptsLoading}
+                                    suggestions={samplePrompts}
+                                    onPromptSuggestionClick={(prompt) => submitMessage(prompt)}/>
+                            </div>
+                        }
+
+                        {initialWidgetConfig && <>
+                            <Typography variant={"h6"} gutterBottom={true} className={"my-4"}>
+                                Editing the widget
+                            </Typography>
+                            <div className={"flex flex-col gap-2 mb-4"}
+                                 style={{
+                                     maxWidth: widgetMaxWidth,
+                                     height: widgetHeight
+                                 }}>
+
+                                <ErrorBoundary>
+                                    {initialWidgetConfig.type === "chart" && <DryChartConfigView
+                                        dryConfig={initialWidgetConfig}
+                                        params={params}
+                                    />}
+                                    {initialWidgetConfig.type === "table" && <DryTableConfigView
+                                        dryConfig={initialWidgetConfig}
+                                        params={params}
+                                    />}
+                                </ErrorBoundary>
+
+                            </div>
+                        </>}
+
+                        {projectId && messages.map((message, index) => {
+                            return <MessageView key={message.date.toISOString() + index}
+                                                onRemove={() => {
+                                                    const newMessages = [...messages];
+                                                    newMessages.splice(index, 1);
+                                                    setMessages(newMessages);
+                                                    onMessagesChange?.(newMessages);
+                                                }}
+                                                onFeedback={(reason, feedbackMessage) => {
+                                                    saveFeedback(message, reason, feedbackMessage, index);
+                                                }}
+                                                onUpdatedMessage={(message) => {
+                                                    updateMessage(message, index);
+                                                }}
+                                                message={message}
+                                                canRegenerate={index === messages.length - 1 && message.user === "SYSTEM"}
+                                                onRegenerate={() => onRegenerate(message, index)}/>;
+                        })}
+
+                        {!messageLoading && lastMessageByUser &&
+                            <Button className={"ml-20"} variant={"outlined"} size={"small"}
+                                    onClick={() => onReSend(lastMessage, messages.length - 1)}>
+                                Resend
+                            </Button>}
+
+                    </div>
+
+                    <div ref={messagesEndRef} style={{ height: 8 }}/>
+                </div>
+
+                <div
+                    className="w-full sticky bottom-0 right-0 left-0 pt-3 pb-6 dark:bg-gray-800 dark:bg-opacity-20 rounded-lg">
+
+                    <div className={"container mx-auto px-4 md:px-6 flex flex-col gap-2"}>
+                        <div className={"flex flex-row gap-4"}>
+                            <DataSourcesSelection projectId={projectId}
+                                                  setProjectId={updateProjectId}
+                                                  projectDisabled={messages.length > 0}
+                                                  dataSources={dataSources}
+                                                  setDataSources={updateDataSources}/>
+
+                            {projectId && (messages.length > 0 || initialWidgetConfig) &&
+                                <PromptSuggestionsSmall loading={samplePromptsLoading}
+                                                        suggestions={samplePrompts}
+                                                        onPromptSuggestionClick={(prompt) => submitMessage(prompt)}/>}
+                        </div>
+                        <form
+                            noValidate
+                            onSubmit={(e: React.FormEvent) => {
+                                e.preventDefault();
+                                if (!messageLoading && textInput && projectId)
+                                    submitMessage(textInput);
+                            }}
+                            autoComplete="off"
+                            className="relative bg-white dark:bg-gray-800 rounded-full flex items-center gap-2 ">
+                            <TextareaAutosize
+                                value={textInput}
+                                autoFocus={true}
+                                onKeyDown={handleKeyDown}
+                                onChange={(e) => setTextInput(e.target.value)}
+                                className={cls(fieldBackgroundHoverMixin, "flex-1 resize-none rounded-3xl p-4 border-none focus:ring-0 dark:bg-gray-800 dark:text-gray-200 pr-[80px] pl-8")}
+                                placeholder="Type your message..."
+                            />
+                            <Button className={"rounded-3xl absolute right-0 top-0 m-1.5"} variant="text"
+                                    type={"submit"}
+                                    disabled={!textInput || messageLoading || !projectId}>
+                                <SendIcon color={"primary"}/>
+                            </Button>
+                        </form>
+                    </div>
                 </div>
             </div>
-        </div>
+        </ChatSessionContext>
     )
 }
 

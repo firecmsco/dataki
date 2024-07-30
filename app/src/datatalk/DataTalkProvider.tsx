@@ -22,7 +22,7 @@ import {
     TextItem,
     WidgetSize
 } from "./types";
-import { DEFAULT_WIDGET_SIZE } from "./utils/widgets";
+import { DEFAULT_GRID_SIZE, DEFAULT_WIDGET_SIZE } from "./utils/widgets";
 import { randomString, User } from "@firecms/core";
 import equal from "react-fast-compare"
 
@@ -42,7 +42,7 @@ export type DataTalkConfig = {
     listenDashboard: (dashboardId: string, onDashboardUpdate: (dashboard: Dashboard) => void) => () => void;
     addDashboardText: (dashboardId: string, pageId: string, node: TextItem) => void;
     updateDashboardText: (dashboardId: string, pageId: string, id: string, node: TextItem) => void;
-    addDashboardWidget: (dashboardId: string, widgetConfig: DryWidgetConfig) => void;
+    addDashboardWidget: (dashboardId: string, widgetConfig: DryWidgetConfig) => DashboardWidgetConfig;
     onWidgetResize: (dashboardId: string, pageId: string, id: string, size: WidgetSize) => void;
     onWidgetUpdate: (dashboardId: string, pageId: string, id: string, widgetConfig: DashboardWidgetConfig) => void;
     onWidgetMove: (dashboardId: string, pageId: string, id: string, position: Position) => void;
@@ -193,12 +193,23 @@ export function useBuildDataTalkConfig({
         return saveDashboard(dashboard);
     }, [saveDashboard]);
 
-    const addDashboardWidget = (id: string, widgetConfig: DryWidgetConfig) => {
+    const addDashboardWidget = (id: string, widgetConfig: DryWidgetConfig): DashboardWidgetConfig => {
         const dashboard = dashboardsRef.current.find(d => d.id === id);
         if (!dashboard) throw Error("addDashboardWidget: Dashboard not found");
         const dashboardPage = dashboard.pages[0];
-        dashboardPage.widgets.push(convertWidgetToDashboardWidget(widgetConfig));
-        return saveDashboard(dashboard);
+        const maxYPosition = dashboardPage.widgets.reduce((acc, widget) => {
+            const y = widget.position.y + widget.size.height;
+            if (y > acc)
+                return y;
+            return acc;
+        }, 0);
+        const newWidget = convertWidgetToDashboardWidget(widgetConfig, {
+            x: DEFAULT_GRID_SIZE,
+            y: maxYPosition + DEFAULT_GRID_SIZE
+        });
+        dashboardPage.widgets.push(newWidget);
+        saveDashboard(dashboard).catch(console.error);
+        return newWidget;
     };
 
     const onWidgetResize = useCallback((dashboardId: string, pageId: string, id: string, size: WidgetSize) => {

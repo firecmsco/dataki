@@ -1,11 +1,15 @@
-import { Dashboard } from "../../types";
-import React, { useDeferredValue, useEffect, useRef } from "react";
+import { Dashboard, Position } from "../../types";
+import React, { useRef } from "react";
 import { DashboardPageView } from "./DashboardPageView";
-import { TextField } from "@firecms/ui";
-import { useDataTalk } from "../../DataTalkProvider";
 import { useResizeObserver } from "../../utils/useResizeObserver";
 
-export function DashboardView({ dashboard }: { dashboard: Dashboard }) {
+export function DashboardView({
+                                  dashboard,
+                                  initialViewPosition
+                              }: {
+    dashboard: Dashboard,
+    initialViewPosition?: Position
+}) {
 
     const {
         id,
@@ -23,7 +27,11 @@ export function DashboardView({ dashboard }: { dashboard: Dashboard }) {
     return (
         <div ref={ref} className={"relative w-full h-full flex flex-col"}>
             {size && selectedPage &&
-                <DashboardPageView page={selectedPage} dashboard={dashboard} containerSize={size}/>}
+                <DashboardPageView page={selectedPage}
+                                   dashboard={dashboard}
+                                   containerSize={size}
+                                   initialViewPosition={initialViewPosition}
+                />}
         </div>
     );
 

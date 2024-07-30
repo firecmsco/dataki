@@ -1,25 +1,13 @@
 import React, { useDeferredValue, useEffect, useRef } from "react";
-import {
-    IconButton,
-    Menubar,
-    MenubarContent,
-    MenubarItem,
-    MenubarMenu,
-    MenubarPortal,
-    MenubarShortcut,
-    MenubarTrigger,
-    Separator,
-    ShareIcon,
-    TextField,
-    TitleIcon,
-    Tooltip
-} from "@firecms/ui";
+import { Button, ForumIcon, IconButton, Separator, ShareIcon, TextField, TitleIcon, Tooltip } from "@firecms/ui";
 import { Dashboard } from "../../types";
 import { DownloadButton } from "./DownloadButton";
 import { useDataTalk } from "../../DataTalkProvider";
 import { UndoRedoState } from "../../hooks/useUndoRedo";
 import { randomString } from "@firecms/core";
-import { SUBTITLE_HEIGHT, TEXT_WIDTH, TITLE_HEIGHT } from "../../utils/widgets";
+import { DEFAULT_GRID_SIZE, SUBTITLE_HEIGHT, TEXT_WIDTH, TITLE_HEIGHT } from "../../utils/widgets";
+import { useViewport } from "reactflow";
+import { useNavigate } from "react-router-dom";
 
 const RADIO_ITEMS = ["Andy", "Benoît", "Luis"];
 const CHECK_ITEMS = ["Always Show Bookmarks Bar", "Always Show Full URLs"];
@@ -32,12 +20,15 @@ export const DashboardMenubar = ({
     undoRedoState: UndoRedoState
 }) => {
 
+    const navigate = useNavigate();
     const dataTalk = useDataTalk();
+    const viewport = useViewport();
     // const [checkedSelection, setCheckedSelection] = React.useState([CHECK_ITEMS[1]]);
     // const [radioSelection, setRadioSelection] = React.useState(RADIO_ITEMS[2]);
 
+
     return (
-        <Menubar className={"flex items-center bg-transparent dark:bg-transparent rounded-2xl gap-2 px-2"}>
+        <div className={"z-10 bg-white dark:bg-gray-950 p-[3px] shadow-sm flex items-center bg-transparent dark:bg-transparent rounded-2xl gap-2 px-2 "}>
 
             <DashboardNameTextField title={dashboard.title} id={dashboard.id}/>
 
@@ -60,8 +51,8 @@ export const DashboardMenubar = ({
                                         type: "title",
                                         text: "",
                                         position: {
-                                            x: 100,
-                                            y: 100
+                                            x: DEFAULT_GRID_SIZE,
+                                            y: -(viewport.y % DEFAULT_GRID_SIZE) * DEFAULT_GRID_SIZE + 100
                                         },
                                         size: {
                                             width: TEXT_WIDTH,
@@ -80,8 +71,8 @@ export const DashboardMenubar = ({
                                         type: "subtitle",
                                         text: "",
                                         position: {
-                                            x: 100,
-                                            y: 100
+                                            x: DEFAULT_GRID_SIZE,
+                                            y: -(viewport.y % DEFAULT_GRID_SIZE) * DEFAULT_GRID_SIZE + 100
                                         },
                                         size: {
                                             width: TEXT_WIDTH,
@@ -94,6 +85,19 @@ export const DashboardMenubar = ({
                 </Tooltip>
             </div>
             <Separator orientation={"vertical"}/>
+
+            <Button
+                size={"small"}
+                variant={"text"}
+                onClick={async () => {
+                    const sessionId = await dataTalk.createSessionId();
+                    navigate(`/chat/${sessionId}`);
+                }}>
+                <ForumIcon size={"small"}/>
+                New widget
+            </Button>
+
+            {/*<Menubar className={"flex items-center bg-transparent dark:bg-transparent rounded-2xl gap-2 px-2"}>*/}
 
             {/*<MenubarMenu>*/}
             {/*    <MenubarTrigger*/}
@@ -149,61 +153,61 @@ export const DashboardMenubar = ({
             {/*    </MenubarPortal>*/}
             {/*</MenubarMenu>*/}
 
-            <MenubarMenu>
-                <MenubarTrigger className={"rounded-xl"}>
-                    Edit
-                </MenubarTrigger>
-                <MenubarPortal>
-                    <MenubarContent>
-                        <MenubarItem disabled={!undoRedoState.actions.canUndo}>
-                            Undo{" "}
-                            <MenubarShortcut>
-                                ⌘ Z
-                            </MenubarShortcut>
-                        </MenubarItem>
-                        <MenubarItem disabled={!undoRedoState.actions.canRedo}>
-                            Redo{" "}
-                            <MenubarShortcut>
-                                ⇧ ⌘ Z
-                            </MenubarShortcut>
-                        </MenubarItem>
-                        {/*    <MenubarSeparator/>*/}
-                        {/*    <MenubarSub>*/}
-                        {/*        <MenubarSubTrigger>*/}
-                        {/*            Find*/}
-                        {/*        </MenubarSubTrigger>*/}
+            {/*<MenubarMenu>*/}
+            {/*    <MenubarTrigger className={"rounded-xl"}>*/}
+            {/*        Edit*/}
+            {/*    </MenubarTrigger>*/}
+            {/*    <MenubarPortal>*/}
+            {/*        <MenubarContent>*/}
+            {/*            <MenubarItem disabled={!undoRedoState.actions.canUndo}>*/}
+            {/*                Undo{" "}*/}
+            {/*                <MenubarShortcut>*/}
+            {/*                    ⌘ Z*/}
+            {/*                </MenubarShortcut>*/}
+            {/*            </MenubarItem>*/}
+            {/*            <MenubarItem disabled={!undoRedoState.actions.canRedo}>*/}
+            {/*                Redo{" "}*/}
+            {/*                <MenubarShortcut>*/}
+            {/*                    ⇧ ⌘ Z*/}
+            {/*                </MenubarShortcut>*/}
+            {/*            </MenubarItem>*/}
+            {/*            /!*    <MenubarSeparator/>*!/*/}
+            {/*            /!*    <MenubarSub>*!/*/}
+            {/*            /!*        <MenubarSubTrigger>*!/*/}
+            {/*            /!*            Find*!/*/}
+            {/*            /!*        </MenubarSubTrigger>*!/*/}
 
-                        {/*        <MenubarPortal>*/}
-                        {/*            <MenubarSubContent>*/}
-                        {/*                <MenubarItem>*/}
-                        {/*                    Search the web…*/}
-                        {/*                </MenubarItem>*/}
-                        {/*                <MenubarSeparator/>*/}
-                        {/*                <MenubarItem>*/}
-                        {/*                    Find…*/}
-                        {/*                </MenubarItem>*/}
-                        {/*                <MenubarItem>*/}
-                        {/*                    Find Next*/}
-                        {/*                </MenubarItem>*/}
-                        {/*                <MenubarItem>*/}
-                        {/*                    Find Previous*/}
-                        {/*                </MenubarItem>*/}
-                        {/*            </MenubarSubContent>*/}
-                        {/*        </MenubarPortal>*/}
-                        {/*    </MenubarSub>*/}
-                        {/*    <MenubarSeparator/>*/}
-                        {/*    <MenubarItem>*/}
-                        {/*        Cut*/}
-                        {/*    </MenubarItem>*/}
-                        {/*    <MenubarItem>*/}
-                        {/*        Copy*/}
-                        {/*    </MenubarItem>*/}
-                        {/*    <MenubarItem>*/}
-                        {/*        Paste*/}
-                        {/*    </MenubarItem>*/}
-                    </MenubarContent>
-                </MenubarPortal>
-            </MenubarMenu>
+            {/*            /!*        <MenubarPortal>*!/*/}
+            {/*            /!*            <MenubarSubContent>*!/*/}
+            {/*            /!*                <MenubarItem>*!/*/}
+            {/*            /!*                    Search the web…*!/*/}
+            {/*            /!*                </MenubarItem>*!/*/}
+            {/*            /!*                <MenubarSeparator/>*!/*/}
+            {/*            /!*                <MenubarItem>*!/*/}
+            {/*            /!*                    Find…*!/*/}
+            {/*            /!*                </MenubarItem>*!/*/}
+            {/*            /!*                <MenubarItem>*!/*/}
+            {/*            /!*                    Find Next*!/*/}
+            {/*            /!*                </MenubarItem>*!/*/}
+            {/*            /!*                <MenubarItem>*!/*/}
+            {/*            /!*                    Find Previous*!/*/}
+            {/*            /!*                </MenubarItem>*!/*/}
+            {/*            /!*            </MenubarSubContent>*!/*/}
+            {/*            /!*        </MenubarPortal>*!/*/}
+            {/*            /!*    </MenubarSub>*!/*/}
+            {/*            /!*    <MenubarSeparator/>*!/*/}
+            {/*            /!*    <MenubarItem>*!/*/}
+            {/*            /!*        Cut*!/*/}
+            {/*            /!*    </MenubarItem>*!/*/}
+            {/*            /!*    <MenubarItem>*!/*/}
+            {/*            /!*        Copy*!/*/}
+            {/*            /!*    </MenubarItem>*!/*/}
+            {/*            /!*    <MenubarItem>*!/*/}
+            {/*            /!*        Paste*!/*/}
+            {/*            /!*    </MenubarItem>*!/*/}
+            {/*        </MenubarContent>*/}
+            {/*    </MenubarPortal>*/}
+            {/*</MenubarMenu>*/}
 
             {/*<MenubarMenu>*/}
             {/*    <MenubarTrigger>*/}
@@ -286,7 +290,8 @@ export const DashboardMenubar = ({
             {/*        </MenubarContent>*/}
             {/*    </MenubarPortal>*/}
             {/*</MenubarMenu>*/}
-        </Menubar>
+            {/*</Menubar>*/}
+        </div>
     );
 };
 

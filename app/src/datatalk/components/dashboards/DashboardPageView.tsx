@@ -5,7 +5,7 @@ import ReactFlow, {
     Node,
     NodeChange,
     NodePositionChange,
-    Panel,
+    Panel, SelectionMode,
     useNodesState
 } from "reactflow";
 
@@ -15,7 +15,7 @@ import { Dashboard, DashboardItem, DashboardPage, DateParams, Position, WidgetSi
 import ChartNode, { ChartNodeProps } from "./nodes/ChartNode";
 import { useDataTalk } from "../../DataTalkProvider";
 import PaperNode, { PaperNodeProps } from "./nodes/PaperNode";
-import { DEFAULT_PAPER_SIZE } from "../../utils/widgets";
+import { DEFAULT_GRID_SIZE, DEFAULT_PAPER_SIZE } from "../../utils/widgets";
 import { DashboardMenubar } from "./DashboardMenubar";
 import { DatePickerWithRange } from "../DateRange";
 import { getInitialDateRange } from "../utils/dates";
@@ -25,11 +25,13 @@ import TextNode, { TextNodeProps } from "./nodes/TextNode";
 export const DashboardPageView = function DashboardPageView({
                                                                 page,
                                                                 dashboard,
-                                                                containerSize
+                                                                containerSize,
+                                                                initialViewPosition
                                                             }: {
     page: DashboardPage,
     dashboard: Dashboard,
-    containerSize: WidgetSize
+    containerSize: WidgetSize,
+    initialViewPosition?: Position
 }) {
 
     const [dateRange, setDateRange] = useState<[Date | null, Date | null]>(getInitialDateRange());
@@ -125,18 +127,21 @@ export const DashboardPageView = function DashboardPageView({
         <ReactFlow
             className={"relative w-full h-full bg-gray-50 dark:bg-gray-950 dark:bg-opacity-80"}
             panOnScroll={true}
-            multiSelectionKeyCode={"Control"}
+            multiSelectionKeyCode={"Shift"}
             nodes={nodes}
             selectionOnDrag={true}
+            panOnDrag={false}
+            selectNodesOnDrag={true}
             snapToGrid={true}
-            snapGrid={[25, 25]}
+            selectionMode={SelectionMode.Partial}
+            snapGrid={[DEFAULT_GRID_SIZE, DEFAULT_GRID_SIZE]}
             zoomOnScroll={false}
             zoomOnPinch={true}
             minZoom={1}
             maxZoom={1}
             defaultViewport={{
-                x: Math.max((containerSize.width - paperSize.width) / 2, 25) - (paperPosition.x),
-                y: -paperPosition.y + 100,
+                x: Math.max((containerSize.width - paperSize.width) / 2, DEFAULT_GRID_SIZE) - (paperPosition.x),
+                y: initialViewPosition ? -initialViewPosition.y + 100 : -paperPosition.y + 100,
                 zoom: 1
             }}
             onNodesDelete={(nodes) => {
@@ -173,7 +178,7 @@ export const DashboardPageView = function DashboardPageView({
                     <DatePickerWithRange dateRange={dateRange} setDateRange={setDateRange}/>
                 </div>
             </Panel>
-            <Background gap={[25, 25]}
+            <Background gap={[DEFAULT_GRID_SIZE, DEFAULT_GRID_SIZE]}
                         color="#888"
                         variant={BackgroundVariant.Dots}/>
 
@@ -201,6 +206,7 @@ function convertWidgetsToNodes(widgets: DashboardItem[], paperSize: WidgetSize, 
         id: "paper",
         type: "paper",
         draggable: false,
+        selectable: false,
         position: {
             x: paperPosition?.x ?? 0,
             y: paperPosition?.y ?? 0

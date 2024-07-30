@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { DataTalkConfig } from "../DataTalkProvider";
 import { CircularProgressCenter, EntityCollection } from "@firecms/core";
 import { useLocation, useParams } from "react-router-dom";
-import { Dashboard } from "../types";
+import { Dashboard, Position } from "../types";
 import { DashboardView } from "../components/dashboards/DashboardView";
 
 export function DashboardRoute({
@@ -37,6 +37,8 @@ function DashboardRouteInner({
                              }: DashboardRouteInnerProps) {
 
     const location = useLocation();
+    
+    const initialViewPosition = location.state?.initialViewPosition as Position | undefined;
 
     const params = new URLSearchParams(location.search);
 
@@ -62,6 +64,7 @@ function DashboardRouteInner({
     return (
         <DashboardView
             dashboard={dashboard}
+            initialViewPosition={initialViewPosition}
         />
     )
 }

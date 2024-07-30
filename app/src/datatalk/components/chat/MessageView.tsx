@@ -1,6 +1,6 @@
 import { AutoAwesomeIcon, Avatar, cls, Menu, MenuItem, PersonIcon, StorageIcon } from "@firecms/ui";
 import React, { useEffect, useRef, useState } from "react";
-import { ChatMessage, DateParams, FeedbackSlug } from "../../types";
+import { ChatMessage, DataSource, DateParams, FeedbackSlug } from "../../types";
 import { SystemMessage } from "./SystemMessage";
 // @ts-ignore
 import MarkdownIt from "markdown-it";
@@ -12,8 +12,6 @@ export function MessageView({
                                 canRegenerate,
                                 onFeedback,
                                 onUpdatedMessage,
-                                projectId,
-                                params
                             }: {
     message?: ChatMessage,
     onRemove?: () => void,
@@ -21,8 +19,6 @@ export function MessageView({
     canRegenerate?: boolean,
     onFeedback?: (reason?: FeedbackSlug, feedbackMessage?: string) => void,
     onUpdatedMessage?: (message: ChatMessage) => void,
-    projectId: string,
-    params?: DateParams
 }) {
 
     const ref = useRef<HTMLDivElement>(null);
@@ -54,7 +50,7 @@ export function MessageView({
 
     const bgColor = message?.user === "SQL_STATEMENT"
         ? "bg-slate-200 dark:bg-slate-800"
-        : (message?.user === "SYSTEM" ? "bg-transparent dark:bg-gray-900" : "bg-white dark:bg-gray-800 dark:bg-opacity-20");
+        : (message?.user === "SYSTEM" ? "bg-transparent dark:bg-transparent" : "bg-white dark:bg-gray-800 dark:bg-opacity-20");
 
     const padding = message?.user === "SQL_STATEMENT" ? "py-1 px-4" : "p-4";
 
@@ -82,12 +78,10 @@ export function MessageView({
                 {message?.user === "SQL_STATEMENT" && <SQLStatementMessage text={message.text}/>}
                 {message?.user === "SYSTEM" && <SystemMessage text={message.text}
                                                               loading={message.loading}
-                                                              projectId={projectId}
                                                               canRegenerate={canRegenerate}
                                                               containerWidth={containerWidth ?? undefined}
                                                               onRegenerate={onRegenerate}
                                                               onUpdatedMessage={onUpdatedMessageInternal}
-                                                              params={params}
                                                               onFeedback={onFeedback}/>}
 
             </div>

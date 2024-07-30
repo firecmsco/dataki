@@ -1,14 +1,14 @@
 import JSON5 from "json5";
-import { Item, LLMOutput } from "../types";
+import { ChatSessionItem, LLMOutput } from "../types";
 
-type Callback = (delta: Item) => void;
+type Callback = (delta: ChatSessionItem) => void;
 
 export class LLMOutputParser {
     private fullText = "";
     private buffer = "";
     private inCodeBlock = false;
     private codeContent: string[] = [];
-    private finalContent: Item[] = [];
+    private finalContent: ChatSessionItem[] = [];
     private callback: Callback;
 
     constructor(callback: Callback) {
@@ -54,7 +54,7 @@ export class LLMOutputParser {
             this.addToCodeBlock(text);
             this.buffer = "";
         } else {
-            const textDelta: Item = {
+            const textDelta: ChatSessionItem = {
                 type: "text",
                 text: text
             };
@@ -78,7 +78,7 @@ export class LLMOutputParser {
             this.finalContent.push(dataDelta);
         } catch (error) {
             console.log("Error parsing JSON:", joinedCode);
-            const textDelta: Item = {
+            const textDelta: ChatSessionItem = {
                 type: "text",
                 text: joinedCode
             };
@@ -103,7 +103,7 @@ export class LLMOutputParser {
         }
 
         // Merge contiguous text entries
-        const mergedContent: Item[] = [];
+        const mergedContent: ChatSessionItem[] = [];
         for (let i = 0; i < this.finalContent.length; i++) {
             const currentItem = this.finalContent[i];
             const prevItem = mergedContent[mergedContent.length - 1];

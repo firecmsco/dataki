@@ -1,6 +1,5 @@
 import { DataRow } from "./sql";
 
-
 export type DataSource = BigQueryDataSource;
 export type BigQueryDataSource = {
     projectId: string;
@@ -15,8 +14,10 @@ export type DryDataset = {
 };
 
 export type DryWidgetConfig = {
+    id?: string;
     sql: string;
     projectId: string;
+    dataSources: DataSource[];
     type: "chart" | "table";
     title: string;
     description: string;

@@ -1,25 +1,41 @@
 import {
     ChatMessage,
+    ChatSessionItem,
     DataRow,
     DataSource,
     DateParams,
     DryWidgetConfig,
     FilterOp,
     GCPProject,
-    Item,
     WidgetConfig
 } from "./types";
 import { LLMOutputParser } from "./utils/llm_parser";
 
-export async function streamDataTalkCommand(firebaseAccessToken: string,
-                                            command: string,
-                                            apiEndpoint: string,
-                                            sessionId: string,
-                                            projectId: string,
-                                            sources: DataSource[],
-                                            messages: ChatMessage[],
-                                            onDelta: (delta: string) => void,
-                                            onSQLQuery: (sqlQuery: string) => void
+interface StreamDataTalkCommandParams {
+    firebaseAccessToken: string;
+    command: string;
+    apiEndpoint: string;
+    sessionId: string;
+    projectId: string;
+    initialWidgetConfig?: DryWidgetConfig;
+    sources: DataSource[];
+    messages: ChatMessage[];
+    onDelta: (delta: string) => void;
+    onSQLQuery: (sqlQuery: string) => void;
+}
+
+export async function streamDataTalkCommand({
+                                                firebaseAccessToken,
+                                                command,
+                                                apiEndpoint,
+                                                sessionId,
+                                                projectId,
+                                                initialWidgetConfig,
+                                                sources,
+                                                messages,
+                                                onDelta,
+                                                onSQLQuery
+                                            }: StreamDataTalkCommandParams
 ): Promise<string> {
 
     const parser = new LLMOutputParser((v) => console.log("Delta:", v));
@@ -39,7 +55,8 @@ export async function streamDataTalkCommand(firebaseAccessToken: string,
                     command,
                     projectId,
                     sources,
-                    history
+                    history,
+                    initialWidgetConfig
                 })
             });
 
@@ -54,7 +71,7 @@ export async function streamDataTalkCommand(firebaseAccessToken: string,
                 const reader = response.body.getReader();
                 const decoder = new TextDecoder();
                 let buffer = "";
-                const result: Item[] = [];
+                const result: ChatSessionItem[] = [];
                 const processChunk = (chunk: ReadableStreamReadResult<Uint8Array>): void | Promise<void> => {
                     if (chunk.done) {
                         console.log("Stream completed", { result });
@@ -190,7 +207,8 @@ export function makeSQLQuery({
 export function getDataTalkPromptSuggestions(firebaseAccessToken: string,
                                              apiEndpoint: string,
                                              dataSources: DataSource[],
-                                             messages?: ChatMessage[]
+                                             messages?: ChatMessage[],
+                                             initialWidgetConfig?: DryWidgetConfig
 ): Promise<string[]> {
     const history = (messages ?? []).filter(message => message.user === "USER" || message.user === "SYSTEM");
     return fetch(apiEndpoint + "/datatalk/prompt_suggestions", {
@@ -201,7 +219,8 @@ export function getDataTalkPromptSuggestions(firebaseAccessToken: string,
         },
         body: JSON.stringify({
             dataSources,
-            history
+            history,
+            initialWidgetConfig
         })
     })
         .then(response => {

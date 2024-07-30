@@ -21,7 +21,8 @@ export function HomePage() {
                     DataTalk is a conversational interface to your data.
                 </Typography>
                 <Typography>
-                    You can ask questions, run commands and explore your data in a natural way.
+                    You can ask questions and <b>explore your data</b> in a natural way.
+                    Then you can <b>save your charts and tables</b> in dashboards to share them with your team.
                 </Typography>
                 <Button
                     size={"xl"}
@@ -35,7 +36,7 @@ export function HomePage() {
                 </Button>
             </div>
 
-            <Separator orientation={"horizontal"}/>
+            {/*<Separator orientation={"horizontal"}/>*/}
 
             <DashboardsOverview/>
 
