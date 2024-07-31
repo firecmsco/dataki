@@ -135,8 +135,6 @@ export function DryTableConfigView({
             .finally(() => setDataLoading(false));
     };
 
-    console.log("DryTableConfigView", data);
-
     const downloadFile = () => {
         // TODO: download as CSV
         toPng(viewRef.current as HTMLElement, {
@@ -170,9 +168,9 @@ export function DryTableConfigView({
                 <Typography variant={"label"}
                             className={"grow px-3 py-4 line-clamp-1 h-10"}>{config?.title ?? dryConfig.title}</Typography>
 
-                {dataLoading && <CircularProgress size={"small"}/>}
+                {dataLoading && <div className={"m-3"}><CircularProgress size={"small"}/></div>}
 
-                <div className={"m-2.5 flex-row gap-1 hidden group-hover:flex nodrag"}>
+                <div className={"m-2.5 flex-row gap-1 hidden group-hover:flex"}>
                     <Tooltip title={"Download"}>
                         <IconButton size={"small"} onClick={downloadFile}>
                             <DownloadIcon size={"small"}/>
@@ -252,6 +250,6 @@ export function DryTableConfigView({
 
         {largeAddToDashboardButton && config && <AddToDashboardDialog open={addToDashboardDialogOpen}
                                                                       setOpen={setAddToDashboardDialogOpen}
-                                                                      widgetConfig={dryConfig}/>}
+                                                                      widget={dryConfig}/>}
     </>;
 }

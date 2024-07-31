@@ -26,6 +26,8 @@ import { downloadImage } from "../../utils/downloadImage";
 import { ExecutionErrorView } from "./ExecutionErrorView";
 import { getConfigWithoutSize } from "../utils/widget";
 
+type LoadedConfig = { dryConfig: DryWidgetConfig, params?: DateParams };
+
 export function DryChartConfigView({
                                        dryConfig,
                                        params,
@@ -66,13 +68,14 @@ export function DryChartConfigView({
 
     const viewRef = React.useRef<HTMLDivElement>(null);
 
-    const loadedConfig = React.useRef<{ dryConfig: DryWidgetConfig, params?: DateParams } | null>(null);
+    const loadedConfig = React.useRef<LoadedConfig | null>(null);
 
     useEffect(() => {
-        if (loadedConfig.current && equal(loadedConfig.current, {
+        const thisConfig = {
             dryConfig: getConfigWithoutSize(dryConfig),
             params
-        })) {
+        };
+        if (!shouldRunHydration(loadedConfig.current, thisConfig)) {
             return;
         }
 
@@ -200,6 +203,15 @@ export function DryChartConfigView({
 
         {config && <AddToDashboardDialog open={addToDashboardDialogOpen}
                                          setOpen={setAddToDashboardDialogOpen}
-                                         widgetConfig={dryConfig}/>}
+                                         widget={dryConfig}/>}
     </>;
+}
+
+function shouldRunHydration(a: LoadedConfig | null, b: LoadedConfig | null) {
+    if (!a || !b) return true;
+    if (a.dryConfig.sql !== b.dryConfig.sql) return true;
+    if (!equal(a.dryConfig.chart, b.dryConfig.chart)) return true;
+    if (!equal(a.dryConfig.table, b.dryConfig.table)) return true;
+    if (!equal(a.params, b.params)) return true;
+    return false;
 }

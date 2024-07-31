@@ -6,7 +6,7 @@ import { useDataki } from "../../../DatakiProvider";
 import { TEXT_WIDTH, TITLE_HEIGHT } from "../../../utils/widgets";
 
 export type TextNodeProps = {
-    textItem: TextItem;
+    widget: TextItem;
     params?: DateParams;
     dashboardId: string;
     pageId: string;
@@ -17,8 +17,8 @@ function TextNode(props: NodeProps<TextNodeProps>) {
 
     const { data } = props;
 
-    const [text, setText] = useState<string>(data.textItem.text);
-    const [size, setSize] = useState<WidgetSize>(data.textItem?.size ?? {
+    const [text, setText] = useState<string>(data.widget.text);
+    const [size, setSize] = useState<WidgetSize>(data.widget?.size ?? {
         width: TEXT_WIDTH,
         height: TITLE_HEIGHT
     });
@@ -27,15 +27,15 @@ function TextNode(props: NodeProps<TextNodeProps>) {
 
     const [resizing, setResizing] = useState<boolean>(false);
     let textClass: string;
-    if (data.textItem.type === "title") {
+    if (data.widget.type === "title") {
         textClass = "text-3xl";
-    } else if (data.textItem.type === "subtitle") {
+    } else if (data.widget.type === "subtitle") {
         textClass = "text-xl";
     } else {
         textClass = "text-body";
     }
 
-    const fieldSize = data.textItem.type === "title" ? "medium" : "small";
+    const fieldSize = data.widget.type === "title" ? "medium" : "small";
 
     return (
         <div className={cls(textClass, "relative group")}>
@@ -44,7 +44,7 @@ function TextNode(props: NodeProps<TextNodeProps>) {
                      className={cls("absolute -top-4 -right-4 h-[32px] rounded-full bg-gray-50 dark:bg-gray-950 group-hover:visible z-10",
                          props.selected ? "visible" : "invisible")}>
                 <IconButton
-                    onClick={() => datakiConfig.onWidgetRemove(data.dashboardId, data.pageId, data.textItem.id)}
+                    onClick={() => datakiConfig.onWidgetRemove(data.dashboardId, data.pageId, data.widget.id)}
                     size={"small"}>
                     <RemoveIcon
                         size={"small"}/>
@@ -63,8 +63,8 @@ function TextNode(props: NodeProps<TextNodeProps>) {
                            props.selected || resizing ? "ring-offset-transparent ring-2 ring-primary ring-opacity-75 ring-offset-2" : "")}
                        onChange={(e) => {
                            setText(e.target.value);
-                           datakiConfig.updateDashboardText(data.dashboardId, data.pageId, data.textItem.id, {
-                               ...data.textItem,
+                           datakiConfig.updateDashboardText(data.dashboardId, data.pageId, data.widget.id, {
+                               ...data.widget,
                                text: e.target.value
                            });
                        }}/>
@@ -76,24 +76,24 @@ function TextNode(props: NodeProps<TextNodeProps>) {
                              console.log("shouldResize", params.direction[0] !== 0, params);
                              return params.direction[0] !== 0;
                              // allow only horizontal resize
-                             //    return params.width !== data.textItem.size.width;
+                             //    return params.width !== data.widget.size.width;
                          }}
                          onResizeStart={() => setResizing(true)}
                          onResizeEnd={() => setResizing(false)}
-                         onResize={(event, params) => {
-                             console.log("onResize", params);
-                             const updatedSize = {
-                                 width: params.width,
-                                 height: params.height
-                             };
-                             const position = {
-                                 x: params.x,
-                                 y: params.y
-                             };
-                             setSize(updatedSize);
-                             datakiConfig.onWidgetMove(data.dashboardId, data.pageId, data.textItem.id, position);
-                             datakiConfig.onWidgetResize(data.dashboardId, data.pageId, data.textItem.id, updatedSize);
-                         }}
+                         // onResize={(event, params) => {
+                         //     console.log("onResize", params);
+                         //     const updatedSize = {
+                         //         width: params.width,
+                         //         height: params.height
+                         //     };
+                         //     const position = {
+                         //         x: params.x,
+                         //         y: params.y
+                         //     };
+                         //     setSize(updatedSize);
+                         //     datakiConfig.onWidgetMove(data.dashboardId, data.pageId, data.widget.id, position);
+                         //     datakiConfig.onWidgetResize(data.dashboardId, data.pageId, data.widget.id, updatedSize);
+                         // }}
             />
 
         </div>

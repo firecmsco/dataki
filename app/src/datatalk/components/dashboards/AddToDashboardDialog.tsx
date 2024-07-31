@@ -9,11 +9,11 @@ import { DryWidgetConfig } from "../../types";
 export function AddToDashboardDialog({
                                          open,
                                          setOpen,
-                                         widgetConfig
+                                         widget
                                      }: {
     open: boolean;
     setOpen: (open: boolean) => void;
-    widgetConfig: DryWidgetConfig;
+    widget: DryWidgetConfig;
 }) {
 
     const navigate = useNavigate();
@@ -31,7 +31,7 @@ export function AddToDashboardDialog({
 
             <NewDashboardCard
                 onClick={(dashboard) => {
-                    const dashboardWidget = datakiConfig.addDashboardWidget(dashboard.id, widgetConfig);
+                    const dashboardWidget = datakiConfig.addDashboardWidget(dashboard.id, widget);
                     navigate(getDashboardPath(dashboard.id), {
                         state: {
                             initialViewPosition: dashboardWidget.position
@@ -46,7 +46,7 @@ export function AddToDashboardDialog({
                         key={index}
                         dashboard={dashboard}
                         onClick={() => {
-                            const dashboardWidget = datakiConfig.addDashboardWidget(dashboard.id, widgetConfig);
+                            const dashboardWidget = datakiConfig.addDashboardWidget(dashboard.id, widget);
                             navigate(getDashboardPath(dashboard.id), {
                                 state: {
                                     initialViewPosition: dashboardWidget.position

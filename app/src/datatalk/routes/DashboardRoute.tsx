@@ -39,6 +39,11 @@ function DashboardRouteInner({
     const location = useLocation();
 
     const initialViewPosition = location.state?.initialViewPosition as Position | undefined;
+    useEffect(() => {
+        // eslint-disable-next-line react-compiler/react-compiler
+        if (initialViewPosition != null)
+            location.state = {};
+    }, [initialViewPosition]);
 
     const params = new URLSearchParams(location.search);
 

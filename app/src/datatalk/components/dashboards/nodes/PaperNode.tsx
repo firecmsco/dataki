@@ -25,7 +25,7 @@ function PaperNode(props: NodeProps<PaperNodeProps>) {
     return (
         <div
             key={"paper-node"}
-            className={"nodrag bg-white dark:bg-gray-900 rounded-lg border border-gray-100 dark:border-gray-800 dark:border-opacity-80 overflow-hidden"}
+            className={"bg-white dark:bg-gray-900 rounded-lg border border-gray-100 dark:border-gray-800 dark:border-opacity-80 overflow-hidden"}
             style={{
                 width: size.width,
                 height: size.height,

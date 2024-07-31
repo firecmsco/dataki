@@ -42,9 +42,9 @@ export type DatakiConfig = {
     listenDashboard: (dashboardId: string, onDashboardUpdate: (dashboard: Dashboard) => void) => () => void;
     addDashboardText: (dashboardId: string, pageId: string, node: TextItem) => void;
     updateDashboardText: (dashboardId: string, pageId: string, id: string, node: TextItem) => void;
-    addDashboardWidget: (dashboardId: string, widgetConfig: DryWidgetConfig) => DashboardWidgetConfig;
+    addDashboardWidget: (dashboardId: string, widget: DryWidgetConfig) => DashboardWidgetConfig;
     onWidgetResize: (dashboardId: string, pageId: string, id: string, size: WidgetSize) => void;
-    onWidgetUpdate: (dashboardId: string, pageId: string, id: string, widgetConfig: DashboardWidgetConfig) => void;
+    onWidgetUpdate: (dashboardId: string, pageId: string, id: string, widget: DashboardWidgetConfig) => void;
     onWidgetMove: (dashboardId: string, pageId: string, id: string, position: Position) => void;
     onWidgetRemove: (dashboardId: string, pageId: string, id: string) => void;
     onWidgetsRemove: (dashboardId: string, pageId: string, id: string[]) => void;
@@ -66,14 +66,14 @@ export interface DatakiConfigParams {
 const DatakiConfigContext = React.createContext<DatakiConfig>({} as any);
 
 export function useBuildDatakiConfig({
-                                           enabled = true,
-                                           firebaseApp,
-                                           userSessionsPath,
-                                           dashboardsPath,
-                                           getAuthToken,
-                                           apiEndpoint,
-                                           user
-                                       }: DatakiConfigParams): DatakiConfig {
+                                         enabled = true,
+                                         firebaseApp,
+                                         userSessionsPath,
+                                         dashboardsPath,
+                                         getAuthToken,
+                                         apiEndpoint,
+                                         user
+                                     }: DatakiConfigParams): DatakiConfig {
 
     const [sessions, setSessions] = useState<ChatSession[]>([]);
     const [sessionsLoading, setSessionsLoading] = useState<boolean>(true);
@@ -87,14 +87,14 @@ export function useBuildDatakiConfig({
         setDashboards(newDashboards);
     }
 
-    const createSessionId = useCallback(async (): Promise<string> => {
+    const createSessionId = async (): Promise<string> => {
         if (!firebaseApp) throw Error("useBuildDatakiConfig Firebase not initialised");
         const firestore = getFirestore(firebaseApp);
         if (!firestore || !userSessionsPath) throw Error("useBuildDatakiConfig Firestore not initialised");
         return doc(collection(firestore, userSessionsPath)).id;
-    }, [firebaseApp, userSessionsPath]);
+    };
 
-    const saveSession = useCallback(async (session: ChatSession) => {
+    const saveSession = async (session: ChatSession) => {
         if (!firebaseApp) throw Error("useBuildDatakiConfig Firebase not initialised");
         const firestore = getFirestore(firebaseApp);
         if (!firestore || !userSessionsPath) throw Error("useBuildDatakiConfig Firestore not initialised");
@@ -107,13 +107,13 @@ export function useBuildDatakiConfig({
             ...sessionData,
             updated_at: new Date()
         });
-    }, [firebaseApp, userSessionsPath]);
+    };
 
-    const getSession = useCallback(async (sessionId: string) => {
+    const getSession = async (sessionId: string) => {
         return sessions.find(s => s.id === sessionId);
-    }, [sessions])
+    }
 
-    const saveDashboard = useCallback(async (dashBoard: Dashboard) => {
+    const saveDashboard = async (dashBoard: Dashboard) => {
         if (!firebaseApp) throw Error("useBuildDatakiConfig Firebase not initialised");
         const firestore = getFirestore(firebaseApp);
         if (!firestore || !dashboardsPath) throw Error("useBuildDatakiConfig Firestore not initialised");
@@ -122,13 +122,22 @@ export function useBuildDatakiConfig({
             ...dashboardData
         } = dashBoard;
         const dashboardDoc = doc(firestore, dashboardsPath, id);
+
+        // update dashboards ref
+        if (dashboardsRef.current.map(d => d.id).includes(id)) {
+            dashboardsRef.current = dashboardsRef.current.map(d => d.id === id ? dashBoard : d);
+            updateDashboards(dashboardsRef.current);
+        } else {
+            dashboardsRef.current = [dashBoard, ...dashboardsRef.current];
+            updateDashboards(dashboardsRef.current);
+        }
         return setDoc(dashboardDoc, {
             ...dashboardData,
             updated_at: new Date()
         });
-    }, [dashboardsPath, firebaseApp]);
+    };
 
-    const listenDashboard = useCallback((id: string, onDashboardUpdate: (dashboard: Dashboard) => void) => {
+    const listenDashboard = (id: string, onDashboardUpdate: (dashboard: Dashboard) => void) => {
         if (!firebaseApp) throw Error("useBuildDatakiConfig Firebase not initialised");
         const firestore = getFirestore(firebaseApp);
         if (!firestore || !dashboardsPath) throw Error("useBuildDatakiConfig Firestore not initialised");
@@ -145,9 +154,9 @@ export function useBuildDatakiConfig({
                 console.error(e);
             }
         });
-    }, [firebaseApp, dashboardsPath]);
+    };
 
-    const createDashboard = useCallback(async (): Promise<Dashboard> => {
+    const createDashboard = async (): Promise<Dashboard> => {
         if (user === null)
             throw Error("User not found");
         if (!firebaseApp)
@@ -161,9 +170,9 @@ export function useBuildDatakiConfig({
         updateDashboards([newDashboard, ...dashboardsRef.current]);
         await setDoc(documentReference, data);
         return newDashboard;
-    }, [firebaseApp, dashboardsPath, user]);
+    };
 
-    const deleteDashboard = useCallback(async (id: string) => {
+    const deleteDashboard = async (id: string) => {
         if (!firebaseApp) throw Error("useBuildDatakiConfig Firebase not initialised");
         const firestore = getFirestore(firebaseApp);
         if (!firestore || !dashboardsPath) throw Error("useBuildDatakiConfig Firestore not initialised");
@@ -171,18 +180,18 @@ export function useBuildDatakiConfig({
         if (!dashboard) throw Error("deleteDashboard: Dashboard not found");
         dashboard.deleted = true;
         return saveDashboard(dashboard);
-    }, [firebaseApp, dashboardsPath, saveDashboard])
+    }
 
-    const addDashboardText = useCallback((dashboardId: string, pageId: string, node: TextItem) => {
+    const addDashboardText = (dashboardId: string, pageId: string, node: TextItem) => {
         const dashboard = dashboardsRef.current.find(d => d.id === dashboardId);
         if (!dashboard) throw Error("addDashboardWidget: Dashboard not found");
         const page = dashboard.pages.find(p => p.id === pageId);
         if (!page) throw Error("addDashboardWidget: Page not found");
         page.widgets.push(node);
         return saveDashboard(dashboard);
-    }, [saveDashboard]);
+    };
 
-    const updateDashboardText = useCallback((dashboardId: string, pageId: string, id: string, node: TextItem) => {
+    const updateDashboardText = (dashboardId: string, pageId: string, id: string, node: TextItem) => {
         const dashboard = dashboardsRef.current.find(d => d.id === dashboardId);
         if (!dashboard) throw Error("addDashboardWidget: Dashboard not found");
         const page = dashboard.pages.find(p => p.id === pageId);
@@ -191,9 +200,9 @@ export function useBuildDatakiConfig({
         if (widgetIndex === -1) throw Error("addDashboardWidget: Widget not found");
         page.widgets.splice(widgetIndex, 1, node);
         return saveDashboard(dashboard);
-    }, [saveDashboard]);
+    };
 
-    const addDashboardWidget = (id: string, widgetConfig: DryWidgetConfig): DashboardWidgetConfig => {
+    const addDashboardWidget = (id: string, widget: DryWidgetConfig): DashboardWidgetConfig => {
         const dashboard = dashboardsRef.current.find(d => d.id === id);
         if (!dashboard) throw Error("addDashboardWidget: Dashboard not found");
         const dashboardPage = dashboard.pages[0];
@@ -203,7 +212,7 @@ export function useBuildDatakiConfig({
                 return y;
             return acc;
         }, 0);
-        const newWidget = convertWidgetToDashboardWidget(widgetConfig, {
+        const newWidget = convertWidgetToDashboardWidget(widget, {
             x: DEFAULT_GRID_SIZE,
             y: maxYPosition + DEFAULT_GRID_SIZE
         });
@@ -212,7 +221,7 @@ export function useBuildDatakiConfig({
         return newWidget;
     };
 
-    const onWidgetResize = useCallback((dashboardId: string, pageId: string, id: string, size: WidgetSize) => {
+    const onWidgetResize = (dashboardId: string, pageId: string, id: string, size: WidgetSize) => {
         console.log("onWidgetResize", dashboardId, pageId, id, size)
         const dashboard = dashboardsRef.current.find(d => d.id === dashboardId);
         if (!dashboard) throw Error("addDashboardWidget: Dashboard not found");
@@ -222,9 +231,9 @@ export function useBuildDatakiConfig({
         if (!widget) throw Error("addDashboardWidget: Widget not found");
         widget.size = size;
         return saveDashboard(dashboard);
-    }, [saveDashboard]);
+    };
 
-    const onWidgetMove = useCallback((dashboardId: string, pageId: string, id: string, position: Position) => {
+    const onWidgetMove = (dashboardId: string, pageId: string, id: string, position: Position) => {
         const dashboard = dashboardsRef.current.find(d => d.id === dashboardId);
         if (!dashboard) throw Error("addDashboardWidget: Dashboard not found");
         const page = dashboard.pages.find(p => p.id === pageId);
@@ -235,9 +244,9 @@ export function useBuildDatakiConfig({
         console.log("onWidgetMove", dashboardId, pageId, id, position)
         widget.position = position;
         return saveDashboard(dashboard);
-    }, [saveDashboard]);
+    };
 
-    const onWidgetRemove = useCallback((dashboardId: string, pageId: string, id: string) => {
+    const onWidgetRemove = (dashboardId: string, pageId: string, id: string) => {
         console.log("onWidgetRemove", dashboardId, pageId, id)
         const dashboard = dashboardsRef.current.find(d => d.id === dashboardId);
         if (!dashboard) throw Error("addDashboardWidget: Dashboard not found");
@@ -247,9 +256,9 @@ export function useBuildDatakiConfig({
         if (widgetIndex === -1) throw Error("addDashboardWidget: Widget not found");
         page.widgets.splice(widgetIndex, 1);
         return saveDashboard(dashboard);
-    }, [saveDashboard]);
+    };
 
-    const onWidgetsRemove = useCallback((dashboardId: string, pageId: string, ids: string[]) => {
+    const onWidgetsRemove = (dashboardId: string, pageId: string, ids: string[]) => {
         const dashboard = dashboardsRef.current.find(d => d.id === dashboardId);
         if (!dashboard) throw Error("addDashboardWidget: Dashboard not found");
         const page = dashboard.pages.find(p => p.id === pageId);
@@ -257,23 +266,23 @@ export function useBuildDatakiConfig({
         const widgets = page.widgets.filter(w => !ids.includes(w.id));
         page.widgets = widgets;
         return saveDashboard(dashboard);
-    }, [saveDashboard]);
+    };
 
-    const onWidgetUpdate = useCallback((dashboardId: string, pageId: string, id: string, widgetConfig: DashboardWidgetConfig) => {
+    const onWidgetUpdate = (dashboardId: string, pageId: string, id: string, widget: DashboardWidgetConfig) => {
+        console.log("updateDashboardWidget", dashboardId, pageId, id, widget)
         const dashboard = dashboardsRef.current.find(d => d.id === dashboardId);
         if (!dashboard) throw Error("addDashboardWidget: Dashboard not found");
         const page = dashboard.pages.find(p => p.id === pageId);
         if (!page) throw Error("addDashboardWidget: Page not found");
-        const widget = page.widgets.find(w => w.id === id);
-        if (!widget) throw Error("addDashboardWidget: Widget not found");
+        const existingWidget = page.widgets.find(w => w.id === id);
+        if (!existingWidget) throw Error("addDashboardWidget: Widget not found");
         const widgetIndex = page.widgets.findIndex(w => w.id === id);
         if (widgetIndex === -1) throw Error("addDashboardWidget: Widget not found");
         const currentWidget = page.widgets[widgetIndex];
-        if (equal(currentWidget, widgetConfig)) return;
-        page.widgets.splice(widgetIndex, 1, widgetConfig);
-        console.log("onWidgetUpdate", dashboardId, pageId, id, widgetConfig)
+        if (equal(currentWidget, widget)) return;
+        page.widgets.splice(widgetIndex, 1, widget);
         return saveDashboard(dashboard);
-    }, [saveDashboard]);
+    };
 
     useEffect(() => {
         if (!enabled) return;
@@ -337,7 +346,7 @@ export function useBuildDatakiConfig({
         );
     }, [enabled, firebaseApp, dashboardsPath, user?.uid]);
 
-    const updateDashboard = useCallback((dashboardId: string, dashboardData: Partial<Dashboard>) => {
+    const updateDashboard = (dashboardId: string, dashboardData: Partial<Dashboard>) => {
         console.log("updateDashboard", dashboardId, dashboardData)
         if (!firebaseApp) throw Error("useBuildDatakiConfig Firebase not initialised");
         const firestore = getFirestore(firebaseApp);
@@ -349,9 +358,9 @@ export function useBuildDatakiConfig({
             ...dashboardData
         };
         return saveDashboard(updatedDashboard);
-    }, [dashboardsPath, firebaseApp, saveDashboard]);
+    };
 
-    const updateDashboardPage = useCallback((dashboardId: string, pageId: string, pageData: Partial<DashboardPage>) => {
+    const updateDashboardPage = (dashboardId: string, pageId: string, pageData: Partial<DashboardPage>) => {
         console.log("updateDashboardPage", dashboardId, pageId, pageData)
         if (!firebaseApp) throw Error("useBuildDatakiConfig Firebase not initialised");
         const firestore = getFirestore(firebaseApp);
@@ -369,7 +378,7 @@ export function useBuildDatakiConfig({
             pages: dashboard.pages.map(p => p.id === pageId ? updatedPage : p)
         };
         return saveDashboard(updatedDashboard);
-    }, [dashboardsPath, firebaseApp, saveDashboard]);
+    };
 
     return {
         loading: sessionsLoading || dashboardsLoading,
@@ -401,9 +410,9 @@ export function useBuildDatakiConfig({
 export const useDataki = () => useContext(DatakiConfigContext);
 
 export function DatakiProvider({
-                                     config,
-                                     children,
-                                 }: { config: DatakiConfig, children: React.ReactNode }) {
+                                   config,
+                                   children,
+                               }: { config: DatakiConfig, children: React.ReactNode }) {
 
     return <DatakiConfigContext.Provider value={config}>
         {children}

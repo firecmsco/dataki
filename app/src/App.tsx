@@ -19,7 +19,6 @@ import {
 import { useFirebaseStorageSource, useFirestoreDelegate, useInitialiseFirebase } from "@firecms/firebase";
 
 import { firebaseConfig } from "./firebase_config";
-import { useImportExportPlugin } from "@firecms/data_import_export";
 import { Typography } from "@firecms/ui";
 import { DatakiDrawer, DatakiProvider, DatakiRoutes, useBuildDatakiConfig } from "./datatalk";
 import { useDatakiAuthController } from "./datatalk/useDatakiAuthController";
@@ -50,7 +49,7 @@ export function App() {
      */
     const authController = useDatakiAuthController({
         firebaseApp,
-        apiEndpoint: API_ENDPOINT,
+        apiEndpoint: API_ENDPOINT
     });
 
     /**
@@ -98,16 +97,11 @@ export function App() {
         enabled: authController.user !== null,
         firebaseApp,
         userSessionsPath: `/users/${authController.user?.uid}/datatalk_sessions`,
-        dashboardsPath: `/dashboards`,
+        dashboardsPath: "/dashboards",
         getAuthToken: authController.getAuthToken,
         apiEndpoint: API_ENDPOINT,
         user: authController.user
     });
-
-    /**
-     * Allow import and export data plugin
-     */
-    const importExportPlugin = useImportExportPlugin();
 
     if (firebaseConfigLoading || !firebaseApp) {
         return <CircularProgressCenter/>;
@@ -128,7 +122,6 @@ export function App() {
                         userConfigPersistence={userConfigPersistence}
                         dataSourceDelegate={firestoreDelegate}
                         storageSource={storageSource}
-                        plugins={[importExportPlugin]}
                     >
                         {({
                               context,

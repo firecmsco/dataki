@@ -1,26 +1,28 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import ReactFlow, {
-    Background,
-    BackgroundVariant,
-    Node,
-    NodeChange,
-    NodePositionChange,
-    Panel, SelectionMode,
-    useNodesState
-} from "reactflow";
-
+import ReactFlow, { Background, BackgroundVariant, Node, Panel, SelectionMode, useNodesState } from "reactflow";
 import "reactflow/dist/style.css";
-import { cls, defaultBorderMixin, useInjectStyles } from "@firecms/ui";
-import { Dashboard, DashboardItem, DashboardPage, DateParams, Position, WidgetSize } from "../../types";
-import ChartNode, { ChartNodeProps } from "./nodes/ChartNode";
+import { Button, cls, defaultBorderMixin, useInjectStyles } from "@firecms/ui";
+import { Dashboard, DashboardPage, DateParams, Position, WidgetSize } from "../../types";
+import ChartNode from "./nodes/ChartNode";
 import { useDataki } from "../../DatakiProvider";
-import PaperNode, { PaperNodeProps } from "./nodes/PaperNode";
+import PaperNode from "./nodes/PaperNode";
 import { DEFAULT_GRID_SIZE, DEFAULT_PAPER_SIZE } from "../../utils/widgets";
 import { DashboardMenubar } from "./DashboardMenubar";
 import { DatePickerWithRange } from "../DateRange";
 import { getInitialDateRange } from "../utils/dates";
-import { useUndoRedo } from "../../hooks/useUndoRedo";
-import TextNode, { TextNodeProps } from "./nodes/TextNode";
+import { DashboardState, useCreateDashboardState } from "../../hooks/useCreateDashboardState";
+import TextNode from "./nodes/TextNode";
+import { convertDashboardWidgetsToNodes, convertNodesToWidgets } from "../utils/dashboard";
+
+const DashboardStateContext = React.createContext<DashboardState | undefined>(undefined);
+
+export function useDashboardStateContext() {
+    const context = React.useContext(DashboardStateContext);
+    if (context === undefined) {
+        throw new Error("useDashboardStateContext must be used within a DashboardStateContext");
+    }
+    return context;
+}
 
 export const DashboardPageView = function DashboardPageView({
                                                                 page,
@@ -35,12 +37,6 @@ export const DashboardPageView = function DashboardPageView({
 }) {
 
     const [dateRange, setDateRange] = useState<[Date | null, Date | null]>(getInitialDateRange());
-
-    const undoRedoState = useUndoRedo(page);
-    useEffect(() => {
-        // console.log("Undo redo state changed", undoRedoState);
-        undoRedoState.actions.set(page);
-    }, [page]);
 
     const params: DateParams = useMemo(() => ({
         dateStart: dateRange[0] ?? null,
@@ -66,197 +62,132 @@ export const DashboardPageView = function DashboardPageView({
         y: 0
     };
 
-    const updateWidgetsBasedOnChange = (changes: NodeChange[]) => {
-        const positionChanges = changes.filter((change) => change.type === "position" && !change.dragging) as NodePositionChange[];
-        const updatedWidgets: DashboardItem[] = [];
-        // check the positions are the same in the node and the widgets
-        positionChanges.forEach((change) => {
-            const node = nodes.find((node) => node.id === change.id);
-            if (node) {
-                const widget = page.widgets.find((widget) => widget.id === change.id);
-                if (widget && (widget?.position?.x !== node.position.x || widget?.position?.y !== node.position.y)) {
-                    widget.position.x = node.position.x;
-                    widget.position.y = node.position.y;
-                    updatedWidgets.push(widget);
-                }
-            }
-        });
-        if (updatedWidgets.length > 0) {
-            console.log("!!!!! Updating widgets", updatedWidgets);
-            datakiConfig.updateDashboardPage(dashboard.id, page.id, page);
-        }
-    };
-
-    const [nodes, setNodes, onNodesChange] = useNodesState(convertWidgetsToNodes(
-        page.widgets,
-        paperSize,
-        paperPosition,
-        dashboard.id,
-        page.id,
-        onRemoveClick,
-        params));
+    const [nodes, setNodes, onNodesChange] = useNodesState(convertDashboardWidgetsToNodes(
+        {
+            widgets: page.widgets,
+            paperSize,
+            paperPosition,
+            dashboardId: dashboard.id,
+            pageId: page.id,
+            onRemoveClick,
+            params
+        }));
 
     const nodesRef = React.useRef(nodes);
     useEffect(() => {
         nodesRef.current = nodes;
     }, [nodes]);
 
-    useEffect(() => {
-        const selectedNodeIds = nodesRef.current.filter((node) => node.selected).map((node) => node.id);
-
-        setNodes(convertWidgetsToNodes(
-            page.widgets,
-            paperSize,
-            paperPosition,
-            dashboard.id,
-            page.id,
-            onRemoveClick,
-            params,
-            selectedNodeIds));
-    }, [page.widgets, params]);
+    // useEffect(() => {
+    //     const selectedNodeIds = nodesRef.current.filter((node) => node.selected).map((node) => node.id);
+    //
+    //     setNodes(convertDashboardWidgetsToNodes(
+    //         {
+    //             widgets: page.widgets,
+    //             paperSize,
+    //             paperPosition,
+    //             dashboardId: dashboard.id,
+    //             pageId: page.id,
+    //             onRemoveClick,
+    //             params,
+    //             selectedNodeIds
+    //         }));
+    // }, [page.id, page.widgets, params]);
 
     useInjectStyles("dashboard", styles);
 
-    const onNodeDragStop = useCallback((_: any, node: Node, nodes: Node[]) => {
-        // console.log("Node moved:", node);
-        // dataTalk.onWidgetMove(dashboard.id, page.id, node.id, node.position);
-    }, []);
+    const onNodesUpdate = (updatedNodes: Node[]) => {
 
-    return (
+        setNodes(updatedNodes);
 
-        <ReactFlow
-            className={"relative w-full h-full bg-gray-50 dark:bg-gray-950 dark:bg-opacity-80"}
-            panOnScroll={true}
-            multiSelectionKeyCode={"Shift"}
-            nodes={nodes}
-            selectionOnDrag={true}
-            panOnDrag={false}
-            selectNodesOnDrag={true}
-            snapToGrid={true}
-            selectionMode={SelectionMode.Partial}
-            snapGrid={[DEFAULT_GRID_SIZE, DEFAULT_GRID_SIZE]}
-            zoomOnScroll={false}
-            zoomOnPinch={true}
-            minZoom={1}
-            maxZoom={1}
-            defaultViewport={{
-                x: Math.max((containerSize.width - paperSize.width) / 2, DEFAULT_GRID_SIZE) - (paperPosition.x),
-                y: initialViewPosition ? -initialViewPosition.y + 100 : -paperPosition.y + 100,
-                zoom: 1
-            }}
-            onNodesDelete={(nodes) => {
-                const deletedIds = nodes.map((node) => node.id);
-                datakiConfig.onWidgetsRemove(dashboard.id, page.id, deletedIds);
-            }}
-            preventScrolling={false}
-            // edges={edges}
-            onNodeDragStop={onNodeDragStop}
+        const currentWidgets = convertNodesToWidgets(updatedNodes);
+        const updatedDashboard: Dashboard = {
+            ...dashboard,
+            pages: dashboard.pages.map((p) => {
+                if (p.id === page.id) {
+                    return {
+                        ...p,
+                        widgets: currentWidgets
+                    }
+                }
+                return p;
+            })
+        };
+        datakiConfig.updateDashboard(dashboard.id, updatedDashboard);
+    }
 
-            onNodesChange={(change) => {
-                onNodesChange(change);
-                updateWidgetsBasedOnChange(change);
-            }}
-            nodeTypes={nodeTypes}
-            // onEdgesChange={onEdgesChange}
-            // onConnect={onConnect}
-            // fitView={true}
-            // fitViewOptions={{
-            //     minZoom: 1,
-            //     maxZoom: 1,
-            // }}
-        >
-            <Panel position="top-left">
-                <div
-                    className={cls("w-full flex flex-row bg-white dark:bg-gray-900 rounded-2xl border", defaultBorderMixin)}>
-                    <DashboardMenubar dashboard={dashboard}
-                                      undoRedoState={undoRedoState}/>
-                </div>
-            </Panel>
-            <Panel position="top-right">
-                <div
-                    className={cls("w-full flex flex-row bg-white dark:bg-gray-900 rounded-2xl border", defaultBorderMixin)}>
-                    <DatePickerWithRange dateRange={dateRange} setDateRange={setDateRange}/>
-                </div>
-            </Panel>
-            <Background gap={[DEFAULT_GRID_SIZE, DEFAULT_GRID_SIZE]}
-                        color="#888"
-                        variant={BackgroundVariant.Dots}/>
-
-            {/*<MiniMap nodeStrokeWidth={3}*/}
-            {/*         className={"dark:bg-gray-900"}*/}
-            {/*         maskColor={"#88888822"}*/}
-            {/*         nodeColor={"#66666622"}/>*/}
-
-        </ReactFlow>
-    );
-};
-
-function convertWidgetsToNodes(widgets: DashboardItem[], paperSize: WidgetSize, paperPosition: Position | undefined, dashboardId: string, pageId: string, onRemoveClick: (id: string) => void, params: DateParams, selectedNodeIds?: string[]): Node<ChartNodeProps | TextNodeProps>[] {
-
-    const paperData = {
-        width: paperSize.width,
-        height: paperSize.height,
-        x: paperPosition?.x ?? 0,
-        y: paperPosition?.y ?? 0,
-        dashboardId,
-        pageId
-    } satisfies PaperNodeProps;
-
-    const paperNode: Node<any> = {
-        id: "paper",
-        type: "paper",
-        draggable: false,
-        selectable: false,
-        position: {
-            x: paperPosition?.x ?? 0,
-            y: paperPosition?.y ?? 0
-        },
-        data: paperData
-    };
-
-    const widgetNodes = widgets.map((widget) => {
-        if (widget.type === "text" || widget.type === "title" || widget.type === "subtitle") {
-            return ({
-                id: widget.id,
-                type: "text",
-                draggable: true,
-                selectable: true,
-                selected: selectedNodeIds?.includes(widget.id),
-                data: {
-                    textItem: widget,
-                    params,
-                    dashboardId,
-                    pageId,
-                    onRemoveClick
-                },
-                position: widget.position,
-                parentId: "paper"
-            });
-        } else if (widget.type === "chart" || widget.type === "table") {
-            return ({
-                id: widget.id,
-                type: "chart",
-                draggable: true,
-                selectable: true,
-                selected: selectedNodeIds?.includes(widget.id),
-                data: {
-                    widgetConfig: widget,
-                    params,
-                    dashboardId,
-                    pageId,
-                    onRemoveClick
-                },
-                position: widget.position,
-                parentId: "paper"
-            });
-        } else {
-            console.error("Unknown widget type", widget);
-            throw new Error("Unknown widget type");
-        }
+    const dashboardState = useCreateDashboardState({
+        dashboard,
+        page,
+        nodes,
+        onNodesUpdate,
+        params,
+        onRemoveClick
     });
 
-    return [paperNode, ...widgetNodes];
-}
+    return (
+        <DashboardStateContext value={dashboardState}>
+            <ReactFlow
+                className={"relative w-full h-full bg-gray-50 dark:bg-gray-950 dark:bg-opacity-80"}
+                panOnScroll={true}
+                multiSelectionKeyCode={"Shift"}
+                nodes={nodes}
+                selectionOnDrag={true}
+                panOnDrag={false}
+                selectNodesOnDrag={true}
+                snapToGrid={true}
+                selectionMode={SelectionMode.Partial}
+                snapGrid={[DEFAULT_GRID_SIZE, DEFAULT_GRID_SIZE]}
+                zoomOnScroll={false}
+                zoomOnPinch={true}
+                minZoom={1}
+                maxZoom={1}
+                defaultViewport={{
+                    x: Math.max((containerSize.width - paperSize.width) / 2, DEFAULT_GRID_SIZE) - (paperPosition.x),
+                    y: initialViewPosition ? -initialViewPosition.y + 100 : -paperPosition.y + 100,
+                    zoom: 1
+                }}
+                onNodesDelete={dashboardState.onNodesDelete}
+                preventScrolling={false}
+                onNodesChange={(change) => {
+                    onNodesChange(change);
+                    dashboardState.updateWidgetsBasedOnChange(change);
+                }}
+                nodeTypes={nodeTypes}
+                // onEdgesChange={onEdgesChange}
+                // onConnect={onConnect}
+                // fitView={true}
+                // fitViewOptions={{
+                //     minZoom: 1,
+                //     maxZoom: 1,
+                // }}
+            >
+                <Panel position="top-left">
+                    <div
+                        className={cls("w-full flex flex-row bg-white dark:bg-gray-900 rounded-2xl border", defaultBorderMixin)}>
+                        <DashboardMenubar dashboard={dashboard}
+                                          dashboardState={dashboardState}/>
+                    </div>
+                </Panel>
+                <Panel position="top-right">
+                    <div
+                        className={cls("w-full flex flex-row bg-white dark:bg-gray-900 rounded-2xl border", defaultBorderMixin)}>
+                        <DatePickerWithRange dateRange={dateRange} setDateRange={setDateRange}/>
+                    </div>
+                </Panel>
+                <Background gap={[DEFAULT_GRID_SIZE, DEFAULT_GRID_SIZE]}
+                            color="#888"
+                            variant={BackgroundVariant.Dots}/>
+
+                {/*<MiniMap nodeStrokeWidth={3}*/}
+                {/*         className={"dark:bg-gray-900"}*/}
+                {/*         maskColor={"#88888822"}*/}
+                {/*         nodeColor={"#66666622"}/>*/}
+
+            </ReactFlow>
+        </DashboardStateContext>
+    );
+};
 
 const styles = `
 

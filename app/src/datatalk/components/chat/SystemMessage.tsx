@@ -184,6 +184,10 @@ function BadMessageIcon({
                                    value={"not_factually_correct"}
                                    selected={selected}
                                    setSelected={setSelected}/>
+                    <FeedbackLabel title={"Chart is incorrect"}
+                                   value={"chart_is_incorrect"}
+                                   selected={selected}
+                                   setSelected={setSelected}/>
                     <FeedbackLabel title={"Incorrect code"}
                                    value={"incorrect_code"}
                                    selected={selected}

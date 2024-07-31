@@ -1,6 +1,6 @@
 import { AutoAwesomeIcon, Avatar, cls, Menu, MenuItem, PersonIcon, StorageIcon } from "@firecms/ui";
 import React, { useEffect, useRef, useState } from "react";
-import { ChatMessage, DataSource, DateParams, FeedbackSlug } from "../../types";
+import { ChatMessage, FeedbackSlug } from "../../types";
 import { SystemMessage } from "./SystemMessage";
 // @ts-ignore
 import MarkdownIt from "markdown-it";
@@ -106,15 +106,13 @@ function UserMessage({ text }: { text: string }) {
 
 function SQLStatementMessage({ text }: { text: string }) {
     const [html, setHtml] = useState<string | null>(null);
-    console.log("SQLStatementMessage", html);
     useEffect(() => {
         setHtml(md.render(text));
     }, [text]);
     if (!html)
         return null;
     return <code
-        className={"text-sm self-center max-w-full prose dark:prose-invert prose-headings:font-title text-base text-gray-700 dark:text-gray-200 mb-3"}
-        dangerouslySetInnerHTML={{ __html: html }}
-    >
+        className={"text-sm self-center max-w-full prose dark:prose-invert prose-headings:font-title text-gray-700 dark:text-gray-200 mb-3"}
+        dangerouslySetInnerHTML={{ __html: html }}>
     </code>
 }

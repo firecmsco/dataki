@@ -1,4 +1,4 @@
-import React, { ComponentType, memo, useState } from "react";
+import React, { ComponentType, memo, useEffect, useState } from "react";
 import { NodeProps, NodeResizer, useOnViewportChange, Viewport } from "reactflow";
 import { DashboardWidgetConfig, DateParams, DryWidgetConfig, WidgetSize } from "../../../types";
 import { DEFAULT_WIDGET_SIZE } from "../../../utils/widgets";
@@ -8,9 +8,10 @@ import { ErrorBoundary, mergeDeep } from "@firecms/core";
 import { DryTableConfigView } from "../../widgets/DryTableConfigView";
 import { Button, ForumIcon } from "@firecms/ui";
 import { WidgetChatSession } from "../../widgets/WidgetChatSession";
+import { useDashboardStateContext } from "../DashboardPageView";
 
 export type ChartNodeProps = {
-    widgetConfig: DashboardWidgetConfig;
+    widget: DashboardWidgetConfig;
     params?: DateParams;
     dashboardId: string;
     pageId: string;
@@ -21,13 +22,19 @@ function ChartNode(props: NodeProps<ChartNodeProps>) {
 
     const { data } = props;
     const datakiConfig = useDataki();
-    const widgetConfig = data.widgetConfig;
-    const [size, setSize] = useState<WidgetSize>(widgetConfig.size ?? DEFAULT_WIDGET_SIZE);
+    const dashboardState = useDashboardStateContext();
+    const widget = data.widget;
+
+    useEffect(() => {
+        setSize(widget.size ?? DEFAULT_WIDGET_SIZE);
+    }, [widget.size]);
+    const [size, setSize] = useState<WidgetSize>(widget.size ?? DEFAULT_WIDGET_SIZE);
 
     const [zoom, setZoom] = useState<number>(1);
 
     const [chatDialogOpen, setChatDialogOpen] = React.useState(false);
 
+    const [resizing, setResizing] = useState<boolean>(false);
     useOnViewportChange({
         // onStart: (viewport: Viewport) => console.log("start", viewport),
         // onChange: (viewport: Viewport) => setZoom(viewport.zoom),
@@ -41,13 +48,15 @@ function ChartNode(props: NodeProps<ChartNodeProps>) {
     </Button>;
 
     const onUpdated = (newConfig: DryWidgetConfig) => {
-        const updatedConfig = mergeDeep(widgetConfig, newConfig);
+        const updatedConfig = mergeDeep(widget, newConfig);
         console.log("onUpdated", updatedConfig, newConfig);
-        datakiConfig.onWidgetUpdate(data.dashboardId, data.pageId, widgetConfig.id, updatedConfig);
+        datakiConfig.onWidgetUpdate(data.dashboardId, data.pageId, widget.id, updatedConfig);
     };
+
+    // const pendingChangeRef = useRef<{ size: WidgetSize, position: Position }>(null);
     return (
         <div
-            key={widgetConfig.id}
+            key={widget.id}
             style={{
                 width: size.width,
                 height: size.height
@@ -55,11 +64,8 @@ function ChartNode(props: NodeProps<ChartNodeProps>) {
 
             <NodeResizer minWidth={200}
                          minHeight={200}
-                         onResize={(event, params) => {
-                             console.log("chart resize", {
-                                 params,
-                                 event
-                             });
+                         onResizeStart={() => setResizing(true)}
+                         onResizeEnd={(event, params) => {
                              const updatedSize = {
                                  width: params.width,
                                  height: params.height
@@ -68,37 +74,53 @@ function ChartNode(props: NodeProps<ChartNodeProps>) {
                                  x: params.x,
                                  y: params.y
                              };
-                             datakiConfig.onWidgetMove(data.dashboardId, data.pageId, widgetConfig.id, position);
+
                              setSize(updatedSize);
-                             datakiConfig.onWidgetResize(data.dashboardId, data.pageId, widgetConfig.id, updatedSize);
+                             setResizing(false);
+                             dashboardState.onNodeResize(widget.id, {
+                                 size: updatedSize,
+                                 position
+                             });
+                             // datakiConfig.onWidgetUpdate(data.dashboardId, data.pageId, widget.id, {
+                             //     ...widget,
+                             //     size: updatedSize,
+                             //     position
+                             // });
+                         }}
+                         onResize={(event, params) => {
+                             const updatedSize = {
+                                 width: params.width,
+                                 height: params.height
+                             };
+                             setSize(updatedSize);
                          }}
             />
 
-            {widgetConfig.type === "chart" && <DryChartConfigView dryConfig={widgetConfig}
-                                                                  actions={actions}
-                                                                  params={data.params}
-                                                                  selected={props.selected}
-                                                                  zoom={zoom}
-                                                                  largeAddToDashboardButton={false}
-                                                                  className={props.selected ? "" : ""}
-                                                                  onRemoveClick={() => data.onRemoveClick(widgetConfig.id)}
-                                                                  onUpdated={onUpdated}/>}
+            {widget.type === "chart" && <DryChartConfigView dryConfig={widget}
+                                                            actions={actions}
+                                                            params={data.params}
+                                                            selected={props.selected}
+                                                            zoom={zoom}
+                                                            largeAddToDashboardButton={false}
+                                                            className={props.selected ? "" : ""}
+                                                            onRemoveClick={() => data.onRemoveClick(widget.id)}
+                                                            onUpdated={onUpdated}/>}
 
-            {widgetConfig.type === "table" && <DryTableConfigView dryConfig={widgetConfig}
-                                                                  actions={actions}
-                                                                  params={data.params}
-                                                                  selected={props.selected}
-                                                                  className={props.selected ? "" : ""}
-                                                                  zoom={zoom}
-                                                                  largeAddToDashboardButton={false}
-                                                                  onRemoveClick={() => data.onRemoveClick(widgetConfig.id)}
-                                                                  onUpdated={onUpdated}/>}
+            {widget.type === "table" && <DryTableConfigView dryConfig={widget}
+                                                            actions={actions}
+                                                            params={data.params}
+                                                            selected={props.selected}
+                                                            className={props.selected ? "" : ""}
+                                                            zoom={zoom}
+                                                            largeAddToDashboardButton={false}
+                                                            onRemoveClick={() => data.onRemoveClick(widget.id)}
+                                                            onUpdated={onUpdated}/>}
 
             <ErrorBoundary>
-                {widgetConfig && <WidgetChatSession open={chatDialogOpen}
-                                                    setOpen={setChatDialogOpen}
-                                                    dryConfig={widgetConfig}
-                                                    onUpdate={onUpdated}
+                {widget && <WidgetChatSession open={chatDialogOpen}
+                                              setOpen={setChatDialogOpen}
+                                              dryConfig={widget}
+                                              onUpdate={onUpdated}
                 />}
             </ErrorBoundary>
 
