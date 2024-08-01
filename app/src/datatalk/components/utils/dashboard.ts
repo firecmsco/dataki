@@ -7,17 +7,13 @@ import { PaperNodeProps } from "../dashboards/nodes/PaperNode";
 export function convertWidgetsToNodes({
                                           widgets,
                                           selectedNodeIds,
-                                          params,
                                           dashboardId,
                                           pageId,
-                                          onRemoveClick
                                       }: {
     widgets: DashboardItem[],
     selectedNodeIds?: string[],
-    params: DateParams,
     dashboardId: string,
     pageId: string,
-    onRemoveClick: (id: string) => void
 }) {
     return widgets.map((widget) => {
         if (widget.type === "text" || widget.type === "title" || widget.type === "subtitle") {
@@ -29,10 +25,8 @@ export function convertWidgetsToNodes({
                 selected: selectedNodeIds?.includes(widget.id),
                 data: {
                     widget,
-                    params,
                     dashboardId,
                     pageId,
-                    onRemoveClick
                 },
                 width: widget.size.width,
                 height: widget.size.height,
@@ -48,10 +42,8 @@ export function convertWidgetsToNodes({
                 selected: selectedNodeIds?.includes(widget.id),
                 data: {
                     widget,
-                    params,
                     dashboardId,
                     pageId,
-                    onRemoveClick
                 },
                 width: widget.size.width,
                 height: widget.size.height,
@@ -101,8 +93,6 @@ export function convertDashboardWidgetsToNodes({
                                                    paperPosition,
                                                    dashboardId,
                                                    pageId,
-                                                   onRemoveClick,
-                                                   params,
                                                    selectedNodeIds
                                                }: {
     widgets: DashboardItem[],
@@ -110,8 +100,6 @@ export function convertDashboardWidgetsToNodes({
     paperPosition: Position | undefined,
     dashboardId: string,
     pageId: string,
-    onRemoveClick: (id: string) => void,
-    params: DateParams,
     selectedNodeIds?: string[]
 }): Node<ChartNodeProps | TextNodeProps>[] {
 
@@ -139,10 +127,8 @@ export function convertDashboardWidgetsToNodes({
     const widgetNodes = convertWidgetsToNodes({
         widgets,
         selectedNodeIds,
-        params,
         dashboardId,
         pageId,
-        onRemoveClick
     });
 
     return [paperNode, ...widgetNodes];

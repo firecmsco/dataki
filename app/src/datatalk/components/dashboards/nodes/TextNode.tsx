@@ -1,16 +1,14 @@
 import React, { ComponentType, memo, useState } from "react";
 import { NodeProps, NodeResizer } from "reactflow";
-import { DateParams, TextItem, WidgetSize } from "../../../types";
+import { TextItem, WidgetSize } from "../../../types";
 import { cls, IconButton, RemoveIcon, TextField, Tooltip } from "@firecms/ui";
 import { useDataki } from "../../../DatakiProvider";
 import { TEXT_WIDTH, TITLE_HEIGHT } from "../../../utils/widgets";
 
 export type TextNodeProps = {
     widget: TextItem;
-    params?: DateParams;
     dashboardId: string;
     pageId: string;
-    onRemoveClick: (widgetId: string) => void;
 };
 
 function TextNode(props: NodeProps<TextNodeProps>) {
@@ -80,20 +78,20 @@ function TextNode(props: NodeProps<TextNodeProps>) {
                          }}
                          onResizeStart={() => setResizing(true)}
                          onResizeEnd={() => setResizing(false)}
-                         // onResize={(event, params) => {
-                         //     console.log("onResize", params);
-                         //     const updatedSize = {
-                         //         width: params.width,
-                         //         height: params.height
-                         //     };
-                         //     const position = {
-                         //         x: params.x,
-                         //         y: params.y
-                         //     };
-                         //     setSize(updatedSize);
-                         //     datakiConfig.onWidgetMove(data.dashboardId, data.pageId, data.widget.id, position);
-                         //     datakiConfig.onWidgetResize(data.dashboardId, data.pageId, data.widget.id, updatedSize);
-                         // }}
+                // onResize={(event, params) => {
+                //     console.log("onResize", params);
+                //     const updatedSize = {
+                //         width: params.width,
+                //         height: params.height
+                //     };
+                //     const position = {
+                //         x: params.x,
+                //         y: params.y
+                //     };
+                //     setSize(updatedSize);
+                //     datakiConfig.onWidgetMove(data.dashboardId, data.pageId, data.widget.id, position);
+                //     datakiConfig.onWidgetResize(data.dashboardId, data.pageId, data.widget.id, updatedSize);
+                // }}
             />
 
         </div>

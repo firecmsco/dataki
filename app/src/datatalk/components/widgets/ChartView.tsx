@@ -6,7 +6,6 @@ import React, { useEffect } from "react";
 import { ChartConfig, WidgetSize } from "../../types";
 import { useModeController } from "@firecms/core";
 
-console.log("Colors", Colors);
 Chart.register(Colors, FunnelController, TrapezoidElement);
 
 export function ChartView({
@@ -33,9 +32,35 @@ export function ChartView({
         if (!config) {
             return;
         }
+
+        // const chartConfig = {
+        //     type: 'line',
+        //     data: config.data,
+        //     options: {
+        //         interaction: {
+        //             mode: 'index',
+        //             intersect: false,
+        //         },
+        //         plugins: {
+        //             title: {
+        //                 display: true,
+        //                 text: 'Chart.js Line Chart - External Tooltips'
+        //             },
+        //             tooltip: {
+        //                 enabled: false,
+        //                 position: 'nearest',
+        //                 external: externalTooltipHandler
+        //             }
+        //         }
+        //     }
+        // };
         const chartConfig = {
             ...config,
             options: {
+                interaction: {
+                    mode: "index",
+                    intersect: false
+                },
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
@@ -54,10 +79,11 @@ export function ChartView({
     }, [config, modeController.mode]);
 
     return <div ref={ref} className={"relative flex-grow p-4 bg-white dark:bg-gray-950"}>
-        <canvas className={"absolute"} style={{
-            top: 16,
-            width: size.width
-        }}
+        <canvas className={"absolute"}
+                style={{
+                    top: 16,
+                    width: size.width
+                }}
                 ref={canvasRef}/>
     </div>;
 }

@@ -9,11 +9,12 @@ import { TextNodeProps } from "../components/dashboards/nodes/TextNode";
 import { ChartNodeProps } from "../components/dashboards/nodes/ChartNode";
 
 export interface DashboardState {
+    params: DateParams;
     onCopy: () => void;
     onPaste: () => void;
     onUndo: () => void;
     onRedo: () => void;
-    onNodesDelete: (nodesToRemove: Node[]) => void;
+    onNodesDelete: (ids: string[]) => void;
     onNodeResize: (widgetId: string, params: { position: Position, size: WidgetSize }) => void;
     updateWidgetsBasedOnChange: (changes: NodeChange[]) => void;
     canCopy: boolean;
@@ -116,10 +117,8 @@ export function useCreateDashboardState({
             const pastedNodes = convertWidgetsToNodes({
                 widgets: pastedWidgets,
                 selectedNodeIds: pastedWidgets.map((widget) => widget.id),
-                params,
                 dashboardId: dashboard.id,
                 pageId: page.id,
-                onRemoveClick
             })
             const unselectedNodes = nodes.map((el) => ({
                 ...el,
@@ -138,9 +137,9 @@ export function useCreateDashboardState({
         }
     };
 
-    const onNodesDelete = (nodesToRemove: Node[]) => {
+    const onNodesDelete = (ids: string[]) => {
         const newNodes = nodes.filter(
-            (element) => !nodesToRemove.some((rem) => rem.id === element.id)
+            (element) => !ids.some((id) => id === element.id)
         );
         updateStateAndHistory(newNodes);
     };
@@ -225,6 +224,7 @@ export function useCreateDashboardState({
     }
 
     return {
+        params,
         onCopy,
         onPaste,
         onNodesDelete,

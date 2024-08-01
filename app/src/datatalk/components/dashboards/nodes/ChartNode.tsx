@@ -12,10 +12,8 @@ import { useDashboardStateContext } from "../DashboardPageView";
 
 export type ChartNodeProps = {
     widget: DashboardWidgetConfig;
-    params?: DateParams;
     dashboardId: string;
     pageId: string;
-    onRemoveClick: (widgetId: string) => void;
 };
 
 function ChartNode(props: NodeProps<ChartNodeProps>) {
@@ -49,7 +47,6 @@ function ChartNode(props: NodeProps<ChartNodeProps>) {
 
     const onUpdated = (newConfig: DryWidgetConfig) => {
         const updatedConfig = mergeDeep(widget, newConfig);
-        console.log("onUpdated", updatedConfig, newConfig);
         datakiConfig.onWidgetUpdate(data.dashboardId, data.pageId, widget.id, updatedConfig);
     };
 
@@ -98,22 +95,22 @@ function ChartNode(props: NodeProps<ChartNodeProps>) {
 
             {widget.type === "chart" && <DryChartConfigView dryConfig={widget}
                                                             actions={actions}
-                                                            params={data.params}
+                                                            params={dashboardState.params}
                                                             selected={props.selected}
                                                             zoom={zoom}
                                                             largeAddToDashboardButton={false}
                                                             className={props.selected ? "" : ""}
-                                                            onRemoveClick={() => data.onRemoveClick(widget.id)}
+                                                            onRemoveClick={() => dashboardState.onNodesDelete([widget.id])}
                                                             onUpdated={onUpdated}/>}
 
             {widget.type === "table" && <DryTableConfigView dryConfig={widget}
                                                             actions={actions}
-                                                            params={data.params}
+                                                            params={dashboardState.params}
                                                             selected={props.selected}
                                                             className={props.selected ? "" : ""}
                                                             zoom={zoom}
                                                             largeAddToDashboardButton={false}
-                                                            onRemoveClick={() => data.onRemoveClick(widget.id)}
+                                                            onRemoveClick={() => dashboardState.onNodesDelete([widget.id])}
                                                             onUpdated={onUpdated}/>}
 
             <ErrorBoundary>

@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import ReactFlow, { Background, BackgroundVariant, Node, Panel, SelectionMode, useNodesState } from "reactflow";
 import "reactflow/dist/style.css";
-import { Button, cls, defaultBorderMixin, useInjectStyles } from "@firecms/ui";
+import { cls, defaultBorderMixin, useInjectStyles } from "@firecms/ui";
 import { Dashboard, DashboardPage, DateParams, Position, WidgetSize } from "../../types";
 import ChartNode from "./nodes/ChartNode";
 import { useDataki } from "../../DatakiProvider";
@@ -69,8 +69,6 @@ export const DashboardPageView = function DashboardPageView({
             paperPosition,
             dashboardId: dashboard.id,
             pageId: page.id,
-            onRemoveClick,
-            params
         }));
 
     const nodesRef = React.useRef(nodes);
@@ -78,21 +76,19 @@ export const DashboardPageView = function DashboardPageView({
         nodesRef.current = nodes;
     }, [nodes]);
 
-    // useEffect(() => {
-    //     const selectedNodeIds = nodesRef.current.filter((node) => node.selected).map((node) => node.id);
-    //
-    //     setNodes(convertDashboardWidgetsToNodes(
-    //         {
-    //             widgets: page.widgets,
-    //             paperSize,
-    //             paperPosition,
-    //             dashboardId: dashboard.id,
-    //             pageId: page.id,
-    //             onRemoveClick,
-    //             params,
-    //             selectedNodeIds
-    //         }));
-    // }, [page.id, page.widgets, params]);
+    useEffect(() => {
+        const selectedNodeIds = nodesRef.current.filter((node) => node.selected).map((node) => node.id);
+
+        setNodes(convertDashboardWidgetsToNodes(
+            {
+                widgets: page.widgets,
+                paperSize,
+                paperPosition,
+                dashboardId: dashboard.id,
+                pageId: page.id,
+                selectedNodeIds
+            }));
+    }, [page.id, page.widgets, params]);
 
     useInjectStyles("dashboard", styles);
 
@@ -147,20 +143,13 @@ export const DashboardPageView = function DashboardPageView({
                     y: initialViewPosition ? -initialViewPosition.y + 100 : -paperPosition.y + 100,
                     zoom: 1
                 }}
-                onNodesDelete={dashboardState.onNodesDelete}
+                onNodesDelete={(nodes) => dashboardState.onNodesDelete(nodes.map((node) => node.id))}
                 preventScrolling={false}
                 onNodesChange={(change) => {
                     onNodesChange(change);
                     dashboardState.updateWidgetsBasedOnChange(change);
                 }}
                 nodeTypes={nodeTypes}
-                // onEdgesChange={onEdgesChange}
-                // onConnect={onConnect}
-                // fitView={true}
-                // fitViewOptions={{
-                //     minZoom: 1,
-                //     maxZoom: 1,
-                // }}
             >
                 <Panel position="top-left">
                     <div
