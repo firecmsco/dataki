@@ -125,11 +125,11 @@ export function DatakiLogin({
                                             By signing in you agree to our <a
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            href={"https://firecms.co/policy/terms_conditions"}>
+                                            href={"./policy/terms"}>
                                             Terms and Conditions</a> and our <a
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            href={"https://firecms.co/policy/privacy_policy"}>
+                                            href={"./policy/privacy"}>
                                             Privacy policy</a>
                                         </Typography>
                                     }/>

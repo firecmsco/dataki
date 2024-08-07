@@ -4,14 +4,11 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@firecms/collection_editor": "3.0.0-canary.90",
-    "@firecms/collection_editor_firebase": "3.0.0-canary.90",
-    "@firecms/core": "3.0.0-canary.90",
-    "@firecms/data_import_export": "3.0.0-canary.90",
-    "@firecms/firebase": "3.0.0-canary.90",
-    "@firecms/formex": "3.0.0-canary.90",
-    "@firecms/schema_inference": "3.0.0-canary.90",
-    "@firecms/ui": "3.0.0-canary.90",
+    "@firecms/core": "3.0.0-canary.99",
+    "@firecms/firebase": "3.0.0-canary.99",
+    "@firecms/formex": "3.0.0-canary.99",
+    "@firecms/ui": "3.0.0-canary.99",
+    "@fontsource/jetbrains-mono": "^5.0.20",
     "@monaco-editor/react": "^4.6.0",
     "chart.js": "^4.4.3",
     "chartjs-chart-funnel": "^4.2.1",
@@ -24,7 +21,8 @@
     "react-router-dom": "^6.25.1",
     "react-transition-group": "^4.4.5",
     "reactflow": "^11.11.4",
-    "sql-formatter": "^15.3.2"
+    "sql-formatter": "^15.3.2",
+    "typeface-rubik": "^1.1.13"
   },
   "scripts": {
     "dev": "vite --mode development",

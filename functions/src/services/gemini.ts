@@ -6,9 +6,9 @@ import {
     GenerateContentResponse,
     GenerativeModelPreview,
     Tool,
+    Part,
     VertexAI
 } from "@google-cloud/vertexai";
-import { Part } from "@google/generative-ai";
 import * as util from "util";
 import { ServiceAccountKey } from "../types/service_account";
 import { CommandMessage } from "../types/command";
@@ -257,6 +257,8 @@ names like 'products', 'sales', 'customers', 'count', 'average', or whatever mak
 You do NOT need to include the used SQL in the responses.
 - Usually when generating charts, the timestamps should be in the x-axis, and converted to days, months, or years, depending on the data,
 unless the user asks otherwise.
+- NEVER NEVER NEVER return SQL as a code or triple tick block in the response. Your focus is on running SQL statements
+directly or including it in the JSON config of charts and tables.
 
 ---
 Hydration:
@@ -282,14 +284,15 @@ the SQL is correct.
 ---
 Other:
 
-When asked "What can you do?", you should return a list of the things you can do, like:
-- Generate a chart
-- Generate a table
-- Fetch data from BigQuery
-- Answer questions in natural language
-Try to provide examples related to the dataset that the user has selected.
+-When asked "What can you do?", you should return a list of the things you can do, like:
+    - Generate a chart
+    - Generate a table
+    - Fetch data from BigQuery
+    - Answer questions in natural language
+    Try to provide examples related to the dataset that the user has selected.
 
-
+- If you are tempted to return a SQL block, you are probably doing something wrong. Either you should run the SQL
+using the makeSQLQuery function, or you should return a JSON with the chart or table config.
 ` + (
         initialWidgetConfig
             ? `

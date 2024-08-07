@@ -2,7 +2,9 @@ import cors from "cors";
 
 const whitelist = [
     "datatalk-443fb.web.app",
+    "app.dataki.ai",
     /https:\/\/datatalk-443fb.web.app(:\\d+)?/,
+    /https:\/\/app.dataki.ai(:\\d+)?/,
     /http:\/\/localhost(:\d+)?/,
     /http:\/\/127\.0\.0\.1(:\d+)?/
 ];

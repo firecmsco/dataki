@@ -24,6 +24,10 @@ import { DatakiDrawer, DatakiProvider, DatakiRoutes, useBuildDatakiConfig } from
 import { useDatakiAuthController } from "./datatalk/useDatakiAuthController";
 import { DatakiLogin } from "./datatalk/DatakiLogin";
 import Logo from "./datatalk/dataki_logo.svg";
+import { Route, Routes } from "react-router-dom";
+import { PrivacyPolicy } from "./policy/privacy_policy";
+import { CookiesPage } from "./policy/cookies_policy";
+import { TermsAndConditions } from "./policy/terms_conditions";
 
 const API_ENDPOINT = import.meta.env.VITE_API_ENDPOINT;
 if (!API_ENDPOINT) {
@@ -111,61 +115,81 @@ export function App() {
         return <>{configError}</>;
     }
 
-    return (
-        <SnackbarProvider>
-            <ModeControllerProvider value={modeController}>
-                <DatakiProvider
-                    config={datakiConfig}>
-                    <FireCMS
-                        navigationController={navigationController}
-                        authController={authController}
-                        userConfigPersistence={userConfigPersistence}
-                        dataSourceDelegate={firestoreDelegate}
-                        storageSource={storageSource}
-                    >
-                        {({
-                              context,
-                              loading
-                          }) => {
+    const main = <SnackbarProvider>
+        <ModeControllerProvider value={modeController}>
+            <DatakiProvider
+                config={datakiConfig}>
+                <FireCMS
+                    navigationController={navigationController}
+                    authController={authController}
+                    userConfigPersistence={userConfigPersistence}
+                    dataSourceDelegate={firestoreDelegate}
+                    storageSource={storageSource}
+                >
+                    {({
+                          context,
+                          loading
+                      }) => {
 
-                            let component;
+                        let component;
 
-                            if (loading || authLoading) {
-                                component = <CircularProgressCenter size={"large"}/>;
+                        if (loading || authLoading) {
+                            component = <CircularProgressCenter size={"large"}/>;
+                        } else {
+                            if (!canAccessMainView) {
+                                component = (
+                                    <DatakiLogin authController={authController}
+                                                 datakiConfig={datakiConfig}/>
+                                );
                             } else {
-                                if (!canAccessMainView) {
-                                    component = (
-                                        <DatakiLogin authController={authController}
-                                                     datakiConfig={datakiConfig}/>
-                                    );
-                                } else {
-                                    component = (
-                                        <Scaffold>
-                                            <AppBar logo={Logo}
-                                                    title={<Typography variant="subtitle1"
-                                                                       className={"ml-2 !font-sm uppercase font-mono"}>
-                                                        DATAKI
-                                                    </Typography>}/>
-                                            <Drawer>
-                                                <DatakiDrawer/>
-                                            </Drawer>
-                                            <DatakiRoutes
-                                                onAnalyticsEvent={(event, params) => {
-                                                    console.log("DataTalk event", event, params);
-                                                }}/>
-                                            {/*<NavigationRoutes*/}
-                                            {/*    homePage={<DataTalk apiEndpoint={API_ENDPOINT}*/}
-                                            {/*                        getAuthToken={authController.getAuthToken}/>}/>*/}
-                                            <SideDialogs/>
-                                        </Scaffold>
-                                    );
-                                }
+                                component = (
+                                    <Scaffold>
+                                        <AppBar logo={Logo}
+                                                title={<Typography variant="subtitle1"
+                                                                   className={"ml-2 !font-sm uppercase font-mono"}>
+                                                    DATAKI
+                                                </Typography>}/>
+                                        <Drawer>
+                                            <DatakiDrawer/>
+                                        </Drawer>
+                                        <DatakiRoutes
+                                            onAnalyticsEvent={(event, params) => {
+                                                console.log("DataTalk event", event, params);
+                                            }}/>
+                                        {/*<NavigationRoutes*/}
+                                        {/*    homePage={<DataTalk apiEndpoint={API_ENDPOINT}*/}
+                                        {/*                        getAuthToken={authController.getAuthToken}/>}/>*/}
+                                        <SideDialogs/>
+                                    </Scaffold>
+                                );
                             }
-                            return component;
-                        }}
-                    </FireCMS>
-                </DatakiProvider>
-            </ModeControllerProvider>
-        </SnackbarProvider>
+                        }
+                        return component;
+                    }}
+                </FireCMS>
+            </DatakiProvider>
+        </ModeControllerProvider>
+    </SnackbarProvider>;
+
+    return (
+        <Routes>
+            <Route path="/policy/privacy"
+                   element={
+                       <PrivacyPolicy/>
+                   }/>
+            <Route path="/policy/cookies"
+                   element={
+                       <CookiesPage/>
+                   }/>
+            <Route path="/policy/terms"
+                   element={
+                       <TermsAndConditions/>
+                   }/>
+            <Route path="*"
+                   element={
+                       main
+                   }/>
+        </Routes>
+
     );
 }
