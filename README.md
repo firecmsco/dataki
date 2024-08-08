@@ -1,9 +1,23 @@
-# Dataki
+# DATAKI
+
+Dataki is an app that allows you to generate analytics reports for your data. It is a tool that allows you to connect
+to your data sources, and generate reports with the help of AI.
 
 You can find the live demo at [https://app.dataki.ai](https://app.dataki.ai).
 
 
-## Frontend
+## Running it locally
+
+To run the project locally you need to run both the frontend and the backend.
+We want to make it as easy as possible for you to run the project locally, so we have included the instructions to run
+both the frontend and the backend in this README.
+
+This repository should have all the config files correctly set up, so you should be able to run the project
+without any additional configuration. However we include the steps to configure the project with a different Google Cloud
+project, in case you want to use your own project.
+
+
+### Frontend
 
 This is the frontend for the Dataki project. It is a React application that
 uses some of the components from the [FireCMS](https://firecms.co) project.
@@ -47,17 +61,16 @@ npm run build
 
 
 
-## Backend
+### Backend
 
-### Steps to run the backend
+#### Steps to run the backend
 
-After you clone the repository, you need to set up the backend.
 
 1. Change directory to the `functions` folder:
     ```bash
     cd functions
     ```
-2. Run 
+2. Run
    ```bash
    npm install
    ```
@@ -71,7 +84,7 @@ After you clone the repository, you need to set up the backend.
 4. Go to .firebaserc and change the default project to your project id
 5. Go to functions/ and copy .env.template to .env and set up the GEMINI API KEY
 
-### Steps to configure the Google Cloud Project
+#### Steps to configure the Google Cloud Project
 
 1. You need a firebase project
 2. Enable and configure firebase auth
@@ -84,16 +97,16 @@ After you clone the repository, you need to set up the backend.
 6. Add Vertex AI permissions to default service
    account, https://console.cloud.google.com/iam-admin/iam?project=PROJECT_ID
 
-### Running the backend
+#### Running the backend
 
 Run the backend locally with
 ```bash
 npm run serve
 ```
 
-### Deploying the backend
+#### Deploying the backend
 
-Deploy the backend with 
+Deploy the backend with
 ```bash
 npm run deploy
 ```

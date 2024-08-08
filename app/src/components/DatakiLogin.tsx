@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { BooleanSwitchWithLabel, Button, CenteredView, cls, Typography } from "@firecms/ui";
-import { DatakiAuthController, OauthParams } from "./useDatakiAuthController";
+import { DatakiAuthController, OauthParams } from "../hooks/useDatakiAuthController";
 import { ErrorView } from "@firecms/core";
-import { generateAuthUrl } from "./api";
-import { DatakiConfig } from "./DatakiProvider";
+import { generateAuthUrl } from "../api";
+import { DatakiConfig } from "../DatakiProvider";
 
 import Logo from "./dataki_logo.svg";
 

@@ -12,13 +12,10 @@ export function HomePage() {
 
     return (
         <div className={"flex flex-col container mx-auto px-4 md:px-6  my-4 pt-8 flex-1"}>
-            {/*<Typography variant={"h3"} gutterBottom={true} className={"font-mono ml-4 my-2"}>*/}
-            {/*    Welcome to DATATALK*/}
-            {/*</Typography>*/}
             <div className={"my-8 flex flex-col gap-4"}>
-                <Button onClick={resetAllTooltips} variant={"text"}>
-                    Reset onboarding
-                </Button>
+                {/*<Button onClick={resetAllTooltips} variant={"text"}>*/}
+                {/*    Reset onboarding*/}
+                {/*</Button>*/}
                 <Typography variant={"h3"} gutterBottom={true} className={"font-mono my-2"}>
                     Welcome to DATAKI
                 </Typography>

@@ -11,6 +11,7 @@ import {
 } from "./types";
 import { LLMOutputParser } from "./utils/llm_parser";
 import JSON5 from "json5";
+import * as util from "node:util";
 
 interface StreamDatakiCommandParams {
     firebaseAccessToken: string;
@@ -26,17 +27,17 @@ interface StreamDatakiCommandParams {
 }
 
 export async function streamDatakiCommand({
-                                                firebaseAccessToken,
-                                                command,
-                                                apiEndpoint,
-                                                sessionId,
-                                                projectId,
-                                                initialWidgetConfig,
-                                                sources,
-                                                messages,
-                                                onDelta,
-                                                onSQLQuery
-                                            }: StreamDatakiCommandParams
+                                              firebaseAccessToken,
+                                              command,
+                                              apiEndpoint,
+                                              sessionId,
+                                              projectId,
+                                              initialWidgetConfig,
+                                              sources,
+                                              messages,
+                                              onDelta,
+                                              onSQLQuery
+                                          }: StreamDatakiCommandParams
 ): Promise<string> {
 
     const parser = new LLMOutputParser((v) => console.log("Delta:", v));

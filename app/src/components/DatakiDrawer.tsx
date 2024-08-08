@@ -4,8 +4,8 @@ import { Link, NavLink } from "react-router-dom";
 import { DrawerLogo, useApp, useNavigationController } from "@firecms/core";
 import { useDataki } from "../DatakiProvider";
 import { Button, cls, ForumIcon, LineAxisIcon, Tooltip, Typography } from "@firecms/ui";
-import { getNewChatPath } from "../navigation";
-import Logo from "../dataki_logo.svg";
+import { getNewChatPath } from "../utils/navigation";
+import Logo from "./dataki_logo.svg";
 
 export function DatakiDrawer() {
 

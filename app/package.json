@@ -28,7 +28,7 @@
     "dev": "vite --mode development",
     "build": "vite build && tsc",
     "preview": "vite build && vite preview",
-    "deploy": "vite build && firebase deploy --only hosting --project datatalk-443fb"
+    "deploy": "vite build && tsc && firebase deploy --only hosting --project datatalk-443fb"
   },
   "browserslist": {
     "production": [

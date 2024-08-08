@@ -34,7 +34,7 @@ export function DataTable({
 
         const entry = getIn(rowData, column.key);
         return (
-            <div className="px-3 py-0.5 flex items-center max-h-full overflow-scroll" style={{ width: column.width }}>
+            <div className="px-3 py-0.5 flex items-center max-h-full" style={{ width: column.width }}>
                 {entry}
             </div>
         );

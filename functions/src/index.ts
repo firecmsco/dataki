@@ -6,9 +6,12 @@ const expressApp = buildExpressApp();
 
 setGlobalOptions({
     timeoutSeconds: 120,
+    minInstances: 1,
     memory: "1GiB",
     region: "europe-west3"
 });
 
 // Expose Express API as a single Cloud Function:
-exports.datakiapi = onRequest(expressApp);
+export const datakiapi = onRequest(expressApp);
+
+export { onNewUserCopyDemoDashboard } from "./functions/users";

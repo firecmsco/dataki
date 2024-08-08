@@ -4,7 +4,7 @@ import { useDataki } from "../../DatakiProvider";
 import { AddIcon, Button, Typography } from "@firecms/ui";
 import { DashboardPreviewCard } from "../dashboards/DashboardPreviewCard";
 import { useNavigate } from "react-router-dom";
-import { getDashboardPath } from "../../navigation";
+import { getDashboardPath } from "../../utils/navigation";
 
 export function DashboardsOverview() {
     const datakiConfig = useDataki();

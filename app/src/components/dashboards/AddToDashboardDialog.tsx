@@ -3,7 +3,7 @@ import React from "react";
 import { useDataki } from "../../DatakiProvider";
 import { DashboardPreviewCard, NewDashboardCard } from "./DashboardPreviewCard";
 import { useNavigate } from "react-router-dom";
-import { getDashboardPath } from "../../navigation";
+import { getDashboardPath } from "../../utils/navigation";
 import { DryWidgetConfig } from "../../types";
 
 export function AddToDashboardDialog({

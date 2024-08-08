@@ -20,14 +20,16 @@ import { useFirebaseStorageSource, useFirestoreDelegate, useInitialiseFirebase }
 
 import { firebaseConfig } from "./firebase_config";
 import { Typography } from "@firecms/ui";
-import { DatakiDrawer, DatakiProvider, DatakiRoutes, useBuildDatakiConfig } from "./datatalk";
-import { useDatakiAuthController } from "./datatalk/useDatakiAuthController";
-import { DatakiLogin } from "./datatalk/DatakiLogin";
-import Logo from "./datatalk/dataki_logo.svg";
+import { useDatakiAuthController } from "./hooks/useDatakiAuthController";
+import { DatakiLogin } from "./components/DatakiLogin";
+import Logo from "./components/dataki_logo.svg";
 import { Route, Routes } from "react-router-dom";
 import { PrivacyPolicy } from "./policy/privacy_policy";
 import { CookiesPage } from "./policy/cookies_policy";
 import { TermsAndConditions } from "./policy/terms_conditions";
+import { DatakiProvider, useBuildDatakiConfig } from "./DatakiProvider";
+import { DatakiDrawer } from "./components/DatakiDrawer";
+import { DatakiRoutes } from "./DatakiRoutes";
 
 const API_ENDPOINT = import.meta.env.VITE_API_ENDPOINT;
 if (!API_ENDPOINT) {

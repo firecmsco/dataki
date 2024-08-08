@@ -13,7 +13,7 @@ import {
 } from "@firebase/auth";
 import { FirebaseApp } from "@firebase/app";
 import { AuthController, Role, User } from "@firecms/core";
-import { exchangeCodeForToken, postUserCredentials } from "./api";
+import { exchangeCodeForToken, postUserCredentials } from "../api";
 
 export interface DatakiAuthControllerProps {
     loading?: boolean;

@@ -70,7 +70,7 @@ export const DashboardMenubar = ({
                                         text: "",
                                         position: {
                                             x: DEFAULT_GRID_SIZE,
-                                            y: -(viewport.y % DEFAULT_GRID_SIZE) * DEFAULT_GRID_SIZE + 100
+                                            y: roundDownToGrid(-viewport.y, DEFAULT_GRID_SIZE) + 100
                                         },
                                         size: {
                                             width: TEXT_WIDTH,
@@ -90,7 +90,7 @@ export const DashboardMenubar = ({
                                         text: "",
                                         position: {
                                             x: DEFAULT_GRID_SIZE,
-                                            y: -(viewport.y % DEFAULT_GRID_SIZE) * DEFAULT_GRID_SIZE + 100
+                                            y: roundDownToGrid(-viewport.y, DEFAULT_GRID_SIZE) + 100
                                         },
                                         size: {
                                             width: TEXT_WIDTH,
@@ -184,4 +184,8 @@ function DashboardNameTextField({
             value={title}
         />
     );
+}
+
+function roundDownToGrid(num: number, gridSize): number {
+    return Math.floor(num / gridSize) * gridSize;
 }
