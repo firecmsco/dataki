@@ -57,16 +57,16 @@ function getInitialDataSources(session: ChatSession, uid: string) {
 }
 
 export function DatakiChatSession({
-                                        session,
-                                        initialPrompt,
-                                        onAnalyticsEvent,
-                                        onMessagesChange,
-                                        onDataSourcesChange,
-                                        onProjectIdChange,
-                                        initialWidgetConfig,
-                                        onInitialWidgetConfigChange,
-                                        className
-                                    }: {
+                                      session,
+                                      initialPrompt,
+                                      onAnalyticsEvent,
+                                      onMessagesChange,
+                                      onDataSourcesChange,
+                                      onProjectIdChange,
+                                      initialWidgetConfig,
+                                      onInitialWidgetConfigChange,
+                                      className
+                                  }: {
     session: ChatSession,
     initialPrompt?: string,
     onAnalyticsEvent?: (event: string, params?: any) => void,
@@ -256,6 +256,8 @@ export function DatakiChatSession({
         const firebaseToken = await getAuthToken();
         let currentMessageResponse = "";
 
+        console.log("messages", messages);
+
         setMessageLoading(true);
         streamDatakiCommand({
             firebaseAccessToken: firebaseToken,
@@ -282,21 +284,24 @@ export function DatakiChatSession({
                     scrollToBottom();
                 }
             },
-            onSQLQuery: (sqlQuery) => {
-                console.log("Got SQL query", sqlQuery);
+            onFunctionCall: (call) => {
+                console.log("Got function call", call);
                 const newMessages = [...currentMessages];
-                // this message must go before the one with id systemMessageId
                 const sqlMessage: ChatMessage = {
                     id: systemMessageId,
                     loading: false,
-                    text: sqlQuery,
-                    user: "SQL_STATEMENT",
+                    text: call.params.sql,
+                    function_call: call,
+                    user: "FUNCTION_CALL",
                     date: new Date()
                 };
                 newMessages.push(sqlMessage);
                 currentMessages = newMessages;
+                console.log("Setting messages", newMessages);
                 setMessages(newMessages);
-
+                if (isUserScrolledDownRef.current) {
+                    scrollToBottom();
+                }
             }
         })
             .then((newMessage) => {

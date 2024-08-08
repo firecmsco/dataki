@@ -20,7 +20,8 @@ export type DataRow = {
 export type ChatMessage = {
     id: string;
     text: string;
-    user: "USER" | "SYSTEM" | "SQL_STATEMENT";
+    user: "USER" | "SYSTEM" | "FUNCTION_CALL";
+    function_call?: FunctionCall;
     date: Date;
     loading?: boolean;
     negative_feedback?: {
@@ -28,6 +29,12 @@ export type ChatMessage = {
         message?: string;
     };
 };
+
+export type FunctionCall = {
+    name: string;
+    params: { [key: string]: any };
+    result: any
+}
 
 export type FeedbackSlug = "not_helpful"
     | "not_factually_correct"

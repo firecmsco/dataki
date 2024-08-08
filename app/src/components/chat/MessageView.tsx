@@ -48,11 +48,11 @@ export function MessageView({
         return () => resizeObserver.disconnect();
     }, [ref]);
 
-    const bgColor = message?.user === "SQL_STATEMENT"
+    const bgColor = message?.user === "FUNCTION_CALL"
         ? "bg-slate-200 dark:bg-slate-800"
         : (message?.user === "SYSTEM" ? "bg-transparent dark:bg-transparent" : "bg-white dark:bg-gray-800 dark:bg-opacity-20");
 
-    const padding = message?.user === "SQL_STATEMENT" ? "py-1 px-4" : "p-4";
+    const padding = message?.user === "FUNCTION_CALL" ? "py-1 px-4" : "p-4";
 
     return <div ref={ref}
                 className={cls("flex flex-col gap-2 rounded-3xl", bgColor, padding)}>
@@ -60,7 +60,7 @@ export function MessageView({
             <Menu trigger={<Avatar className="w-10 h-10 shrink-0">
                 {message?.user === "USER" && <PersonIcon/>}
                 {message?.user === "SYSTEM" && <AutoAwesomeIcon/>}
-                {message?.user === "SQL_STATEMENT" && <StorageIcon/>}
+                {message?.user === "FUNCTION_CALL" && <StorageIcon/>}
             </Avatar>}>
                 <MenuItem dense onClick={onRemove}>Remove</MenuItem>
             </Menu>
@@ -68,14 +68,14 @@ export function MessageView({
             {/*<Avatar className="w-10 h-10 shrink-0">*/}
             {/*    {message?.user === "USER" && <PersonIcon/>}*/}
             {/*    {message?.user === "SYSTEM" && <AutoAwesomeIcon/>}*/}
-            {/*    {message?.user === "SQL_STATEMENT" && <StorageIcon/>}*/}
+            {/*    {message?.user === "FUNCTION_CALL" && <StorageIcon/>}*/}
             {/*</Avatar>*/}
 
-            <div className={cls(message?.user === "SQL_STATEMENT" ? "my-1" : "mt-3 mb-1 min-h-[32px]",
+            <div className={cls(message?.user === "FUNCTION_CALL" ? "my-1" : "mt-3 mb-1 min-h-[32px]",
                 "flex-1 text-gray-700 dark:text-gray-200 self-center")}>
 
                 {message?.user === "USER" && <UserMessage text={message.text}/>}
-                {message?.user === "SQL_STATEMENT" && <SQLStatementMessage text={message.text}/>}
+                {message?.user === "FUNCTION_CALL" && <FunctionCallMessage text={message.text}/>}
                 {message?.user === "SYSTEM" && <SystemMessage text={message.text}
                                                               loading={message.loading}
                                                               canRegenerate={canRegenerate}
@@ -104,7 +104,7 @@ function UserMessage({ text }: { text: string }) {
     // return <>{text.split("\n").map((line, index) => <p key={index}>{line}</p>)}</>
 }
 
-function SQLStatementMessage({ text }: { text: string }) {
+function FunctionCallMessage({ text }: { text: string }) {
     const [html, setHtml] = useState<string | null>(null);
     useEffect(() => {
         setHtml(md.render(text));

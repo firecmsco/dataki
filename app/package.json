@@ -19,7 +19,6 @@
     "react-dom": "^19.0.0-rc-163365a0-20240717",
     "react-router": "^6.25.1",
     "react-router-dom": "^6.25.1",
-    "react-transition-group": "^4.4.5",
     "reactflow": "^11.11.4",
     "sql-formatter": "^15.3.2",
     "typeface-rubik": "^1.1.13"

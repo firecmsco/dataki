@@ -5,13 +5,12 @@ import {
     DataSource,
     DateParams,
     DryWidgetConfig,
-    FilterOp,
+    FilterOp, FunctionCall,
     GCPProject,
     WidgetConfig
 } from "./types";
 import { LLMOutputParser } from "./utils/llm_parser";
 import JSON5 from "json5";
-import * as util from "node:util";
 
 interface StreamDatakiCommandParams {
     firebaseAccessToken: string;
@@ -23,7 +22,7 @@ interface StreamDatakiCommandParams {
     sources: DataSource[];
     messages: ChatMessage[];
     onDelta: (delta: string) => void;
-    onSQLQuery: (sqlQuery: string) => void;
+    onFunctionCall: (call: FunctionCall) => void;
 }
 
 export async function streamDatakiCommand({
@@ -36,7 +35,7 @@ export async function streamDatakiCommand({
                                               sources,
                                               messages,
                                               onDelta,
-                                              onSQLQuery
+                                              onFunctionCall
                                           }: StreamDatakiCommandParams
 ): Promise<string> {
 
@@ -45,7 +44,7 @@ export async function streamDatakiCommand({
     // eslint-disable-next-line no-async-promise-executor
     return new Promise<string>(async (resolve, reject) => {
         try {
-            const history = messages.filter(message => message.user === "USER" || message.user === "SYSTEM");
+            const history = messages;
             const response = await fetch(apiEndpoint + "/dataki/command", {
                 method: "POST",
                 headers: {
@@ -103,8 +102,8 @@ export async function streamDatakiCommand({
                                 result.push(message.data.delta);
                                 onDelta(message.data.delta);
                                 parser.parseDelta(message.data.delta);
-                            } else if (message.type === "sql") {
-                                onSQLQuery(message.data.sqlQuery);
+                            } else if (message.type === "function_call") {
+                                onFunctionCall(message.data.call);
                             } else if (message.type === "result") {
                                 console.log("Result received:", parser.getFinalState());
                                 resolve(message.data);

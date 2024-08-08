@@ -1,46 +1,61 @@
 import { ChatMessage } from "../types/chat";
 import { runSQLQuery } from "./bigquery";
-import { getGoogleProjectId } from "../auth/auth";
-import {
-    FunctionDeclarationSchemaType,
-    GenerateContentResponse,
-    GenerativeModelPreview,
-    Tool,
-    Part,
-    VertexAI
-} from "@google-cloud/vertexai";
+
 import * as util from "util";
 import { ServiceAccountKey } from "../types/service_account";
 import { CommandMessage } from "../types/command";
 import { DataSource, DryWidgetConfig } from "../types/dashboards";
 import { getProjectDataContext } from "./context_data";
 import DatakiException from "../types/exceptions";
+import {
+    FunctionDeclarationSchemaType,
+    GenerateContentResponse,
+    GenerativeModel,
+    GoogleGenerativeAI,
+    Part,
+    Tool
+} from "@google/generative-ai";
 
 const PREFERRED_COLORS = ["#ea5545", "#f46a9b", "#ef9b20", "#edbf33", "#ede15b", "#bdcf32", "#87bc45", "#27aeef", "#b33dc6"];
 
-export const getVertexAI = async (): Promise<GenerativeModelPreview> => {
-    const model = "gemini-1.5-pro";
-    const projectId = await getGoogleProjectId();
-    const vertex_ai = new VertexAI({
-        project: projectId,
-        location: "europe-west3"
-    });
-    return vertex_ai.preview.getGenerativeModel({
-        model: model,
+export const getGenerativeModel = async (): Promise<GenerativeModel> => {
+
+    if (!process.env.GOOGLE_GEN_API_KEY) {
+        throw new Error("GOOGLE_GEN_API_KEY not set");
+
+    }
+    const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEN_API_KEY as string);
+    return genAI.getGenerativeModel({
+        model: "gemini-1.5-pro",
         generationConfig: {
             maxOutputTokens: 2048,
             temperature: 1,
             topP: 0.95
         },
         tools: [makeSQLQueryFunctionDeclaration]
-    }, { apiClient: "v1beta" });
+    });
+    // const model = "gemini-1.5-pro";
+    // const projectId = await getGoogleProjectId();
+    // const vertex_ai = new VertexAI({
+    //     project: projectId,
+    //     location: "europe-west3"
+    // });
+    // return vertex_ai.preview.getGenerativeModel({
+    //     model: model,
+    //     generationConfig: {
+    //         maxOutputTokens: 2048,
+    //         temperature: 1,
+    //         topP: 0.95
+    //     },
+    //     tools: [makeSQLQueryFunctionDeclaration]
+    // }, { apiClient: "v1beta" });
 }
 
 export async function makeGeminiRequest({
                                             userQuery,
                                             dataContexts,
                                             onDelta,
-                                            onSQLQuery,
+                                            onFunctionCall,
                                             history,
                                             credentials,
                                             initialWidgetConfig
@@ -49,18 +64,22 @@ export async function makeGeminiRequest({
                                                 userQuery: string,
                                                 dataContexts: string[],
                                                 onDelta: (delta: string) => void,
-                                                onSQLQuery?: (sql: string) => void,
+                                                onFunctionCall?: (call: {
+                                                    name: string,
+                                                    params: { [key: string]: any },
+                                                    response: any
+                                                }) => void,
                                                 history: ChatMessage[],
                                                 credentials?: ServiceAccountKey,
                                                 initialWidgetConfig?: DryWidgetConfig
                                             }): Promise<string> {
 
-    const geminiModel = await getVertexAI();
+    const geminiModel = await getGenerativeModel();
 
     const functions = {
-        makeSQLQuery: ({ sql }: { sql: string }) => {
-            onSQLQuery && onSQLQuery(sql);
-            return runSQLQuery({
+        makeSQLQuery: async ({ sql }: { sql: string }) => {
+            console.log("Making SQL query", sql);
+            return await runSQLQuery({
                 sql: sql,
                 credentials: credentials
             })
@@ -71,7 +90,7 @@ export async function makeGeminiRequest({
     const colors = [...PREFERRED_COLORS];
     shuffle(colors);
 
-    const instructions = `You are a tool that allows user to query their BigQuery datasets and generate
+    const instructions = `You are DATAKI, a tool that allows user to query their BigQuery datasets and generate
 charts, tables or give answers in natural language. The charts and tables you generate can be added to dashboards.
 You are able to understand the user's query and generate the SQL query that will fetch the data the user is asking for.
 You can output a mix of markdown and JSON, exclusively.
@@ -317,12 +336,25 @@ In this mode, the config you generate should always include the provided id: ${i
             }],
             role: "user"
         },
-        history: history.map((message) => ({
-            parts: [{ text: message.text }],
-            role: message.user === "SYSTEM"
-                ? "model"
-                : "user"
-        }))
+        history: history.map((message) => {
+            if (message.user === "FUNCTION_CALL" && message.function_call) {
+                return {
+                    role: "function",
+                    parts: [{
+                        functionResponse: {
+                            name: message.function_call.name,
+                            response: { functionResponse: message.function_call.result }
+                        }
+                    }]
+                }
+            }
+            return ({
+                parts: [{ text: message.text }],
+                role: message.user === "SYSTEM"
+                    ? "model"
+                    : "user"
+            });
+        })
     });
 
     let totalDelta = "";
@@ -340,15 +372,21 @@ In this mode, the config you generate should always include the provided id: ${i
         console.log(util.inspect(item, false, null, true /* enable colors */) + "\n\n");
 
         const candidate = item.candidates?.[0];
-        if (candidate?.finishReason) {
-            return;
-        }
+        // if (candidate?.finishReason) {
+        //     return;
+        // }
         const part = candidate?.content.parts[0];
         if (part?.functionCall) {
+            console.log("Function call", part.functionCall);
             const functionName = part.functionCall.name;
             const functionParams = part.functionCall.args;
             // @ts-ignore
             const functionResponse = await functions[functionName](functionParams);
+            onFunctionCall && onFunctionCall({
+                name: functionName,
+                params: functionParams,
+                response: functionResponse
+            });
             await sendMessage([{
                 functionResponse: {
                     name: functionName,
@@ -433,7 +471,7 @@ export const generateSamplePrompts = async (
 
     const systemInstruction = buildSamplePromptsSystemInstructions(dataContexts, initialWidgetConfig)
 
-    const geminiModel = await getVertexAI();
+    const geminiModel = await getGenerativeModel();
     const chat = geminiModel.startChat({
         systemInstruction: {
             parts: [{ text: systemInstruction }],
@@ -451,7 +489,6 @@ export const generateSamplePrompts = async (
     if (candidates && candidates.length > 0) {
         const firstCandidate = candidates[0];
         if (!firstCandidate.content.parts) return [];
-        console.log(firstCandidate.content.parts);
         const result = firstCandidate.content.parts?.map((part) => part.text).join("");
         const cleanedResult = result
             .replace(/```JSON/g, "")
@@ -459,9 +496,6 @@ export const generateSamplePrompts = async (
             .replace(/```JSON5/g, "")
             .replace(/```json5/g, "")
             .replace(/```/g, "");
-        console.log({
-            cleanedResult
-        });
         return JSON.parse(cleanedResult);
     }
     throw new Error("No prompts found");

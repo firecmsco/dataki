@@ -64,11 +64,11 @@ async function processUserCommandRoute(request: Request, response: Response) {
                 data: { delta }
             }));
         },
-        onSQLQuery: (sqlQuery) => {
-            console.log("Got SQL query", sqlQuery);
+        onFunctionCall: (call) => {
+            console.log("Got Function call query", call);
             response.write("&$# " + JSON.stringify({
-                type: "sql",
-                data: { sqlQuery }
+                type: "function_call",
+                data: { call }
             }));
         }
     });
