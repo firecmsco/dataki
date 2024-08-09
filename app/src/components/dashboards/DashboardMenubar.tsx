@@ -186,6 +186,6 @@ function DashboardNameTextField({
     );
 }
 
-function roundDownToGrid(num: number, gridSize): number {
+function roundDownToGrid(num: number, gridSize: number): number {
     return Math.floor(num / gridSize) * gridSize;
 }

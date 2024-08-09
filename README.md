@@ -8,8 +8,11 @@ You can find the live demo at [https://app.dataki.ai](https://app.dataki.ai).
 
 ## Running it locally
 
-To run the project locally you need to run both the frontend and the backend.
-We want to make it as easy as possible for you to run the project locally, so we have included the instructions to run
+To run the project locally you need to run at least the frontend (and connect to the deployed backend).
+
+Or you can also run the frontend and the backend locally.
+
+We want to make it as easy as possible for you to run the project, so we have included the instructions to run
 both the frontend and the backend in this README.
 
 This repository should have all the config files correctly set up, so you should be able to run the project
@@ -59,12 +62,24 @@ project name. Then run:
 npm run build
 ```
 
+### Changing the API endpoint
+You can change the API endpoint in the `.env` file. By default it is set to the deployed backend of this project.
 
 
 ### Backend
 
 #### Steps to run the backend
 
+Note: these are instructions to setup a completely new project. 
+You can use our demo project too, for which you will need a SA key. Feel free to reach us at francesco@firecms.co if you 
+need it!
+
+You need a Google Cloud project with the following services enabled:
+- Firebase
+- Firestore
+- Cloud Functions
+- Vertex AI
+- Oauth2 API
 
 1. Change directory to the `functions` folder:
     ```bash

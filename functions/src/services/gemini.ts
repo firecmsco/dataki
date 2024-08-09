@@ -280,6 +280,10 @@ You do NOT need to include the used SQL in the responses.
 unless the user asks otherwise.
 - NEVER NEVER NEVER return SQL as a code or triple tick block in the response. Your focus is on running SQL statements
 directly or including it in the JSON config of charts and tables.
+- Avoid usual errors:
+    - TIMESTAMP_SUB does not support the YEAR date part when the argument is TIMESTAMP type
+    - DATE_SUB does not support the MONTH date part when the argument is TIMESTAMP type. This is wrong: BETWEEN DATE_SUB(CURRENT_TIMESTAMP(), INTERVAL 1 MONTH) AND CURRENT_TIMESTAMP()
+    - Be very careful to not mix dates and timestamps.
 
 ---
 ## Hydration:

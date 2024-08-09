@@ -16,7 +16,10 @@ export function HomePage() {
                 {/*<Button onClick={resetAllTooltips} variant={"text"}>*/}
                 {/*    Reset onboarding*/}
                 {/*</Button>*/}
-                <Typography variant={"h3"} gutterBottom={true} className={"font-mono my-2"}>
+                <Typography variant={"h3"}
+                            gutterBottom={true}
+                            className={"font-mono my-2"}
+                            onClick={resetAllTooltips}>
                     Welcome to DATAKI
                 </Typography>
                 <Typography>
@@ -28,7 +31,8 @@ export function HomePage() {
                 </Typography>
 
                 <Alert>
-                    You can use demo data from the <code>bigquery-public-data.thelook_ecommerce</code> dataset, or use your
+                    You can use demo data from the <code>bigquery-public-data.thelook_ecommerce</code> dataset, or use
+                    your
                     own
                 </Alert>
                 <OnboardingTooltip id={"home_chat"}
