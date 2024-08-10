@@ -3,7 +3,6 @@ import { runSQLQuery } from "./bigquery";
 
 import * as util from "util";
 import { ServiceAccountKey } from "../types/service_account";
-import { CommandMessage } from "../types/command";
 import { DataSource, DryWidgetConfig } from "../types/dashboards";
 import { getProjectDataContext } from "./context_data";
 import DatakiException from "../types/exceptions";
@@ -458,7 +457,7 @@ export const generateSamplePrompts = async (
         initialWidgetConfig
     }: {
         firestore: FirebaseFirestore.Firestore,
-        history: Array<CommandMessage> | undefined,
+        history: Array<ChatMessage> | undefined,
         dataSources: DataSource[],
         initialWidgetConfig?: DryWidgetConfig
     }

@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "dependencies": {
+    "@firebase/auth": "^1.7.6",
     "@firecms/core": "3.0.0-canary.99",
     "@firecms/firebase": "3.0.0-canary.99",
     "@firecms/formex": "3.0.0-canary.99",

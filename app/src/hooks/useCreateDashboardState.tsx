@@ -1,10 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Node } from "@reactflow/core";
 
 import { convertWidgetsToNodes } from "../components/utils/dashboard";
 import { Dashboard, DashboardItem, DashboardPage, DateParams, Position, WidgetSize } from "../types";
 import { randomString } from "@firecms/core";
-import { NodeChange, NodePositionChange } from "reactflow";
+import { Node, NodeChange, NodePositionChange } from "reactflow";
 import { TextNodeProps } from "../components/dashboards/nodes/TextNode";
 import { ChartNodeProps } from "../components/dashboards/nodes/ChartNode";
 

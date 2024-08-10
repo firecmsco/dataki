@@ -1,4 +1,4 @@
-import { Node } from "@reactflow/core";
+import { Node } from "reactflow";
 import { DashboardItem, DateParams, Position, WidgetSize } from "../../types";
 import { ChartNodeProps } from "../dashboards/nodes/ChartNode";
 import { TextNodeProps } from "../dashboards/nodes/TextNode";
