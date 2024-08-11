@@ -125,11 +125,11 @@ export function DatakiLogin({
                                             By signing in you agree to our <a
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            href={"./policy/terms"}>
+                                            href={"https://dataki.ai/terms_and_conditions"}>
                                             Terms and Conditions</a> and our <a
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            href={"./policy/privacy"}>
+                                            href={"https://dataki.ai/privacy_policy"}>
                                             Privacy policy</a>
                                         </Typography>
                                     }/>
@@ -283,7 +283,7 @@ const googleIcon = () => <>
 </>;
 
 const subscribeNewsletter = (email: string) => {
-    const url = "https://api-drplyi3b6q-ey.a.run.app/notifications/newsletter";
+    const url = " https://datakiapi-4mgflsd2ha-ey.a.run.app/notifications/newsletter";
     fetch(url, {
         method: "POST",
         headers: {
@@ -291,7 +291,7 @@ const subscribeNewsletter = (email: string) => {
         },
         body: JSON.stringify({
             email_address: email,
-            source: "dataki"
+            source: "dataki-app"
         })
     }).then((res) => {
         console.log("newsletter response", res);
