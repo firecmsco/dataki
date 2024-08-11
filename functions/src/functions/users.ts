@@ -32,6 +32,8 @@ async function makeDashboardCopy(firestore: FirebaseFirestore.Firestore, dashboa
             edit: true,
             delete: true
         }],
+        deleted: false,
+        users: [uid],
         owner: uid,
         created_at: new Date(),
         updated_at: new Date(),
