@@ -9,7 +9,8 @@ import {
     signInWithCredential,
     signInWithPopup,
     signOut,
-    User as FirebaseUser
+    User as FirebaseUser,
+    UserCredential
 } from "@firebase/auth";
 import { FirebaseApp } from "@firebase/app";
 import { AuthController, Role, User } from "@firecms/core";
@@ -27,7 +28,7 @@ export type DatakiAuthController = AuthController<FirebaseUser> & {
     // googleLogin: () => Promise<FirebaseUser | null>;
     authProviderError?: any;
     permissionsNotGrantedError: boolean;
-    updateOauth: (params: Partial<OauthParams>) => Promise<void>;
+    updateOauth: (params: Partial<OauthParams>) => Promise<UserCredential | null>;
 };
 
 export interface OauthParams {
@@ -43,12 +44,12 @@ export interface OauthParams {
  * @group Firebase
  */
 export const useDatakiAuthController = ({
-                                              loading,
-                                              firebaseApp,
-                                              apiEndpoint,
-                                              onSignOut: onSignOutProp,
-                                              defineRolesFor
-                                          }: DatakiAuthControllerProps): DatakiAuthController => {
+                                            loading,
+                                            firebaseApp,
+                                            apiEndpoint,
+                                            onSignOut: onSignOutProp,
+                                            defineRolesFor
+                                        }: DatakiAuthControllerProps): DatakiAuthController => {
 
     const [loggedUser, setLoggedUser] = useState<FirebaseUser | null | undefined>(undefined); // logged user, anonymous or logged out
     const [authError, setAuthError] = useState<any>();
@@ -86,19 +87,19 @@ export const useDatakiAuthController = ({
         }
     }, [defineRolesFor, roles]);
 
-    const updateOauth = useCallback(async (params: Partial<OauthParams>): Promise<void> => {
+    const updateOauth = useCallback(async (params: Partial<OauthParams>): Promise<UserCredential | null> => {
         if (!params.code) {
             setAuthError("Oauth error: No code provided");
-            return;
+            return null;
         }
         const scopes = params.scope?.split(" ");
         if (!scopes?.includes("https://www.googleapis.com/auth/cloud-platform")) {
             setAuthError("Required scopes not granted");
-            return;
+            return null;
         }
 
+        setAuthLoading(true);
         const credentials = await exchangeCodeForToken(window.location.origin, params.code, apiEndpoint);
-        console.log("credentials", credentials);
         const credential = GoogleAuthProvider.credential(credentials.id_token);
         return signInWithCredential(getAuth(firebaseApp), credential)
             .then(async (result) => {
@@ -107,6 +108,10 @@ export const useDatakiAuthController = ({
                     throw Error("No user returned from sign in with credential");
                 }
                 await postUserCredentials(credentials, await result.user.getIdToken(), apiEndpoint);
+                return result;
+            })
+            .finally(() => {
+                setAuthLoading(false);
             });
     }, [apiEndpoint, firebaseApp]);
 

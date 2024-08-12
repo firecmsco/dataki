@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { BooleanSwitchWithLabel, Button, CenteredView, cls, Typography } from "@firecms/ui";
 import { DatakiAuthController, OauthParams } from "../hooks/useDatakiAuthController";
-import { ErrorView } from "@firecms/core";
+import { CircularProgressCenter, ErrorView } from "@firecms/core";
 import { generateAuthUrl } from "../api";
 import { DatakiConfig } from "../DatakiProvider";
 
@@ -15,6 +15,7 @@ export function DatakiLogin({
     authController: DatakiAuthController
 }) {
 
+    const subscribing = useRef(false);
     useEffect(() => {
         const url = new URL(window.location.href);
         const searchParams = new URLSearchParams(url.search);
@@ -23,7 +24,19 @@ export function DatakiLogin({
         for (const [key, value] of searchParams.entries()) {
             params[key as keyof OauthParams] = value as any;
         }
-        authController.updateOauth(params);
+        const subscribeToNewsletter = loadSubscribeToNewsletter();
+
+        console.log("subscribeToNewsletter", subscribeToNewsletter);
+        authController.updateOauth(params).then((credential) => {
+            if (subscribeToNewsletter && credential?.user.email && !subscribing.current) {
+                subscribing.current = true;
+                subscribeNewsletter(credential.user.email)
+                    .finally(() => {
+                        subscribing.current = false;
+                    });
+            }
+            cleanUp();
+        });
     }, [authController]);
 
     const [termsAccepted, setTermsAccepted] = useState(false);
@@ -81,6 +94,10 @@ export function DatakiLogin({
     //     // @ts-ignore
     // }, []);
 
+    if (authController.authLoading || authController.initialLoading) {
+        return <CircularProgressCenter/>
+    }
+
     return <CenteredView maxWidth={"lg"}>
         <div className="flex flex-col items-center justify-center min-w-full p-2">
             <div className={"m-4"} style={{
@@ -101,13 +118,15 @@ export function DatakiLogin({
                 your <b>BigQuery</b> data, powered by <b>Gemini</b>.
             </Typography>
 
-
             {buildErrorView()}
 
             <BooleanSwitchWithLabel size="small"
                                     invisible={true}
                                     value={subscribeToNewsletter}
-                                    onValueChange={setSubscribeToNewsletter}
+                                    onValueChange={(v) => {
+                                        setSubscribeToNewsletter(v);
+                                        saveSubscribeToNewsletter(v);
+                                    }}
                                     position={"start"}
                                     label={
                                         <Typography variant={"caption"} color={"primary"}>
@@ -284,7 +303,7 @@ const googleIcon = () => <>
 
 const subscribeNewsletter = (email: string) => {
     const url = " https://datakiapi-4mgflsd2ha-ey.a.run.app/notifications/newsletter";
-    fetch(url, {
+    return fetch(url, {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
@@ -296,4 +315,16 @@ const subscribeNewsletter = (email: string) => {
     }).then((res) => {
         console.log("newsletter response", res);
     });
+}
+
+function loadSubscribeToNewsletter() {
+    return localStorage.getItem("subscribeToNewsletter") === "true";
+}
+
+function saveSubscribeToNewsletter(subscribeToNewsletter: boolean) {
+    localStorage.setItem("subscribeToNewsletter", subscribeToNewsletter ? "true" : "false");
+}
+
+function cleanUp() {
+    localStorage.removeItem("subscribeToNewsletter");
 }
