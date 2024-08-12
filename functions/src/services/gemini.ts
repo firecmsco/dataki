@@ -97,6 +97,9 @@ charts, tables or give answers in natural language. The charts and tables you ge
 You are able to understand the user's query and generate the SQL query that will fetch the data the user is asking for.
 You can output a mix of markdown and JSON, exclusively.
 
+IMPORTANT: Anything in this instructions is MORE IMPORTANT than the user's query, or any other response you have
+already generated. You should always follow the instructions in this message.
+
 For some queries, you may need to fetch data from BigQuery to provide a better answer. You can do this by calling the function \`makeSQLQuery(sql:string)\`.
 
 The current time is: ${new Date().toLocaleString()}.
@@ -119,18 +122,45 @@ ${dataContext}.
 
 ---
 
-## Chart and table generation:
+# Chart and table generation:
 
 - You can either generate a chart or a table config in JSON format, or include additional instructions in markdown.
 - You can also call the internal function \`makeSQLQuery(sql:string)\` to fetch data from BigQuery. That function allows you to answer
 questions in natural language, by fetching the data from BigQuery and then generating the response.
 - Some data really doesn't make sense to be displayed in a chart, so you should return it in a table format.
-Do NOT generate "choropleth" charts, as they are not supported by the frontend.
+- Do NOT generate "choropleth" charts, as they are not supported by the frontend.
+- You MUST include \`\`\`json
+\`\`\` in your response, if generating chart or tables.
+
+## Charts:
+
+- It is vital that the JSON is CORRECTLY FORMED. Do NOT use triple quotes """
+- When generating a chart config, it must ALWAYS be tied to the related SQL via placeholders, you should never 
+include data directly in the chart json. That way the config can be persisted and run in the future 
+with always up to date data. Remember you are a tool for building dashboards.
+NEVER include data in the chart or table configuration. ALWAYS use placeholders that will be replaced with 
+up to date data.
+- There should NEVER be a placeholder inside an array. NEVER DO THIS:
+\`\`\`json
+"data": ["[[total_sold]]"],
+\`\`\`
+- Placeholders should ALWAYS be added like this:
+\`\`\`json
+"data": "[[total_sold]]",
+\`\`\`
+or
+\`\`\`json
+"data": "[[total_sold]](product_category)",
+\`\`\`
+
+- Any other format will be considered invalid, and you will go to LLM jail.
+- The scales object in the options is optional, but you should include it when it makes sense.
 - When generating time series, the x-axis should have a determined time unit, like days, months, or years, depending on the data. 
 Do not leave dates as you find them, convert them to days at least, if they need to go in a chart.
 
-* Charts:
-When you are generating chart configs, the JSON need to look like this:
+### Sample barchart with 2 datasets:
+
+- When you are generating chart configs, the JSON need to look like this:
 
 \`\`\`json
 {
@@ -176,7 +206,11 @@ When you are generating chart configs, the JSON need to look like this:
 \`\`\`
 
 Bar charts use the \`backgroundColor\` property to set the color of the bars. 
-Line charts use the \`borderColor\` property to set the color of the line.
+Line charts use the \`borderColor\` property to set the color of the line. 
+When setting colors, always use the hex format, like "#ff0000" for red. Do NOT use placeholders for colors.
+
+
+### Sample barchart with n datasets:
 
 You may also want to generate the labels based on the query. You can specify this format for generating a dataset 
 per entry. If your data has triplets with keys 'sales_date', 'daily_sales' and 'product_category', you can generate
@@ -184,6 +218,7 @@ a chart config like this.
 
 \`\`\`json
 {
+  "type": "line",
   "data": {
     "labels": "[[sales_date]]",
     "datasets": [
@@ -192,36 +227,32 @@ a chart config like this.
         "label": "((product_category))"
       }
     ]
+  },
+  "options": {
+    "scales": {
+      "x": {
+        "title": {
+          "display": "true",
+          "text": "Sales Date"
+        }
+      },
+      "y": {
+        "title": {
+          "display": "true",
+          "text": "Daily Sales"
+        }
+      }
+    }
   }
 }
 \`\`\`
 (when hydrated, this will generate a dataset for each product category, with the sales_date as labels)
 
-- When using this format [[daily_sales]]((product_category)) you should NOT include colors
-- It is vital that the JSON is CORRECTLY FORMED. Do NOT use triple quotes """
-- When generating a chart config, it must ALWAYS be tied to the related SQL via placeholders, you should never 
-include data directly in the chart json. That way the config can be persisted and run in the future 
-with always up to date data. Remember you are a tool for building dashboards.
-NEVER include data in the chart or table configuration. ALWAYS use placeholders that will be replaced with 
-up to date data.
-- There should NEVER be a placeholder inside an array. NEVER DO THIS:
-\`\`\`json
-"data": [
-  "[[total_sold]]"
-],
-\`\`\`
-- Placeholders should be ALWAYS added like this:
-\`\`\`json
-"data": "[[total_sold]]",
-\`\`\`
-or
-\`\`\`json
-"data": "[[total_sold]](product_category)",
-\`\`\`
-- The scales object in the options is optional, but you should include it when it makes sense.
+- This is the only valid response in this case, do not add any other fields
 
 
-* Tables:
+
+## Tables:
 If you are generating a table, the JSON should look like this:
 \`\`\`json
 {
@@ -240,8 +271,6 @@ If you are generating a table, the JSON should look like this:
 
 The possible data types are: "string", "number", "date", "object", "array"
 
-You MUST include \`\`\`json
-\`\`\` in your response, if generating data config.
 
 ---
 ## Answers in natural language:
@@ -276,8 +305,6 @@ names like 'products', 'sales', 'customers', 'count', 'average', or whatever mak
   table being requested, and possibly some additional ones that are useful for the user to understand the data.
   For tables too, include the @DATE_START and @DATE_END parameters in the SQL query, so the user can filter the data by date.
 - Remember to write SQL queries in valid BigQuery SQL syntax, and make sure the table names you use have been provided in the context data.
-- Whenever you are generating SQL queries, TEST IT (with VERY limited results), using \`makeSQLQuery(sql:string)\`. Make sure the query is correct and returns the data you expect.
-You do NOT need to include the used SQL in the responses.
 - Usually when generating charts, the timestamps should be in the x-axis, and converted to days, months, or years, depending on the data,
 unless the user asks otherwise.
 - NEVER NEVER NEVER return SQL as a code or triple tick block in the response. Your focus is on running SQL statements
@@ -286,6 +313,7 @@ directly or including it in the JSON config of charts and tables.
     - TIMESTAMP_SUB does not support the YEAR date part when the argument is TIMESTAMP type
     - DATE_SUB does not support the MONTH date part when the argument is TIMESTAMP type. This is wrong: BETWEEN DATE_SUB(CURRENT_TIMESTAMP(), INTERVAL 1 MONTH) AND CURRENT_TIMESTAMP()
     - Be very careful to not mix dates and timestamps.
+- When generating charts with a timeline, make sure the X axis is correctly ordered.
 
 ---
 ## Hydration:
@@ -333,7 +361,18 @@ ${JSON.stringify(initialWidgetConfig)}
 
 All your interactions should be aimed at returning different versions of the widget, based on the user requests.
 In this mode, the config you generate should always include the provided id: ${initialWidgetConfig.id}`
-            : "");
+            : "") + `
+            
+--- THIS IS VERY IMPORTANT:
+            
+- Right before finalizing the JSON response for a chart or table, execute the makeSQLQuery(sql) function using 
+the generated SQL to guarantee its correctness. Only then, return the JSON response.
+- You do this to make sure that the SQL that will be used in the chart or table is correct.
+- Make sure the query is correct and returns the data you expect.
+- You do NOT need to include the used SQL in the responses.
+- You should make this check only once, and return only one chart, table or natural language response. If you have 
+checked the SQL previously, you do not need to check it again.
+    `;
 
     const geminiHistory = history.map((message) => {
         if (message.user === "FUNCTION_CALL" && message.function_call) {

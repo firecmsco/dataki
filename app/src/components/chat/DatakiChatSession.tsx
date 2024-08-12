@@ -240,15 +240,19 @@ export function DatakiChatSession({
                 date: new Date()
             }];
         onMessagesChange?.(currentMessages);
+
+        const loadingMessage: ChatMessage = {
+            id: systemMessageId,
+            loading: true,
+            text: "",
+            user: "SYSTEM",
+            date: new Date()
+        };
+
         setMessages([
             ...currentMessages,
-            {
-                id: systemMessageId,
-                loading: true,
-                text: "",
-                user: "SYSTEM",
-                date: new Date()
-            }]);
+            loadingMessage
+        ]);
 
         setTextInput("");
         scrollToBottom();
@@ -295,8 +299,10 @@ export function DatakiChatSession({
                 };
                 newMessages.push(sqlMessage);
                 currentMessages = newMessages;
-                console.log("Setting messages", newMessages);
-                setMessages(newMessages);
+                setMessages([
+                    ...currentMessages,
+                    loadingMessage
+                ]);
                 if (isUserScrolledDownRef.current) {
                     scrollToBottom();
                 }

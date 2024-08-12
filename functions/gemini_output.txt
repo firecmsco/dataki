@@ -1,64 +1,10 @@
-```json
-{
-  "title": "Data in users_changelog table",
-  "description": "This table shows the data available in the users_changelog table",
-  "type": "table",
-  "sql": "SELECT * FROM firecms-backend.firestore_export.users_changelog LIMIT 10",
-  "table": {
-    "columns": [
-      {
-        "key": "document_name",
-        "name": "document_name",
-        "dataType": "string"
-      },
-      {
-        "key": "document_id",
-        "name": "document_id",
-        "dataType": "string"
-      },
-      {
-        "key": "timestamp",
-        "name": "timestamp",
-        "dataType": "timestamp"
-      },
-      {
-        "key": "operation",
-        "name": "operation",
-        "dataType": "string"
-      },
-      {
-        "key": "email",
-        "name": "email",
-        "dataType": "string"
-      },
-      {
-        "key": "projects",
-        "name": "projects",
-        "dataType": "string"
-      },
-      {
-        "key": "created_on",
-        "name": "created_on",
-        "dataType": "timestamp"
-      },
-      {
-        "key": "projects_member",
-        "name": "projects_member",
-        "dataType": "string"
-      },
-      {
-        "key": "projects_index",
-        "name": "projects_index",
-        "dataType": "number"
-      }
-    ]
-  },
-  "projectId": "firecms-backend",
-  "dataSources": [
-    {
-      "projectId": "firecms-backend",
-      "datasetId": "firestore_export"
-    }
-  ]
-}
-```
+Here's the number of orders placed each day last week:
+
+* **2024-08-05**: 78 orders
+* **2024-08-06**: 353 orders
+* **2024-08-07**: 488 orders
+* **2024-08-08**: 690 orders
+* **2024-08-09**: 968 orders
+* **2024-08-10**: 1659 orders
+* **2024-08-11**: 643 orders
+* **2024-08-12**: 403 orders 
