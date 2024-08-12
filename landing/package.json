@@ -1,0 +1,12 @@
+{
+  "name": "dataki-landing",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "npx tailwindcss -o ./src/index.css --watch ",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "deploy": "npx tailwindcss -o ./src/index.css && firebase deploy --only hosting --project datatalk-443fb"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": ""
+}
