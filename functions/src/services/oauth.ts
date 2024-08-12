@@ -2,6 +2,9 @@ import { google } from "googleapis";
 import { Credentials } from "google-auth-library";
 import axios, { AxiosResponse } from "axios";
 
+export const infoScope = "https://www.googleapis.com/auth/userinfo.email";
+export const cloudPlatformScope = "https://www.googleapis.com/auth/cloud-platform";
+
 export function getAuthUrl(redirect_uri: string) {
     const oauth2Client = new google.auth.OAuth2(
         process.env.GOOGLE_CLIENT_ID,
@@ -12,7 +15,7 @@ export function getAuthUrl(redirect_uri: string) {
     return oauth2Client.generateAuthUrl({
         access_type: "offline",
         prompt: "consent",
-        scope: ["https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/cloud-platform"],
+        scope: [infoScope, cloudPlatformScope].join(" "),
         include_granted_scopes: true
     });
 }
@@ -40,7 +43,6 @@ export function getOauthTokenFromCode(code: string, redirect_uri: string): Promi
     });
 }
 
-
 export function refreshOauthCredentials(credentials: Credentials): Promise<Credentials> {
     const client_id = process.env.GOOGLE_CLIENT_ID as string;
     const client_secret = process.env.GOOGLE_CLIENT_SECRET as string;
@@ -64,4 +66,10 @@ export function refreshOauthCredentials(credentials: Credentials): Promise<Crede
             console.log(res.data);
             return res.data;
         });
+}
+
+export function checkTokenHasScopes(token: Credentials, scopes: string[]): boolean {
+    if (!token.scope) return false;
+    const tokenScopes = token.scope.split(" ");
+    return scopes.every(scope => tokenScopes.includes(scope));
 }

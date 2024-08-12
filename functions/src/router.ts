@@ -4,6 +4,7 @@ import { datakiRouter } from "./routes/dataki";
 import oauthRouter from "./routes/oauth";
 import { dataRouter } from "./routes/sql";
 import notificationsRouter from "./routes/notifications";
+import usersRouter from "./routes/users";
 
 export const createRouter = (): Router => {
     const router = Router();
@@ -12,6 +13,7 @@ export const createRouter = (): Router => {
     router.use("/oauth", oauthRouter);
     router.use("/data", dataRouter);
     router.use("/notifications", notificationsRouter);
+    router.use("/users", usersRouter);
     return router;
 }
 

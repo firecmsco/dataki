@@ -36,7 +36,7 @@ export function saveCredentialsToFirestore(firestore: FirebaseFirestore.Firestor
         }, { merge: true });
 }
 
-export async function getUserAccessToken(firestore: FirebaseFirestore.Firestore, userId: string) {
+export async function getUserCredentials(firestore: FirebaseFirestore.Firestore, userId: string): Promise<Credentials> {
     const userDoc = await firestore.collection("users").doc(userId).get();
     if (!userDoc.exists) {
         throw new Error("User not found: " + userId);
@@ -53,8 +53,12 @@ export async function getUserAccessToken(firestore: FirebaseFirestore.Firestore,
         credentials = await refreshAccessToken(credentials.refresh_token);
         saveCredentialsToFirestore(firestore, userId, credentials).catch(console.error);
     }
-    return credentials.access_token;
+    return credentials;
+}
 
+export async function getUserAccessToken(firestore: FirebaseFirestore.Firestore, userId: string) {
+    const credentials = await getUserCredentials(firestore, userId);
+    return credentials.access_token;
 }
 
 export async function refreshAccessToken(refreshToken: string) {
