@@ -33,7 +33,7 @@ export type ChatMessage = {
 export type FunctionCall = {
     name: string;
     params: { [key: string]: any };
-    result: any
+    response: any
 }
 
 export type FeedbackSlug = "not_helpful"

@@ -1,39 +1,64 @@
 ```json
 {
-    "title": "Weekly Revenue",
-    "description": "This chart displays the total revenue generated each week.",
-    "type": "chart",
-    "sql": "SELECT\n  EXTRACT(WEEK FROM created_at) AS week,\n  SUM(sale_price) AS total_revenue\nFROM\n  `bigquery-public-data`.thelook_ecommerce.order_items\nWHERE\n  created_at BETWEEN @DATE_START AND @DATE_END\nGROUP BY\n  week\nORDER BY\n  week",
-    "id": "8k27ao1y76",
-    "position": {"y": 200, "x": 25},
-    "chart": {
-        "options": {
-            "scales": {
-                "y": {
-                    "title": {
-                        "display": "true",
-                        "text": "Total Revenue"
-                    }
-                },
-                "x": {
-                    "title": {
-                        "display": "true",
-                        "text": "Week"
-                    }
-                }
-            }
-        },
-        "data": {
-            "datasets": [
-                {
-                    "label": "Total Revenue",
-                    "borderColor": "#ef2727",
-                    "data": "[[total_revenue]]"
-                }
-            ],
-            "labels": "[[week]]"
-        },
-        "type": "line"
+  "title": "Data in users_changelog table",
+  "description": "This table shows the data available in the users_changelog table",
+  "type": "table",
+  "sql": "SELECT * FROM firecms-backend.firestore_export.users_changelog LIMIT 10",
+  "table": {
+    "columns": [
+      {
+        "key": "document_name",
+        "name": "document_name",
+        "dataType": "string"
+      },
+      {
+        "key": "document_id",
+        "name": "document_id",
+        "dataType": "string"
+      },
+      {
+        "key": "timestamp",
+        "name": "timestamp",
+        "dataType": "timestamp"
+      },
+      {
+        "key": "operation",
+        "name": "operation",
+        "dataType": "string"
+      },
+      {
+        "key": "email",
+        "name": "email",
+        "dataType": "string"
+      },
+      {
+        "key": "projects",
+        "name": "projects",
+        "dataType": "string"
+      },
+      {
+        "key": "created_on",
+        "name": "created_on",
+        "dataType": "timestamp"
+      },
+      {
+        "key": "projects_member",
+        "name": "projects_member",
+        "dataType": "string"
+      },
+      {
+        "key": "projects_index",
+        "name": "projects_index",
+        "dataType": "number"
+      }
+    ]
+  },
+  "projectId": "firecms-backend",
+  "dataSources": [
+    {
+      "projectId": "firecms-backend",
+      "datasetId": "firestore_export"
     }
+  ]
 }
 ```

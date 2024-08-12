@@ -256,8 +256,6 @@ export function DatakiChatSession({
         const firebaseToken = await getAuthToken();
         let currentMessageResponse = "";
 
-        console.log("messages", messages);
-
         setMessageLoading(true);
         streamDatakiCommand({
             firebaseAccessToken: firebaseToken,

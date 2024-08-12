@@ -81,7 +81,10 @@ export async function makeGeminiRequest({
             return await runSQLQuery({
                 sql: sql,
                 credentials: credentials
-            })
+            }).catch((error: any) => {
+                console.warn("Error running SQL query as LLM function call", error);
+                return error;
+            });
         }
     };
 
@@ -332,6 +335,34 @@ All your interactions should be aimed at returning different versions of the wid
 In this mode, the config you generate should always include the provided id: ${initialWidgetConfig.id}`
             : "");
 
+    const geminiHistory = history.map((message) => {
+        if (message.user === "FUNCTION_CALL" && message.function_call) {
+            return [{
+                role: "model",
+                parts: [{
+                    functionCall: {
+                        name: message.function_call.name,
+                        args: message.function_call.params
+                    }
+                }]
+            }, {
+                role: "function",
+                parts: [{
+                    functionResponse: {
+                        name: message.function_call.name,
+                        response: { functionResponse: message.function_call.response }
+                    }
+                }]
+            }]
+        }
+        return [{
+            parts: [{ text: message.text }],
+            role: message.user === "SYSTEM"
+                ? "model"
+                : "user"
+        }];
+    }).flat();
+
     const chat = geminiModel.startChat({
         systemInstruction: {
             parts: [{
@@ -339,25 +370,7 @@ In this mode, the config you generate should always include the provided id: ${i
             }],
             role: "user"
         },
-        history: history.map((message) => {
-            if (message.user === "FUNCTION_CALL" && message.function_call) {
-                return {
-                    role: "function",
-                    parts: [{
-                        functionResponse: {
-                            name: message.function_call.name,
-                            response: { functionResponse: message.function_call.result }
-                        }
-                    }]
-                }
-            }
-            return ({
-                parts: [{ text: message.text }],
-                role: message.user === "SYSTEM"
-                    ? "model"
-                    : "user"
-            });
-        })
+        history: geminiHistory
     });
 
     let totalDelta = "";
@@ -525,6 +538,8 @@ You ALWAYS return a JSON with an array of 4 sample prompts like:
 ]
 \`\`\`
 
+Do not suggest time spans in your suggestions, the app is in charge of applying them. Do not include bits like
+'last month', 'last year', etc.
 Try to think of the most common questions users might ask about the data you have in the BigQuery datasets.
 Especially related to data you would have in an analytics dashboard.
 Probably not count operations, but more like "Show me the sales of the last month", "Create a chart with the sales of the last month", etc.
