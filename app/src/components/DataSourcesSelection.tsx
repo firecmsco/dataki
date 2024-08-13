@@ -28,13 +28,16 @@ import { DataSource, GCPProject } from "../types";
 import React, { useEffect } from "react";
 import { useDataki } from "../DatakiProvider";
 import {
+    checkUserHasGCPPermissions,
     createServiceAccountLink,
     deleteServiceAccountLink,
     fetchDataSourcesForProject,
     fetchGCPProjects
 } from "../api";
-import { useSnackbarController } from "@firecms/core";
+import { ErrorView, useAuthController, User, useSnackbarController } from "@firecms/core";
 import { OnboardingTooltip } from "./OnboardingTooltip";
+import { DatakiLogin } from "./DatakiLogin";
+import { DatakiAuthController } from "../hooks/useDatakiAuthController";
 
 const PREVIEW_DATASOURCES_COUNT = 3;
 
@@ -45,6 +48,8 @@ export type DataSourceSelectionProps = {
     dataSources: DataSource[];
     setDataSources: (dataSources: DataSource[]) => void;
     className?: string;
+    initialDataSourceSelectionOpen?: boolean;
+    onDataSourceSelectionOpenChange?: (open: boolean) => void
 }
 
 function renderSelectProject(project: GCPProject) {
@@ -72,9 +77,13 @@ export function DataSourcesSelection({
                                          projectDisabled,
                                          dataSources,
                                          setDataSources,
-                                         className
+                                         className,
+                                         initialDataSourceSelectionOpen,
+                                         onDataSourceSelectionOpenChange
                                      }: DataSourceSelectionProps) {
 
+    const datakiConfig = useDataki();
+    const authController = useAuthController<User, DatakiAuthController>();
     const snackbar = useSnackbarController()
 
     const [dataSourcesInternal, setDataSourcesInternal] = React.useState<DataSource[]>(dataSources);
@@ -82,13 +91,48 @@ export function DataSourcesSelection({
         setDataSourcesInternal(dataSources);
     }, [dataSources]);
 
-    const [dialogOpen, setDialogOpen] = React.useState(false);
-    const datakiConfig = useDataki();
+    const [dialogOpen, setDialogOpen] = React.useState(initialDataSourceSelectionOpen ?? false);
     const [projects, setProjects] = React.useState<GCPProject[]>([]);
     const [loadingProjects, setLoadingProjects] = React.useState(false);
     const [projectError, setProjectError] = React.useState<string | undefined>(undefined);
 
+    const [projectDataSources, setProjectDataSources] = React.useState<DataSource[]>([]);
+    const [loadingDataSources, setLoadingDataSources] = React.useState(false);
+    const [projectDataSourcesError, setProjectDataSourcesError] = React.useState<string | undefined>(undefined);
+
+    const selectedProject = projects.find((p) => p.projectId === projectId);
+
+    const [userHasPermissionsLoading, setUserHasPermissionsLoading] = React.useState<boolean>(true);
+    const [userHasGCPPermissions, setUserHasGCPPermissions] = React.useState<boolean>(false);
+
+    const [newDataSource, setNewDataSource] = React.useState<{ projectId: string, datasetId: string }>({
+        projectId: "",
+        datasetId: ""
+    });
+
+    const [unlinkLoading, setUnlinkLoading] = React.useState(false);
+
+    const updateDialogOpen = (open: boolean) => {
+        setDialogOpen(open);
+        if (onDataSourceSelectionOpenChange) {
+            onDataSourceSelectionOpenChange(open);
+        }
+    }
+
+    useEffect(() => {
+        if (!authController.user?.uid) {
+            return;
+        }
+        setUserHasPermissionsLoading(true);
+        checkUserHasGCPPermissions(authController.user?.uid, datakiConfig.apiEndpoint)
+            .then(setUserHasGCPPermissions)
+            .finally(() => setUserHasPermissionsLoading(false));
+    }, []);
+
     async function loadProjects() {
+        if (!userHasGCPPermissions) {
+            return;
+        }
         const accessToken = await datakiConfig.getAuthToken();
         setLoadingProjects(true);
         setProjectError(undefined);
@@ -110,36 +154,25 @@ export function DataSourcesSelection({
             .finally(() => setLoadingProjects(false));
     }
 
-    const [projectDataSources, setProjectDataSources] = React.useState<DataSource[]>([]);
-    const [loadingDataSources, setLoadingDataSources] = React.useState(false);
-    const [projectDataSourcesError, setProjectDataSourcesError] = React.useState<string | undefined>(undefined);
-
-    const selectedProject = projects.find((p) => p.projectId === projectId);
-
     useEffect(() => {
-        loadProjects();
-        if (projectId) {
-            loadDataSourcesFor(projectId);
+        if (userHasGCPPermissions) {
+            loadProjects();
+            if (projectId) {
+                loadDataSourcesFor(projectId);
+            }
         }
-    }, [])
+    }, [userHasGCPPermissions])
 
     async function loadDataSourcesFor(projectId: string) {
-        const accessToken = await datakiConfig.getAuthToken();
         setLoadingDataSources(true);
         setProjectDataSources([]);
         setProjectDataSourcesError(undefined);
+        const accessToken = await datakiConfig.getAuthToken();
         return fetchDataSourcesForProject(accessToken, datakiConfig.apiEndpoint, projectId)
             .then(setProjectDataSources)
             .catch(setProjectDataSourcesError)
             .finally(() => setLoadingDataSources(false));
     }
-
-    const [newDataSource, setNewDataSource] = React.useState<{ projectId: string, datasetId: string }>({
-        projectId: "",
-        datasetId: ""
-    });
-
-    const [unlinkLoading, setUnlinkLoading] = React.useState(false);
 
     async function unlinkProject(projectId: string) {
         const token = await datakiConfig.getAuthToken();
@@ -176,7 +209,7 @@ export function DataSourcesSelection({
             side={"right"}>
             <Label
                 onClick={() => {
-                    setDialogOpen(true);
+                    updateDialogOpen(true);
                 }}
                 className={cls("bg-white dark:bg-gray-800 flex-wrap w-fit font-normal border cursor-pointer rounded-md p-2 px-3 flex items-center gap-2 [&:has(:checked)]:bg-gray-100 dark:[&:has(:checked)]:bg-gray-800", className)}
             >
@@ -202,13 +235,12 @@ export function DataSourcesSelection({
 
             <Dialog maxWidth={"6xl"}
                     open={dialogOpen}
-                    onOpenChange={setDialogOpen}
+                    onOpenChange={updateDialogOpen}
                     onOpenAutoFocus={(e) => {
                         e.preventDefault();
                     }}>
                 <DialogContent className={"flex flex-col lg:flex-row gap-12 my-8 mx-6"}>
                     <div className={"flex flex-col gap-4 flex-grow lg:w-1/2"}>
-
 
                         <Typography variant={"subtitle2"}>
                             Your datasets
@@ -217,33 +249,34 @@ export function DataSourcesSelection({
                             Select your BigQuery data sources from your Google Cloud Platform projects
                         </Typography>
 
-                        {(projectDataSources ?? []).length === 0 && !loadingProjects && (
+                        {(projectDataSources ?? []).length === 0 && (
                             <EmptyValue/>
                         )}
                         {projectError && (
-                            <Typography variant={"caption"} color={"error"}>
-                                {projectError}
-                            </Typography>
+                            <ErrorView error={projectError}/>
+                        )}
+                        {projectDataSourcesError && (
+                            <ErrorView error={projectDataSourcesError}/>
                         )}
 
-                        {selectedProject?.linked && (
+                        {(
                             <>
                                 <Typography variant={"label"} component="div"
                                             className={"flex flex-row items-center gap-2"}>
                                     Data sources in project
-                                    <IconButton
+                                    {selectedProject?.linked && <IconButton
                                         size={"smallest"}
                                         onClick={() => loadDataSourcesFor(selectedProject.projectId)}>
                                         <CachedIcon size={"smallest"}/>
-                                    </IconButton>
-                                    <IconButton
+                                    </IconButton>}
+                                    {selectedProject?.linked && <IconButton
                                         size={"smallest"}
                                         disabled={unlinkLoading}
                                         onClick={() => unlinkProject(selectedProject.projectId)}>
                                         <LinkOffIcon size={"smallest"}/>
-                                    </IconButton>
+                                    </IconButton>}
                                 </Typography>
-                                {loadingDataSources && (
+                                {(loadingProjects || loadingDataSources) && (
                                     <CircularProgress size={"small"}/>
                                 )}
                                 {!loadingDataSources && projectDataSources?.length > 0 &&
@@ -280,7 +313,7 @@ export function DataSourcesSelection({
                                     </div>
                                 }
 
-                                {!loadingDataSources && projectDataSources.length === 0 &&
+                                {!loadingDataSources && !loadingProjects && projectDataSources.length === 0 &&
                                     <Typography color={"secondary"}>
                                         No data sources available for this project
                                     </Typography>}
@@ -352,6 +385,8 @@ export function DataSourcesSelection({
                     </div>
 
                     <div className={"flex flex-col gap-4 flex-grow lg:w-1/2"}>
+
+
                         <Typography variant={"subtitle2"}>
                             Session project
                         </Typography>
@@ -360,9 +395,13 @@ export function DataSourcesSelection({
                         </Typography>
                         <OnboardingTooltip id={"project_select"} title={"Select your GCP project"} side={"left"}>
                             <Select placeholder={"Select a project"}
+
                                     value={projectId ?? ""}
-                                    disabled={projectDisabled}
+                                    disabled={userHasPermissionsLoading || projectDisabled || !userHasGCPPermissions}
                                     renderValue={(value) => {
+                                        if (userHasPermissionsLoading) {
+                                            return <CircularProgress size={"small"}/>
+                                        }
                                         if (!value) {
                                             return "Select a project";
                                         }
@@ -373,13 +412,25 @@ export function DataSourcesSelection({
                                         setProjectId(value);
                                         loadDataSourcesFor(value);
                                     }}>
-                                {projects.map((project) => (
+                                {projects && projects.map((project) => (
                                     <SelectItem key={project.projectId} value={project.projectId}>
                                         {renderSelectProject(project)}
                                     </SelectItem>
                                 ))}
                             </Select>
                         </OnboardingTooltip>
+
+                        {!userHasPermissionsLoading && !userHasGCPPermissions && (
+                            <>
+                                <Alert color={"warning"}>
+                                    You need to have the necessary permissions to access Google Cloud Platform projects
+                                </Alert>
+                                <DatakiLogin authController={authController}
+                                             datakiConfig={datakiConfig}
+                                             smallLayout={true}
+                                             includeGCPScope={true}/>
+                            </>
+                        )}
 
                         {selectedProject && !selectedProject.linked && (
                             <>
@@ -419,7 +470,7 @@ export function DataSourcesSelection({
                         </Typography>
 
                         <div className={"flex flex-col gap-2"}>
-                            {dataSourcesInternal.map((dataSource, index) => (
+                            {dataSourcesInternal && dataSourcesInternal.map((dataSource, index) => (
                                 <Label
                                     key={dataSource.datasetId}
                                     className="w-full border cursor-pointer rounded-md p-2 px-3 flex items-center gap-2 [&:has(:checked)]:bg-gray-100 dark:[&:has(:checked)]:bg-gray-800 font-normal"
@@ -455,7 +506,7 @@ export function DataSourcesSelection({
                     <Button
                         variant={"text"}
                         onClick={() => {
-                            setDialogOpen(false);
+                            updateDialogOpen(false);
                         }}>
                         Close
                     </Button>
@@ -464,7 +515,7 @@ export function DataSourcesSelection({
                         disabled={dataSourcesInternal.length === 0}
                         onClick={() => {
                             setDataSources(dataSourcesInternal);
-                            setDialogOpen(false);
+                            updateDialogOpen(false);
                         }}>
                         Done
                     </Button>

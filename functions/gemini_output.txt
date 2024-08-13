@@ -1,10 +1,7 @@
-Here's the number of orders placed each day last week:
+There are **5** order statuses:
 
-* **2024-08-05**: 78 orders
-* **2024-08-06**: 353 orders
-* **2024-08-07**: 488 orders
-* **2024-08-08**: 690 orders
-* **2024-08-09**: 968 orders
-* **2024-08-10**: 1659 orders
-* **2024-08-11**: 643 orders
-* **2024-08-12**: 403 orders 
+*   **Shipped**: 37514 orders
+*   **Complete**: 31168 orders
+*   **Processing**: 25032 orders
+*   **Cancelled**: 19161 orders
+*   **Returned**: 12572 orders 

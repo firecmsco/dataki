@@ -92,11 +92,6 @@ export const useDatakiAuthController = ({
             setAuthError("Oauth error: No code provided");
             return null;
         }
-        const scopes = params.scope?.split(" ");
-        if (!scopes?.includes("https://www.googleapis.com/auth/cloud-platform")) {
-            setAuthError("Required scopes not granted");
-            return null;
-        }
 
         setAuthLoading(true);
         const credentials = await exchangeCodeForToken(window.location.origin, params.code, apiEndpoint);

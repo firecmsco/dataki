@@ -65,6 +65,8 @@ export function DatakiChatSession({
                                       onProjectIdChange,
                                       initialWidgetConfig,
                                       onInitialWidgetConfigChange,
+                                      initialDataSourceSelectionOpen,
+                                      onDataSourceSelectionOpenChange,
                                       className
                                   }: {
     session: ChatSession,
@@ -75,7 +77,9 @@ export function DatakiChatSession({
     onProjectIdChange?: (projectId: string) => void,
     initialWidgetConfig?: DryWidgetConfig,
     onInitialWidgetConfigChange?: (newConfig: DryWidgetConfig) => void
-    className?: string
+    initialDataSourceSelectionOpen?: boolean,
+    onDataSourceSelectionOpenChange?: (open: boolean) => void
+    className?: string,
 }) {
 
     const authController = useAuthController();
@@ -511,6 +515,8 @@ export function DatakiChatSession({
                                                   setProjectId={updateProjectId}
                                                   projectDisabled={messages.length > 0}
                                                   dataSources={dataSources}
+                                                  initialDataSourceSelectionOpen={initialDataSourceSelectionOpen}
+                                                  onDataSourceSelectionOpenChange={onDataSourceSelectionOpenChange}
                                                   setDataSources={updateDataSources}/>
 
                             {projectId && (messages.length > 0 || initialWidgetConfig) &&

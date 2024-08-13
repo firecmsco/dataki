@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { DatakiConfig } from "../DatakiProvider";
 import { CircularProgressCenter } from "@firecms/core";
-import { useLocation, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { DatakiChatSession } from "../components/chat/DatakiChatSession";
-import { ChatMessage, DataSource, ChatSession } from "../types";
+import { ChatMessage, ChatSession, DataSource } from "../types";
 
 export function ChatSessionRoute({
                                      datakiConfig,
@@ -42,6 +42,7 @@ function ChatRouteInner({
                             autoRunCode,
                             setAutoRunCode
                         }: ChatRouteInnerProps) {
+    const navigate = useNavigate();
 
     const location = useLocation();
 
@@ -50,6 +51,10 @@ function ChatRouteInner({
 
     const [session, setSession] = React.useState<ChatSession | undefined>(undefined);
     const [loading, setLoading] = React.useState(true);
+
+    // I need to hold the data source dialog open state in the URL
+    // so that the user can refresh the page and the dialog remains open
+    const initialDataSourceSelectionOpen = params.get("dataSource") === "true";
 
     useEffect(() => {
         setLoading(true);
@@ -107,6 +112,15 @@ function ChatRouteInner({
             onDataSourcesChange={onDataSourcesChange}
             onProjectIdChange={onProjectIdChange}
             onMessagesChange={onMessagesChange}
+            initialDataSourceSelectionOpen={initialDataSourceSelectionOpen}
+            onDataSourceSelectionOpenChange={(open) => {
+                const searchParams = new URLSearchParams(location.search);
+                if (open) searchParams.set("dataSource", "true");
+                else searchParams.delete("dataSource");
+                navigate({
+                    search: searchParams.toString()
+                }, { replace: true });
+            }}
         />
     )
 }

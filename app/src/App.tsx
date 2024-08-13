@@ -30,6 +30,7 @@ import { TermsAndConditions } from "./policy/terms_conditions";
 import { DatakiProvider, useBuildDatakiConfig } from "./DatakiProvider";
 import { DatakiDrawer } from "./components/DatakiDrawer";
 import { DatakiRoutes } from "./DatakiRoutes";
+import { useManageOauthCallback } from "./hooks/useManageOauthCallback";
 
 const API_ENDPOINT = import.meta.env.VITE_API_ENDPOINT;
 if (!API_ENDPOINT) {
@@ -45,6 +46,7 @@ export function App() {
     } = useInitialiseFirebase({
         firebaseConfig
     });
+
     /**
      * Controller used to manage the dark or light color mode
      */
@@ -57,6 +59,8 @@ export function App() {
         firebaseApp,
         apiEndpoint: API_ENDPOINT
     });
+
+    useManageOauthCallback(authController);
 
     /**
      * Controller for saving some user preferences locally.
@@ -141,6 +145,7 @@ export function App() {
                             if (!canAccessMainView) {
                                 component = (
                                     <DatakiLogin authController={authController}
+                                                 includeGCPScope={false}
                                                  datakiConfig={datakiConfig}/>
                                 );
                             } else {

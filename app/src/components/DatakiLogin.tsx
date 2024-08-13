@@ -1,43 +1,27 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { BooleanSwitchWithLabel, Button, CenteredView, cls, Typography } from "@firecms/ui";
-import { DatakiAuthController, OauthParams } from "../hooks/useDatakiAuthController";
+import { DatakiAuthController } from "../hooks/useDatakiAuthController";
 import { CircularProgressCenter, ErrorView } from "@firecms/core";
 import { generateAuthUrl } from "../api";
 import { DatakiConfig } from "../DatakiProvider";
 
 import Logo from "./dataki_logo.svg";
+import { savePendingRedirect, saveSubscribeToNewsletter } from "../utils/local_storage";
+import { useLocation } from "react-router-dom";
 
 export function DatakiLogin({
                                 authController,
-                                datakiConfig
+                                datakiConfig,
+                                smallLayout,
+                                includeGCPScope = false
                             }: {
     datakiConfig: DatakiConfig,
-    authController: DatakiAuthController
+    authController: DatakiAuthController,
+    smallLayout?: boolean,
+    includeGCPScope: boolean
 }) {
 
-    const subscribing = useRef(false);
-    useEffect(() => {
-        const url = new URL(window.location.href);
-        const searchParams = new URLSearchParams(url.search);
-        const params: Partial<OauthParams> = {};
-
-        for (const [key, value] of searchParams.entries()) {
-            params[key as keyof OauthParams] = value as any;
-        }
-        const subscribeToNewsletter = loadSubscribeToNewsletter();
-
-        console.log("subscribeToNewsletter", subscribeToNewsletter);
-        authController.updateOauth(params).then((credential) => {
-            if (subscribeToNewsletter && credential?.user.email && !subscribing.current) {
-                subscribing.current = true;
-                subscribeNewsletter(credential.user.email)
-                    .finally(() => {
-                        subscribing.current = false;
-                    });
-            }
-            cleanUp();
-        });
-    }, [authController]);
+    const location = useLocation();
 
     const [termsAccepted, setTermsAccepted] = useState(false);
     const [subscribeToNewsletter, setSubscribeToNewsletter] = useState(false);
@@ -57,42 +41,21 @@ export function DatakiLogin({
     const [oauthUrl, setOauthUrl] = useState<string | undefined>();
 
     useEffect(() => {
-        generateAuthUrl(window.location.origin, datakiConfig.apiEndpoint)
+        generateAuthUrl(window.location.origin, includeGCPScope, datakiConfig.apiEndpoint)
             .then((res) => {
                 setOauthUrl(res.data);
             });
-    }, [])
+    }, [includeGCPScope])
 
-    // const ref = React.useRef<HTMLDivElement>(null);
-    //
-    // function handleCredentialResponse(response: any) {
-    //     console.log("handleCredentialResponse", response);
-    //
-    // }
-
-    // useEffect(() => {
-    //     // @ts-ignore
-    //     window.handleCredentialResponse = handleCredentialResponse
-    //
-    //     // @ts-ignore
-    //     if (window.google) {
-    //         // @ts-ignore
-    //         window.google.accounts.id.initialize({
-    //             client_id: "513464601173-404mj4t6masag0bj41a30k71i9estkkg.apps.googleusercontent.com",
-    //             scope: "https://www.googleapis.com/auth/cloud-platform",
-    //             callback: handleCredentialResponse
-    //         })
-    //         // @ts-ignore
-    //         window.google.accounts.id.prompt()
-    //         // @ts-ignore
-    //         window.google.accounts.id.renderButton(ref.current, {
-    //             theme: "filled_black",
-    //             shape: "pill",
-    //             size: "large"
-    //         })
-    //     }
-    //     // @ts-ignore
-    // }, []);
+    if (smallLayout) {
+        return <GoogleLoginButton
+            url={oauthUrl}
+            disabled={false}
+            onClick={() => {
+                console.log("Google login");
+                savePendingRedirect(location.pathname + location.search);
+            }}/>
+    }
 
     if (authController.authLoading || authController.initialLoading) {
         return <CircularProgressCenter/>
@@ -153,12 +116,15 @@ export function DatakiLogin({
                                         </Typography>
                                     }/>
 
-            <GoogleLoginButton
-                url={oauthUrl}
-                disabled={!termsAccepted}
-                onClick={() => {
-                    console.log("Google login");
-                }}/>
+            <div className={"m-4 w-full"}>
+                <GoogleLoginButton
+                    url={oauthUrl}
+                    disabled={!termsAccepted}
+                    onClick={() => {
+                        console.log("Google login");
+                        savePendingRedirect(location.pathname + location.search);
+                    }}/>
+            </div>
 
             {authController.permissionsNotGrantedError &&
                 <ErrorView
@@ -180,42 +146,40 @@ export function DatakiLogin({
     </CenteredView>;
 }
 
-function GoogleLoginButton({
-                               url,
-                               onClick,
-                               disabled
-                           }: {
+export function GoogleLoginButton({
+                                      url,
+                                      onClick,
+                                      disabled
+                                  }: {
     url?: string,
     onClick: () => void,
     disabled?: boolean
 }) {
     return (
-        <div className={"m-4 w-full"}>
-            <Button
-                component={"a"}
-                href={url}
-                className={cls("w-full bg-white text-gray-900 dark:text-gray-900", disabled ? "" : "hover:text-white hover:dark:text-white")}
-                style={{
-                    height: "40px",
-                    borderRadius: "4px",
-                    fontSize: "14px"
-                }}
-                variant="filled"
-                disabled={disabled}
-                onClick={onClick}>
-                <div
-                    className={cls("flex items-center justify-items-center ")}>
-                    <div className="flex flex-col items-center justify-center w-4.5 h-4.5">
-                        {googleIcon()}
-                    </div>
-                    <div
-                        className={cls("flex-grow pl-6 text-left")}>
-                        {"Sign in with Google"}
-                    </div>
+        <Button
+            component={"a"}
+            href={url}
+            className={cls("w-full bg-white text-gray-900 dark:text-gray-900", disabled ? "" : "hover:text-white hover:dark:text-white")}
+            style={{
+                height: "40px",
+                borderRadius: "4px",
+                fontSize: "14px"
+            }}
+            variant="filled"
+            disabled={disabled}
+            onClick={onClick}>
+            <div
+                className={cls("flex items-center justify-items-center ")}>
+                <div className="flex flex-col items-center justify-center w-4.5 h-4.5">
+                    {googleIcon()}
                 </div>
-            </Button>
+                <div
+                    className={cls("flex-grow pl-6 text-left")}>
+                    {"Sign in with Google"}
+                </div>
+            </div>
+        </Button>
 
-        </div>
     )
 }
 
@@ -300,31 +264,3 @@ const googleIcon = () => <>
         />
     </svg>
 </>;
-
-const subscribeNewsletter = (email: string) => {
-    const url = " https://datakiapi-4mgflsd2ha-ey.a.run.app/notifications/newsletter";
-    return fetch(url, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            email_address: email,
-            source: "dataki-app"
-        })
-    }).then((res) => {
-        console.log("newsletter response", res);
-    });
-}
-
-function loadSubscribeToNewsletter() {
-    return localStorage.getItem("subscribeToNewsletter") === "true";
-}
-
-function saveSubscribeToNewsletter(subscribeToNewsletter: boolean) {
-    localStorage.setItem("subscribeToNewsletter", subscribeToNewsletter ? "true" : "false");
-}
-
-function cleanUp() {
-    localStorage.removeItem("subscribeToNewsletter");
-}

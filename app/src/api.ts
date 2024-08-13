@@ -5,7 +5,8 @@ import {
     DataSource,
     DateParams,
     DryWidgetConfig,
-    FilterOp, FunctionCall,
+    FilterOp,
+    FunctionCall,
     GCPProject,
     WidgetConfig
 } from "./types";
@@ -23,6 +24,16 @@ interface StreamDatakiCommandParams {
     messages: ChatMessage[];
     onDelta: (delta: string) => void;
     onFunctionCall: (call: FunctionCall) => void;
+}
+
+export class ApiError extends Error {
+
+    public code?: string;
+
+    constructor(message: string, code?: string) {
+        super(message);
+        this.code = code;
+    }
 }
 
 export async function streamDatakiCommand({
@@ -246,6 +257,8 @@ export function fetchDataSourcesForProject(firebaseAccessToken: string, apiEndpo
         }).then(response => {
         if (!response.ok) {
             return response.json().then(data => {
+
+                console.log("!!! Error fetching GCP projects", data);
                 throw new ApiError(data.message, data.code);
             });
         }
@@ -295,16 +308,6 @@ export function deleteServiceAccountLink(firebaseAccessToken: string, apiEndpoin
 
 }
 
-export class ApiError extends Error {
-
-    public code?: string;
-
-    constructor(message: string, code?: string) {
-        super(message);
-        this.code = code;
-    }
-}
-
 export function fetchGCPProjects(firebaseAccessToken: string, apiEndpoint: string): Promise<GCPProject[]> {
     return fetch(apiEndpoint + "/projects",
         {
@@ -316,6 +319,7 @@ export function fetchGCPProjects(firebaseAccessToken: string, apiEndpoint: strin
         }).then(response => {
         if (!response.ok) {
             return response.json().then(data => {
+                console.log("!!! Error fetching GCP projects", data);
                 throw new ApiError(data.message, data.code);
             });
         }
@@ -328,9 +332,11 @@ export function fetchGCPProjects(firebaseAccessToken: string, apiEndpoint: strin
  * Generate the authorization URL for the OAuth2 flow
  *
  */
-export async function generateAuthUrl(redirectUri: string, apiEndpoint: string) {
+export async function generateAuthUrl(redirectUri: string, includeGCPScope: boolean, apiEndpoint: string) {
     const url = new URL(`${apiEndpoint}/oauth/generate_auth_url`);
     url.searchParams.append("redirect_uri", redirectUri);
+    if (includeGCPScope)
+        url.searchParams.append("include_gcp_scope", "true");
 
     const response = await fetch(url.toString(), {
         method: "GET",
@@ -391,4 +397,24 @@ export async function postUserCredentials(credentials: object, firebaseAccessTok
     }
 
     return response.json();
+}
+
+export function checkUserHasGCPPermissions(uid: string, apiEndpoint: string): Promise<boolean> {
+    const url = new URL(`${apiEndpoint}/users/${uid}/has_gcp_scopes`);
+
+    return fetch(url.toString(), {
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json"
+        }
+    })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(data => {
+                    throw new ApiError(data.error, data.code);
+                });
+            }
+            return response.json();
+        })
+        .then(data => data.data);
 }
