@@ -1,7 +1,53 @@
 <html lang="en">
 <head>
+
+    <meta charset="UTF-8">
     <title>DATAKI - Your AI analytics companion</title>
     <link href="./index.css" rel="stylesheet">
+    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
+    <link rel="canonical" href="https://dataki.ai">
+    <meta name="description"
+          content="DATAKI is an AI analytics platform that helps you build beautiful dashboards with your data.">
+    <meta name="robots" content="index">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap"
+          rel="stylesheet">
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="DATAKI - Your AI Analytics Companion">
+    <meta property="og:description"
+          content="DATAKI is an AI analytics platform that helps you build beautiful dashboards with your data.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://dataki.ai">
+    <meta property="og:image" content="https://dataki.ai/img/teaser.png">
+
+    <!-- Pre-fetching DNS Lookups -->
+    <link rel="dns-prefetch" href="//fonts.googleapis.com">
+    <link rel="dns-prefetch" href="//fonts.gstatic.com">
+
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@firecmsco">
+
+    <meta name="twitter:title" content="DATAKI - Your AI Analytics Companion">
+    <meta name="twitter:description"
+          content="DATAKI is an AI analytics platform that helps you build beautiful dashboards with your data.">
+    <meta name="twitter:image:type" content="image/png"/>
+    <meta name="twitter:image:width" content="1200"/>
+    <meta name="twitter:image:height" content="630"/>
+    <meta name="twitter:image" content="https://dataki.ai/img/twitter_teaser.png">
+
+    <script type="application/ld+json">
+        {
+            "@context": "http://schema.org",
+            "@type": "WebSite",
+            "name": "DATAKI",
+            "url": "https://dataki.ai"
+        }
+    </script>
+
     <style>
         iframe {
             aspect-ratio: 800 / 450;
@@ -9,63 +55,28 @@
             max-width: 100% !important;
         }
 
-        .font-mono {
-            font-family: "JetBrains Mono", monospace;
-            font-optical-sizing: auto;
-            font-weight: 400;
-            font-style: normal;
-        }
-    </style>
-
-    <style>
-
-
-        .frame {
-            position: absolute;
-            z-index: 10;
-            background: #1f2937;
-            border-radius: 10px;
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
         }
 
-        .image-container {
-            position: relative;
-            max-width: 100%;
-            width: 84rem;
-            margin: 0 auto;
-            height: 800px;
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
         }
-
 
     </style>
-
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap"
-          rel="stylesheet">
-    <meta name="description"
-          content="DATAKI is an AI analytics platform that helps you build beautiful dashboards with your BigQuery data.">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-
-    <!-- Open Graph Meta Tags -->
-    <meta property="og:title" content="DATAKI - Your AI Analytics Companion">
-    <meta property="og:description" content="Build beautiful dashboards with BigQuery data using DATAKI.">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://your-website-url.com">
-    <meta property="og:image" content="https://your-website-url.com/path-to-image.jpg">
-
-    <!-- Twitter Card Meta Tags -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="DATAKI - Your AI Analytics Companion">
-    <meta name="twitter:description" content="Build beautiful dashboards with BigQuery data using DATAKI.">
-    <meta name="twitter:image" content="https://your-website-url.com/path-to-image.jpg">
 
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-GFH7K538SW"></script>
     <script>
         window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
 
-        gtag('config', 'G-GFH7K538SW');
+        function gtag() {
+            dataLayer.push(arguments);
+        }
+
+        gtag("js", new Date());
+
+        gtag("config", "G-GFH7K538SW");
     </script>
 </head>
 
@@ -95,7 +106,7 @@
         <h1 class="mb-4 text-4xl font-extrabold tracking-tight leading-none md:text-5xl lg:text-6xl text-white">
             Build amazing analytic dashboards with AI</h1>
         <p class="mb-8 text-lg font-normal lg:text-xl sm:px-16 xl:px-48 text-gray-900">
-            Link <span class="font-mono">DATAKI</span> to your <b>BigQuery</b> data sources (more coming soon!) and let
+            Link <span class="font-mono">DATAKI</span> to your <b>data sources</b>  and let
             it do the heavy lifting. Analyze your data and create <b>beautiful dashboards</b> to share with your team.
         </p>
 
@@ -114,55 +125,41 @@
 </section>
 
 
-<section class="px-8 py-16 flex flex-row w-full items-center gap-8 bg-gray-900 justify-center">
+<section class="px-8 py-16 flex flex-row w-full items-center gap-12 bg-gray-900 justify-center">
     <img src="img/bigquery.svg" class="w-48">
     <img src="img/Postgresql_elephant.svg" class="h-20">
-    <img src="img/gemini_logo.png" class="w-36 mb-4">
+    <img src="img/mysql.png" class="h-16">
+    <img src="img/gemini_logo.png" class="w-32 mb-4">
 </section>
 
-<section id="waitlist"
-         class="max-w-full flex flex-col items bg-gray-800 text-white border-0 border-t border-solid border-slate-500 border-opacity-15">
-    <div class="gap-8 items-center py-28 px-4 mx-auto">
-        <div class="flex flex-col px-6 py-20">
-            <div class="flex flex-col space-y-2 mb-4 text-4xl">
-                <strong>JOIN THE WAITLIST</strong>
-            </div>
-            <div class="flex flex-col space-y-2 mb-4 text-lg">
-                Excited about DATAKI? Get early access to our platform and be the first to know when we launch.
-            </div>
-            <div class="flex flex-wrap">
-                <form id="subscribeForm">
-                    <label class="w-full flex items-baseline gap-3 text-sm">
-                        <input type="checkbox" id="policy-check" value="policy-read" onchange="validateForm()">
-                        <span>By subscribing to our newsletter, you acknowledge you have read, and agree to <a
-                                href="/privacy_policy" class="underline">our personal data policy</a>.</span>
-                    </label>
-                    <label class="w-full flex items-baseline gap-3 text-sm">
-                        <input type="checkbox" id="bigquery" value="bigquery" onchange="">
-                        <span>I am interested in using <b>Bigquery</b></span>
-                    </label>
-                    <label class="w-full flex items-baseline gap-3 text-sm">
-                        <input type="checkbox" id="postgresql" value="postgresql" onchange="">
-                        <span>I am interested in using <b>PostgreSQL</b></span>
-                    </label>
-                    <label class="w-full flex items-baseline gap-3 text-sm">
-                        <input type="checkbox" id="other_db" value="other_db" onchange="">
-                        <span>I am interested in using a different database</span>
-                    </label>
-                    <div class="w-full py-2 flex flex-col md:flex-row justify-between gap-2">
-                        <input oninput="validateForm()"
-                               class="appearance-none outline-none text-xl flex-1 px-4 py-4 bg-gray-900 rounded w-full leading-tight focus:border-primary border-none"
-                               id="email" type="email" placeholder="Enter your email" value="">
-                        <button type="submit" disabled id="subscribe-btn"
-                                class="font-bold px-8 py-4 sm:px-12 sm:py-4 uppercase w-auto sm:mb-0 sm:ml-2 bg-gray-800 rounded">
-                            Sign up
-                        </button>
-                    </div>
-                </form>
-            </div>
+<section
+        class="max-w-full flex flex-col items bg-gray-800 text-white border-0 border-t border-solid border-slate-500 border-opacity-15">
+    <div class="gap-8 items-center py-8 px-4 mx-auto max-w-screen-xl xl:gap-16 sm:py-16 lg:px-6">
+        <div class="mt-6 px-6 py-20">
+            <h2 class="mb-4 text-4xl tracking-tight font-mono uppercase text-white">
+                <!--            <h2 class="mb-4 text-4xl tracking-tight font-extrabold text-gray-900">-->
+                A mix between a <b>notebook</b>, a <b>chatbot</b>, and a <b>dashboard</b>. That's <span
+                    class="font-mono">DATAKI</span>.
+            </h2>
+            <p class="mb-6 text-lg md:text-2xl text-text-white">
+                Get the best of all worlds in one platform.
+            </p>
+            <a href="#waitlist"
+               class="mt-6 inline-flex items-center text-white bg-gray-900 hover:bg-gray-950 focus:ring-4 font-medium rounded-lg text-sm px-5 py-2.5 text-center focus:ring-primary-900">
+                Join the waitlist
+                <svg class="ml-2 -mr-1 w-5 h-5" fill="currentColor" viewBox="0 0 20 20"
+                     xmlns="http://www.w3.org/2000/svg">
+                    <path fill-rule="evenodd"
+                          d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z"
+                          clip-rule="evenodd"></path>
+                </svg>
+            </a>
         </div>
     </div>
+
+
 </section>
+
 
 <script>
     const emailInput = document.getElementById("email");
@@ -208,6 +205,7 @@
         const databases = [];
         if (document.getElementById("bigquery").checked) databases.push("BigQuery");
         if (document.getElementById("postgresql").checked) databases.push("PostgreSQL");
+        if (document.getElementById("mysql").checked) databases.push("MySQL");
         if (document.getElementById("other_db").checked) databases.push("Other");
         return databases;
     }
@@ -231,16 +229,15 @@
 
 <section class="bg-gray-100">
 
+    <div class="gap-8 items-center py-8 px-4 mx-auto max-w-screen-xl xl:gap-16 md:grid md:grid-cols-2 sm:py-16 lg:px-6">
 
-    <div
-            class="gap-8 items-center py-8 px-4 mx-auto max-w-screen-xl xl:gap-16 md:grid md:grid-cols-2 sm:py-16 lg:px-6">
-
-        <!--        <img class="w-full block"-->
-        <!--             src="https://flowbite.s3.amazonaws.com/blocks/marketing-ui/cta/cta-dashboard-mockup-dark.svg"-->
-        <!--             alt="dashboard image"/>-->
-        <img class="w-full block rounded-2xl"
-             src="./img/chart.webp"
-             alt="dashboard image"/>
+        <video class="w-full block rounded-2xl" autoplay loop muted playsinline>
+            <source src="./img/videos/gen_chart.webm" type="video/webm">
+            Your browser does not support the video tag.
+        </video>
+<!--        <img class="w-full block rounded-2xl"-->
+<!--             src="./img/chart.webp"-->
+<!--             alt="dashboard image"/>-->
         <div class="mt-4 md:mt-0">
             <h2 class="mb-4 text-4xl tracking-tight font-mono uppercase text-gray-900">
                 <!--            <h2 class="mb-4 text-4xl tracking-tight font-extrabold text-gray-900">-->
@@ -251,13 +248,16 @@
                 reports</b>.
             </p>
             <p class="mb-6 md:text-lg text-gray-900">
-                <span class="font-mono">DATAKI</span> uses an extremely simple approach. You create widgets with the
-                help of Gemini.
+                <span class="font-mono">DATAKI</span> uses an extremely simple approach. You create widgets by asking
+                questions.
                 Each widget is related to a datasource, to a SQL query, and to a chart type.
-                You can create as many widgets as you want, and then you can create a dashboard with them.
+                You can iterate on your widgets, and ask more questions to refine them.
+            </p>
+            <p class="mb-6 md:text-lg text-gray-900">
+                There is <b>no need to learn</b> complex abstractions or domain specific languages.
             </p>
             <a href="#waitlist"
-               class="inline-flex items-center text-gray-900 bg-gray-200 hover:bg-white focus:ring-4 font-medium rounded-lg text-sm px-5 py-2.5 text-center focus:ring-primary-900">
+               class="mt-6 inline-flex items-center text-gray-900 bg-gray-200 hover:bg-white focus:ring-4 font-medium rounded-lg text-sm px-5 py-2.5 text-center focus:ring-primary-900">
                 Join the waitlist
                 <svg class="ml-2 -mr-1 w-5 h-5" fill="currentColor" viewBox="0 0 20 20"
                      xmlns="http://www.w3.org/2000/svg">
@@ -270,24 +270,19 @@
     </div>
 </section>
 
-<section class="bg-gray-100">
+<section class="bg-gradient-to-b from-gray-100 to-white py-8">
 
-    <div class="gap-8 items-center py-8 px-4 mx-auto max-w-screen-xl">
-        <img class="w-full block rounded-2xl"
-             src="./img/age_chart.webp"
-             alt="dashboard image"/>
+    <div class="gap-8 items-center my-8 px-4 mx-auto max-w-screen-xl">
+        <video class="w-full block rounded-2xl" autoplay loop muted playsinline>
+            <source src="./img/videos/edit_chart_720.webm" type="video/webm">
+            Your browser does not support the video tag.
+        </video>
     </div>
-</section>
-
-<section class="bg-gray-100">
 
 
     <div
-            class="gap-8 items-center py-8 px-4 mx-auto max-w-screen-xl xl:gap-16 md:grid md:grid-cols-2 sm:py-16 lg:px-6">
+            class="gap-8 items-center my-8 px-4 mx-auto max-w-screen-xl xl:gap-16 sm:py-16 lg:px-6">
 
-        <!--        <img class="w-full block"-->
-        <!--             src="https://flowbite.s3.amazonaws.com/blocks/marketing-ui/cta/cta-dashboard-mockup-dark.svg"-->
-        <!--             alt="dashboard image"/>-->
         <div class="mt-4 md:mt-0">
             <h2 class="mb-4 text-4xl tracking-tight font-mono uppercase text-gray-900">
                 A data platform for everyone
@@ -296,17 +291,14 @@
                 Build dashboards, reports, and charts with <b>no code</b> required. Share your insights with your team,
                 and make data-driven decisions.
             </p>
-            <p>
+            <p class="mb-6 md:text-lg text-gray-900">
                 <span class="font-mono">DATAKI</span> is currently supporting BigQuery. We are working on adding support
                 for other databases. If you
                 are
                 interested in using a different database, please let us know in the waitlist form.
             </p>
-            <p class="mb-6 md:text-lg text-gray-900">
-
-            </p>
             <a href="#waitlist"
-               class="inline-flex items-center text-gray-900 bg-gray-200 hover:bg-white focus:ring-4 font-medium rounded-lg text-sm px-5 py-2.5 text-center focus:ring-primary-900">
+               class="mt-6 inline-flex items-center text-gray-900 bg-gray-200 hover:bg-white focus:ring-4 font-medium rounded-lg text-sm px-5 py-2.5 text-center focus:ring-primary-900">
                 Join the waitlist
                 <svg class="ml-2 -mr-1 w-5 h-5" fill="currentColor" viewBox="0 0 20 20"
                      xmlns="http://www.w3.org/2000/svg">
@@ -316,86 +308,113 @@
                 </svg>
             </a>
         </div>
-        <img class="w-full block rounded-2xl"
-             src="./img/funnel_chart.webp"
-             alt="dashboard image"/>
     </div>
 </section>
 
-<div class="overflow-visible flex flex-col items-center justify-center bg-white" id="parallax-container">
-    <div class="image-container">
-        <!-- MM CMS -->
-        <div id="img-1" class="absolute frame" style="width: 540px;">
-            <img class="w-full block rounded-2xl"
-                 src="./img/chart.webp"
-                 alt="dashboard image"/>
-        </div>
 
-        <!-- EDITOR -->
-        <div id="img-2" class="absolute frame" style="width: 540px;">
-            <img class="w-full block rounded-2xl"
-                 src="./img/chart.webp"
-                 alt="dashboard image"/>
-        </div>
+<section class="w-full max-w-full overflow-x-scroll scrollbar-hide flex justify-center" style="background: #18181c">
+    <div class="flex gap-4 p-8 items-center">
+        <img class=" block rounded-2xl border border-gray-800"
+             style="height: 360px;"
+             src="./img/charts/bar_chart.png"
+             alt="Bar chart"/>
+        <img class="block rounded-2xl border border-gray-800"
+             style="height: 360px;"
+             src="./img/charts/pie_chart.png"
+             alt="Pie chart"/>
+        <img class="block rounded-2xl border border-gray-800"
+             style="height: 360px;"
+             src="./img/charts/line_chart.png"
+             alt="Line chart"/>
+        <img class="block rounded-2xl border border-gray-800"
+             style="height: 360px;"
+             src="./img/charts/funnel_chart.png"
+             alt="Funnel chart"/>
+    </div>
+</section>
 
-        <!-- MM APP -->
-        <div id="img-3" class="absolute frame" style="width: 540px;">
-            <img class="w-full block rounded-2xl"
-                 src="./img/chart.webp"
-                 alt="dashboard image"/>
-        </div>
+<!--<section class="bg-gray-100">-->
+<!--    <div-->
+<!--            class="gap-8 items-center py-8 px-4 mx-auto max-w-screen-xl xl:gap-16 md:grid md:grid-cols-2 sm:py-16 lg:px-6">-->
 
-        <!-- COURSES INLINE EDITING -->
-        <div id="img-4" class="absolute frame" style="width: 540px;">
-            <img class="w-full block rounded-2xl"
-                 src="./img/chart.webp"
-                 alt="dashboard image"/>
-        </div>
+<!--        <div class="mt-4 md:mt-0">-->
+<!--            <h2 class="mb-4 text-4xl tracking-tight font-mono uppercase text-gray-900">-->
+<!--                A data platform for everyone-->
+<!--            </h2>-->
+<!--            <p class="mb-6 md:text-lg text-gray-900">-->
+<!--                Build dashboards, reports, and charts with <b>no code</b> required. Share your insights with your team,-->
+<!--                and make data-driven decisions.-->
+<!--            </p>-->
+<!--            <p class="mb-6 md:text-lg text-gray-900">-->
+<!--                <span class="font-mono">DATAKI</span> is currently supporting BigQuery. We are working on adding support-->
+<!--                for other databases. If you-->
+<!--                are-->
+<!--                interested in using a different database, please let us know in the waitlist form.-->
+<!--            </p>-->
+<!--            <a href="#waitlist"-->
+<!--               class="mt-6 inline-flex items-center text-gray-900 bg-gray-200 hover:bg-white focus:ring-4 font-medium rounded-lg text-sm px-5 py-2.5 text-center focus:ring-primary-900">-->
+<!--                Join the waitlist-->
+<!--                <svg class="ml-2 -mr-1 w-5 h-5" fill="currentColor" viewBox="0 0 20 20"-->
+<!--                     xmlns="http://www.w3.org/2000/svg">-->
+<!--                    <path fill-rule="evenodd"-->
+<!--                          d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z"-->
+<!--                          clip-rule="evenodd"></path>-->
+<!--                </svg>-->
+<!--            </a>-->
+<!--        </div>-->
+<!--        <img class="w-full block rounded-2xl"-->
+<!--             src="./img/funnel_chart.webp"-->
+<!--             alt="dashboard image"/>-->
+<!--    </div>-->
+<!--</section>-->
 
-        <!-- TPA APP -->
-        <div id="img-5" class="absolute frame" style="width: 540px;">
-            <img class="w-full block rounded-2xl"
-                 src="./img/chart.webp"
-                 alt="dashboard image"/>
+<section id="waitlist"
+         class="max-w-full flex flex-col items bg-gray-900 text-white border-0 border-t border-solid border-slate-500 border-opacity-15 border-b">
+    <div class="gap-8 items-center py-28 px-4 mx-auto">
+        <div class="flex flex-col px-6 py-16">
+            <div class="flex flex-col space-y-2 mb-4 text-4xl">
+                <strong>JOIN THE WAITLIST</strong>
+            </div>
+            <div class="flex flex-col space-y-2 mb-4 text-lg">
+                Excited about DATAKI? Get early access and be the first to know when we launch.
+            </div>
+            <div class="flex flex-wrap">
+                <form id="subscribeForm">
+                    <label class="w-full flex items-baseline gap-3 text-sm">
+                        <input type="checkbox" id="policy-check" value="policy-read" onchange="validateForm()">
+                        <span>By subscribing, you acknowledge you have read, and agree to <a
+                                href="/privacy_policy" class="underline">our personal data policy</a>.</span>
+                    </label>
+                    <label class="w-full flex items-baseline gap-3 text-sm">
+                        <input type="checkbox" id="bigquery" value="bigquery" onchange="">
+                        <span>I am interested in using <b>BigQuery</b></span>
+                    </label>
+                    <label class="w-full flex items-baseline gap-3 text-sm">
+                        <input type="checkbox" id="postgresql" value="postgresql" onchange="">
+                        <span>I am interested in using <b>PostgreSQL</b></span>
+                    </label>
+                    <label class="w-full flex items-baseline gap-3 text-sm">
+                        <input type="checkbox" id="mysql" value="mysql" onchange="">
+                        <span>I am interested in using <b>MySQL</b></span>
+                    </label>
+                    <label class="w-full flex items-baseline gap-3 text-sm">
+                        <input type="checkbox" id="other_db" value="other_db" onchange="">
+                        <span>I am interested in using a different database</span>
+                    </label>
+                    <div class="w-full py-2 flex flex-col md:flex-row justify-between gap-2">
+                        <input oninput="validateForm()"
+                               class="appearance-none outline-none text-xl flex-1 px-4 py-4 bg-gray-950 rounded w-full leading-tight focus:border-primary border-none"
+                               id="email" type="email" placeholder="Enter your email" value="">
+                        <button type="submit" disabled id="subscribe-btn"
+                                class="font-bold px-8 py-4 sm:px-12 sm:py-4 uppercase w-auto sm:mb-0 sm:ml-2 bg-gray-800 rounded">
+                            Sign up
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
-    <div style="height: 300px;"></div>
-</div>
-
-<script>
-
-    const container = document.getElementById('parallax-container');
-    const parallaxElements = container.getElementsByClassName('frame');
-
-    document.addEventListener('scroll', function () {
-        const scrollY = window.scrollY;
-
-        const offset = container.getBoundingClientRect().top;
-        console.log("scrollY", scrollY);
-        console.log("offset", offset);
-        Array.from(parallaxElements).forEach(element => {
-            const parallaxOffset = (Math.max(0, Math.min(1, (300 + offset) / element.offsetHeight)) * 2 - 1);
-
-            // Apply parallax effect
-            if (element.id === 'img-1') {
-                element.style.left = `${-50 * parallaxOffset}px`;
-                element.style.top = `${50 * parallaxOffset}px`;
-            } else if (element.id === 'img-2') {
-                element.style.right = `${-30 + 20 * parallaxOffset}px`;
-                element.style.top = `${-50 - 50 * parallaxOffset}px`;
-            } else if (element.id === 'img-3') {
-                element.style.left = `${500}px`;
-                element.style.top = `${140 + 40 * parallaxOffset}px`;
-            } else if (element.id === 'img-4') {
-                element.style.left = `${100}px`;
-                element.style.top = `${700 + 150 * (parallaxOffset)}px`;
-            } else if (element.id === 'img-5') {
-                element.style.top = `${600}px`;
-                element.style.right = `${100 - 100 * parallaxOffset}px`;
-            }
-        });
-    });
-</script>
+</section>
 
 
 <footer class="p-4 sm:p-6 bg-gray-800 py-24 sm:py-16">
@@ -416,28 +435,6 @@
                 </div>
             </div>
             <div class="flex">
-                <!--                <div>-->
-                <!--                    <h2 class="mb-6 text-sm font-semibold text-gray-900 uppercase dark:text-white">Resources</h2>-->
-                <!--                    <ul class="text-gray-600 dark:text-gray-400">-->
-                <!--                        <li class="mb-4">-->
-                <!--                            <a href="https://dataki.ai" class="hover:underline">Flowbite</a>-->
-                <!--                        </li>-->
-                <!--                        <li>-->
-                <!--                            <a href="https://tailwindcss.com/" class="hover:underline">Tailwind CSS</a>-->
-                <!--                        </li>-->
-                <!--                    </ul>-->
-                <!--                </div>-->
-                <!--                <div>-->
-                <!--                    <h2 class="mb-6 text-sm font-semibold text-gray-900 uppercase dark:text-white">Follow us</h2>-->
-                <!--                    <ul class="text-gray-600 dark:text-gray-400">-->
-                <!--                        <li class="mb-4">-->
-                <!--                            <a href="https://github.com/themesberg/flowbite" class="hover:underline ">Github</a>-->
-                <!--                        </li>-->
-                <!--                        <li>-->
-                <!--                            <a href="https://discord.gg/4eeurUVvTy" class="hover:underline">Discord</a>-->
-                <!--                        </li>-->
-                <!--                    </ul>-->
-                <!--                </div>-->
                 <div>
                     <h2 class="mb-6 text-sm font-semibold uppercase text-white">Legal</h2>
                     <ul class="text-gray-400">
@@ -458,41 +455,6 @@
         <div class="sm:flex sm:items-center sm:justify-between">
             <span class="text-sm sm:text-center text-gray-400">2024 DATAKI. All Rights Reserved.
             </span>
-            <!--            <div class="flex mt-4 space-x-6 sm:justify-center sm:mt-0">-->
-            <!--                <a href="#" class="text-gray-500 hover:text-white">-->
-            <!--                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">-->
-            <!--                        <path fill-rule="evenodd"-->
-            <!--                              d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z"-->
-            <!--                              clip-rule="evenodd"/>-->
-            <!--                    </svg>-->
-            <!--                </a>-->
-            <!--                <a href="#" class="text-gray-500  hover:text-white">-->
-            <!--                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">-->
-            <!--                        <path fill-rule="evenodd"-->
-            <!--                              d="M12.315 2c2.43 0 2.784.013 3.808.06 1.064.049 1.791.218 2.427.465a4.902 4.902 0 011.772 1.153 4.902 4.902 0 011.153 1.772c.247.636.416 1.363.465 2.427.048 1.067.06 1.407.06 4.123v.08c0 2.643-.012 2.987-.06 4.043-.049 1.064-.218 1.791-.465 2.427a4.902 4.902 0 01-1.153 1.772 4.902 4.902 0 01-1.772 1.153c-.636.247-1.363.416-2.427.465-1.067.048-1.407.06-4.123.06h-.08c-2.643 0-2.987-.012-4.043-.06-1.064-.049-1.791-.218-2.427-.465a4.902 4.902 0 01-1.772-1.153 4.902 4.902 0 01-1.153-1.772c-.247-.636-.416-1.363-.465-2.427-.047-1.024-.06-1.379-.06-3.808v-.63c0-2.43.013-2.784.06-3.808.049-1.064.218-1.791.465-2.427a4.902 4.902 0 011.153-1.772A4.902 4.902 0 015.45 2.525c.636-.247 1.363-.416 2.427-.465C8.901 2.013 9.256 2 11.685 2h.63zm-.081 1.802h-.468c-2.456 0-2.784.011-3.807.058-.975.045-1.504.207-1.857.344-.467.182-.8.398-1.15.748-.35.35-.566.683-.748 1.15-.137.353-.3.882-.344 1.857-.047 1.023-.058 1.351-.058 3.807v.468c0 2.456.011 2.784.058 3.807.045.975.207 1.504.344 1.857.182.466.399.8.748 1.15.35.35.683.566 1.15.748.353.137.882.3 1.857.344 1.054.048 1.37.058 4.041.058h.08c2.597 0 2.917-.01 3.96-.058.976-.045 1.505-.207 1.858-.344.466-.182.8-.398 1.15-.748.35-.35.566-.683.748-1.15.137-.353.3-.882.344-1.857.048-1.055.058-1.37.058-4.041v-.08c0-2.597-.01-2.917-.058-3.96-.045-.976-.207-1.505-.344-1.858a3.097 3.097 0 00-.748-1.15 3.098 3.098 0 00-1.15-.748c-.353-.137-.882-.3-1.857-.344-1.023-.047-1.351-.058-3.807-.058zM12 6.865a5.135 5.135 0 110 10.27 5.135 5.135 0 010-10.27zm0 1.802a3.333 3.333 0 100 6.666 3.333 3.333 0 000-6.666zm5.338-3.205a1.2 1.2 0 110 2.4 1.2 1.2 0 010-2.4z"-->
-            <!--                              clip-rule="evenodd"/>-->
-            <!--                    </svg>-->
-            <!--                </a>-->
-            <!--                <a href="#" class="text-gray-500 hover:text-white">-->
-            <!--                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">-->
-            <!--                        <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84"/>-->
-            <!--                    </svg>-->
-            <!--                </a>-->
-            <!--                <a href="#" class="text-gray-500 hover:text-white">-->
-            <!--                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">-->
-            <!--                        <path fill-rule="evenodd"-->
-            <!--                              d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"-->
-            <!--                              clip-rule="evenodd"/>-->
-            <!--                    </svg>-->
-            <!--                </a>-->
-            <!--                <a href="#" class="text-gray-500 hover:text-white">-->
-            <!--                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">-->
-            <!--                        <path fill-rule="evenodd"-->
-            <!--                              d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10c5.51 0 10-4.48 10-10S17.51 2 12 2zm6.605 4.61a8.502 8.502 0 011.93 5.314c-.281-.054-3.101-.629-5.943-.271-.065-.141-.12-.293-.184-.445a25.416 25.416 0 00-.564-1.236c3.145-1.28 4.577-3.124 4.761-3.362zM12 3.475c2.17 0 4.154.813 5.662 2.148-.152.216-1.443 1.941-4.48 3.08-1.399-2.57-2.95-4.675-3.189-5A8.687 8.687 0 0112 3.475zm-3.633.803a53.896 53.896 0 013.167 4.935c-3.992 1.063-7.517 1.04-7.896 1.04a8.581 8.581 0 014.729-5.975zM3.453 12.01v-.26c.37.01 4.512.065 8.775-1.215.25.477.477.965.694 1.453-.109.033-.228.065-.336.098-4.404 1.42-6.747 5.303-6.942 5.629a8.522 8.522 0 01-2.19-5.705zM12 20.547a8.482 8.482 0 01-5.239-1.8c.152-.315 1.888-3.656 6.703-5.337.022-.01.033-.01.054-.022a35.318 35.318 0 011.823 6.475 8.4 8.4 0 01-3.341.684zm4.761-1.465c-.086-.52-.542-3.015-1.659-6.084 2.679-.423 5.022.271 5.314.369a8.468 8.468 0 01-3.655 5.715z"-->
-            <!--                              clip-rule="evenodd"/>-->
-            <!--                    </svg>-->
-            <!--                </a>-->
-            <!--            </div>-->
         </div>
     </div>
 
