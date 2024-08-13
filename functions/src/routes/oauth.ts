@@ -25,7 +25,6 @@ oauthRouter.post("/credentials", cors(corsOptions), firebaseAuthorization(), sav
 oauthRouter.get("/generate_auth_url", cors(corsOptions), generateAuthUrl);
 oauthRouter.get("/exchange_code_for_token", cors(corsOptions), exchangeCodeForToken);
 oauthRouter.post("/refresh_access_token", cors(corsOptions), refreshAccessToken);
-oauthRouter.get("/has_gcp_scopes", cors(corsOptions), hasGCPScopes);
 
 // save credentials in body to user col
 async function saveUserCredentials(request: Request, response: Response) {
@@ -56,7 +55,9 @@ function generateAuthUrl(request: Request, response: Response) {
         response.status(400).send({ error: "param redirect_uri is required" });
         return;
     }
-    const authorizationUrl = getAuthUrl(redirect_uri as string);
+
+    const include_gcp_scope = request.query["include_gcp_scope"];
+    const authorizationUrl = getAuthUrl(redirect_uri as string, include_gcp_scope === "true");
 
     response.setHeader("ETag", etag(authorizationUrl))
     response.status(200).send({ data: authorizationUrl });
@@ -105,23 +106,6 @@ export function refreshAccessToken(request: Request, response: Response) {
         });
 
 }
-
-/**
- * Generates the authorization URL for the OAuth2 flow
- */
-function hasGCPScopes(request: Request, response: Response) {
-
-    const redirect_uri = request.query["redirect_uri"];
-    if (!redirect_uri) {
-        response.status(400).send({ error: "param redirect_uri is required" });
-        return;
-    }
-    const authorizationUrl = getAuthUrl(redirect_uri as string);
-
-    response.setHeader("ETag", etag(authorizationUrl))
-    response.status(200).send({ data: authorizationUrl });
-}
-
 
 export default oauthRouter;
 

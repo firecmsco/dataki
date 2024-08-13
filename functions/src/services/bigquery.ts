@@ -184,7 +184,7 @@ function convertBQValues(obj: any): any {
     return obj;
 }
 
-export async function getBigQueryDatasets(projectId: string, accessToken: string): Promise<DataSource> {
+export async function getBigQueryDatasets(projectId: string, accessToken: string): Promise<DataSource[]> {
     const url = `https://www.googleapis.com/bigquery/v2/projects/${projectId}/datasets`;
 
     const response = await fetch(url, {
@@ -200,6 +200,9 @@ export async function getBigQueryDatasets(projectId: string, accessToken: string
     }
 
     const data = await response.json();
+    if (!data.datasets) {
+        return [];
+    }
     return data.datasets.map((e: any) => ({
         ...e.datasetReference,
         location: e.location

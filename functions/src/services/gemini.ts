@@ -17,7 +17,7 @@ import {
 
 const PREFERRED_COLORS = ["#ea5545", "#f46a9b", "#ef9b20", "#edbf33", "#ede15b", "#bdcf32", "#87bc45", "#27aeef", "#b33dc6"];
 
-export const getGenerativeModel = async (): Promise<GenerativeModel> => {
+export const getGenerativeModel = async (model:string): Promise<GenerativeModel> => {
 
     if (!process.env.GOOGLE_GEN_API_KEY) {
         throw new Error("GOOGLE_GEN_API_KEY not set");
@@ -25,7 +25,7 @@ export const getGenerativeModel = async (): Promise<GenerativeModel> => {
     }
     const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEN_API_KEY as string);
     return genAI.getGenerativeModel({
-        model: "gemini-1.5-pro",
+        model,
         generationConfig: {
             maxOutputTokens: 2048,
             temperature: 1,
@@ -73,7 +73,7 @@ export async function makeGeminiRequest({
                                                 initialWidgetConfig?: DryWidgetConfig
                                             }): Promise<string> {
 
-    const geminiModel = await getGenerativeModel();
+    const geminiModel = await getGenerativeModel("gemini-1.5-pro");
 
     const functions = {
         makeSQLQuery: async ({ sql }: { sql: string }) => {
@@ -314,6 +314,7 @@ directly or including it in the JSON config of charts and tables.
     - DATE_SUB does not support the MONTH date part when the argument is TIMESTAMP type. This is wrong: BETWEEN DATE_SUB(CURRENT_TIMESTAMP(), INTERVAL 1 MONTH) AND CURRENT_TIMESTAMP()
     - Be very careful to not mix dates and timestamps.
 - When generating charts with a timeline, make sure the X axis is correctly ordered.
+- NEVER generate SQL with triple ticks """
 
 ---
 ## Hydration:
@@ -339,7 +340,7 @@ the SQL is correct.
 ---
 ## Other:
 
--When asked "What can you do?", you should return a list of the things you can do, like:
+- When asked "What can you do?", you should return a list of the things you can do, like:
     - Generate a chart
     - Generate a table
     - Fetch data from BigQuery
@@ -365,8 +366,8 @@ In this mode, the config you generate should always include the provided id: ${i
             
 --- THIS IS VERY IMPORTANT:
             
-- Right before finalizing the JSON response for a chart or table, execute the makeSQLQuery(sql) function using 
-the generated SQL to guarantee its correctness. Only then, return the JSON response.
+- If you are planning on generating a JSON response for a chart or table, execute the makeSQLQuery(sql) function using 
+the generated SQL first to guarantee its correctness. Only then, return the JSON response.
 - You do this to make sure that the SQL that will be used in the chart or table is correct.
 - Make sure the query is correct and returns the data you expect.
 - You do NOT need to include the used SQL in the responses.
@@ -526,7 +527,7 @@ export const generateSamplePrompts = async (
 
     const systemInstruction = buildSamplePromptsSystemInstructions(dataContexts, initialWidgetConfig)
 
-    const geminiModel = await getGenerativeModel();
+    const geminiModel = await getGenerativeModel("gemini-1.5-flash");
     const chat = geminiModel.startChat({
         systemInstruction: {
             parts: [{ text: systemInstruction }],

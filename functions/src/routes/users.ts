@@ -4,9 +4,6 @@ import { getUserCredentials } from "../services/users";
 import { firestore } from "../firebase";
 import { checkTokenHasScopes, cloudPlatformScope } from "../services/oauth";
 
-// @ts-ignore
-import etag from "etag";
-
 const usersRouter = express.Router();
 
 const corsOptions: CorsOptions = {
@@ -27,15 +24,18 @@ async function hasGCPScopes(request: Request, response: Response) {
 
     const uid = request.params["uid"];
 
-    const credentials = await getUserCredentials(firestore, uid);
-    if (!credentials) {
-        response.status(400).send({ error: "User has no credentials" });
-        return;
+    try {
+        const credentials = await getUserCredentials(firestore, uid, true);
+        if (!credentials) {
+            response.status(400).send({ error: "User has no credentials" });
+            return;
+        }
+
+        const result = checkTokenHasScopes(credentials, [cloudPlatformScope]);
+        response.status(200).send({ data: result });
+    } catch (error) {
+        response.status(200).send({ data: false });
     }
-
-    const result = checkTokenHasScopes(credentials, [cloudPlatformScope]);
-
-    response.status(200).send({ data: result });
 }
 
 export default usersRouter;

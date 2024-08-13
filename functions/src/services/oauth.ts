@@ -5,17 +5,19 @@ import axios, { AxiosResponse } from "axios";
 export const infoScope = "https://www.googleapis.com/auth/userinfo.email";
 export const cloudPlatformScope = "https://www.googleapis.com/auth/cloud-platform";
 
-export function getAuthUrl(redirect_uri: string) {
+export function getAuthUrl(redirect_uri: string, includeGCPScope = false) {
     const oauth2Client = new google.auth.OAuth2(
         process.env.GOOGLE_CLIENT_ID,
         process.env.GOOGLE_CLIENT_SECRET,
         redirect_uri as string
     );
 
+    const scopes = [infoScope];
+    if (includeGCPScope) scopes.push(cloudPlatformScope);
     return oauth2Client.generateAuthUrl({
         access_type: "offline",
         prompt: "consent",
-        scope: [infoScope, cloudPlatformScope].join(" "),
+        scope: scopes.join(" "),
         include_granted_scopes: true
     });
 }

@@ -36,7 +36,7 @@ export function saveCredentialsToFirestore(firestore: FirebaseFirestore.Firestor
         }, { merge: true });
 }
 
-export async function getUserCredentials(firestore: FirebaseFirestore.Firestore, userId: string): Promise<Credentials> {
+export async function getUserCredentials(firestore: FirebaseFirestore.Firestore, userId: string, forceRefresh = false): Promise<Credentials> {
     const userDoc = await firestore.collection("users").doc(userId).get();
     if (!userDoc.exists) {
         throw new Error("User not found: " + userId);
@@ -49,7 +49,7 @@ export async function getUserCredentials(firestore: FirebaseFirestore.Firestore,
     }
     const expiry = new Date(credentials.expiry_date);
     console.log("Expiry date:", expiry);
-    if (expiry < new Date()) {
+    if (forceRefresh || expiry < new Date()) {
         credentials = await refreshAccessToken(credentials.refresh_token);
         saveCredentialsToFirestore(firestore, userId, credentials).catch(console.error);
     }
@@ -67,12 +67,6 @@ export async function refreshAccessToken(refreshToken: string) {
     if (!client_id || !client_secret) {
         throw new Error("Client ID and Client Secret are required");
     }
-
-    console.log("Refreshing access token", {
-        client_id,
-        client_secret,
-        refreshToken
-    });
 
     const postData = new URLSearchParams();
     postData.append("client_id", client_id);
