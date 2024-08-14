@@ -57,6 +57,7 @@ async function processUserCommandRoute(request: Request, response: Response) {
         history: request.body.history || [],
         credentials,
         initialWidgetConfig,
+        sqlDialect: "bigquery",
         onDelta: (delta) => {
             console.log("Got delta", delta);
             response.write("&$# " + JSON.stringify({
