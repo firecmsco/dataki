@@ -39,7 +39,7 @@ export function PromptSuggestions({
             </div>
 
             <Typography variant={"caption"} color={"secondary"} paragraph={true} className={"ml-4 my-2"}>
-                Note that these sample prompts are just suggestions.
+                Note that these prompts are just suggestions. AI is not perfect and might make mistakes.
             </Typography>
 
             <Typography color={"secondary"} paragraph={true} className={"ml-4 my-4"}>

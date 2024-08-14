@@ -30,6 +30,7 @@ export function SystemMessage({
                                   canRegenerate,
                                   onFeedback,
                                   onUpdatedMessage,
+                                  language
                               }: {
     text?: string,
     loading?: boolean,
@@ -38,6 +39,7 @@ export function SystemMessage({
     canRegenerate?: boolean,
     onFeedback?: (reason?: FeedbackSlug, feedbackMessage?: string) => void,
     onUpdatedMessage?: (message: string) => void,
+    language: "bigquery"
 }) {
 
     const [parsedElements, setParsedElements] = useState<MarkdownElement[] | null>();
@@ -74,6 +76,7 @@ export function SystemMessage({
                                           loading={loading}
                                           rawDryConfig={element.content}
                                           maxWidth={containerWidth ? containerWidth - 90 : undefined}
+                                          language={language}
                                           onContentModified={(updatedContent) => {
                                               console.log("Updated content", updatedContent);
                                               if (equal(updatedContent, parsedElements[index].content)) {

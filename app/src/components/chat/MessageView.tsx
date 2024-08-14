@@ -1,9 +1,22 @@
-import { AutoAwesomeIcon, Avatar, cls, Menu, MenuItem, PersonIcon, StorageIcon } from "@firecms/ui";
+import {
+    AutoAwesomeIcon,
+    Avatar,
+    Button,
+    cls,
+    Menu,
+    MenuItem,
+    PersonIcon,
+    RunCircleIcon,
+    Sheet,
+    StorageIcon
+} from "@firecms/ui";
 import React, { useEffect, useRef, useState } from "react";
 import { ChatMessage, FeedbackSlug } from "../../types";
 import { SystemMessage } from "./SystemMessage";
 // @ts-ignore
 import MarkdownIt from "markdown-it";
+import { SQLEditor } from "../SQLEditor";
+import { useChatSession } from "./DatakiChatSession";
 
 export function MessageView({
                                 message,
@@ -12,6 +25,7 @@ export function MessageView({
                                 canRegenerate,
                                 onFeedback,
                                 onUpdatedMessage,
+                                language
                             }: {
     message?: ChatMessage,
     onRemove?: () => void,
@@ -19,6 +33,7 @@ export function MessageView({
     canRegenerate?: boolean,
     onFeedback?: (reason?: FeedbackSlug, feedbackMessage?: string) => void,
     onUpdatedMessage?: (message: ChatMessage) => void,
+    language: "bigquery"
 }) {
 
     const ref = useRef<HTMLDivElement>(null);
@@ -82,7 +97,8 @@ export function MessageView({
                                                               containerWidth={containerWidth ?? undefined}
                                                               onRegenerate={onRegenerate}
                                                               onUpdatedMessage={onUpdatedMessageInternal}
-                                                              onFeedback={onFeedback}/>}
+                                                              onFeedback={onFeedback}
+                                                              language={language}/>}
 
             </div>
         </div>
@@ -105,14 +121,36 @@ function UserMessage({ text }: { text: string }) {
 }
 
 function FunctionCallMessage({ text }: { text: string }) {
+
+    const chatSession = useChatSession();
+    const [editorOpen, setEditorOpen] = useState(false);
+
     const [html, setHtml] = useState<string | null>(null);
     useEffect(() => {
         setHtml(md.render(text));
     }, [text]);
     if (!html)
         return null;
-    return <code
-        className={"text-sm self-center max-w-full prose dark:prose-invert prose-headings:font-title text-gray-700 dark:text-gray-200 mb-3"}
-        dangerouslySetInnerHTML={{ __html: html }}>
-    </code>
+    return <>
+        <div className={"flex flex-row gap-4"}>
+            <code
+                className={"text-sm self-center max-w-full prose dark:prose-invert prose-headings:font-title text-gray-700 dark:text-gray-200 mb-3 flex-grow"}
+                dangerouslySetInnerHTML={{ __html: html }}/>
+            <Button
+                variant={"text"} onClick={() => setEditorOpen(true)}>
+                <RunCircleIcon/>
+            </Button>
+        </div>
+
+        <Sheet
+            open={editorOpen}
+            onOpenChange={setEditorOpen}
+            side={"bottom"}>
+            <div className={"h-[90vh]"}>
+                {editorOpen && <SQLEditor initialSql={text} dataSources={chatSession.dataSources}/>}
+            </div>
+
+        </Sheet>
+    </>
+
 }

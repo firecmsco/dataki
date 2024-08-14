@@ -14,11 +14,13 @@ export function WidgetMessageView({
                                       maxWidth,
                                       loading,
                                       onContentModified,
+                                      language
                                   }: {
     rawDryConfig?: string,
     loading?: boolean,
     maxWidth?: number,
     onContentModified?: (rawDryConfig: string) => void,
+    language: "bigquery"
 }) {
 
     const {
@@ -38,7 +40,7 @@ export function WidgetMessageView({
                 setParsingError(null);
                 const newDryConfig = JSON5.parse(rawDryConfig) as DryWidgetConfig;
                 if (!newDryConfig.projectId && projectId) {
-                    newDryConfig.sql = format(newDryConfig.sql, { language: "bigquery" });
+                    newDryConfig.sql = format(newDryConfig.sql, { language });
                     newDryConfig.projectId = projectId;
                     newDryConfig.dataSources = dataSources;
                     onChange(newDryConfig);

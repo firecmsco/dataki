@@ -103,6 +103,8 @@ export function DatakiChatSession({
 
     const [dateRange, setDateRange] = useState<[Date | null, Date | null]>(getInitialDateRange());
 
+    const language = getLanguageFromDataSources(dataSources);
+
     const params: DateParams = useMemo(() => ({
         dateStart: dateRange[0] ?? null,
         dateEnd: dateRange[1] ?? null
@@ -490,6 +492,7 @@ export function DatakiChatSession({
                                                 onUpdatedMessage={(message) => {
                                                     updateMessage(message, index);
                                                 }}
+                                                language={language}
                                                 message={message}
                                                 canRegenerate={index === messages.length - 1 && message.user === "SYSTEM"}
                                                 onRegenerate={() => onRegenerate(message, index)}/>;
@@ -572,4 +575,9 @@ function saveLastProjectLocally(uid: string, projectId: string) {
 
 function loadLastProjectLocally(uid: string): string | null {
     return localStorage.getItem("projectId:" + uid);
+}
+
+function getLanguageFromDataSources(dataSources: DataSource[]): "bigquery" {
+    // TODO
+    return "bigquery";
 }

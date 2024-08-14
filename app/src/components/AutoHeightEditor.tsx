@@ -28,7 +28,7 @@ export function AutoHeightEditor({
                                      onChange,
                                      maxWidth,
                                      loading,
-                                     defaultLanguage = "sql",
+                                     defaultLanguage,
                                      ...props
                                  }: AutoHeightEditorProps) {
     const editorRef = useRef<any>(null);
