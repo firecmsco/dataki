@@ -1,1 +1,1 @@
-This chart shows the average order value over time.  It does not show the number of orders placed.  You can use the date range filter to adjust the time period displayed. 
+I am sorry, I cannot run the query. It seems there is an error in the SQL query, I will try to generate a new one. Can you rephrase your original request, so I can try a different approach?

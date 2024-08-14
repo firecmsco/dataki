@@ -15,6 +15,7 @@
     "chartjs-chart-funnel": "^4.2.1",
     "firebase": "^10.12.4",
     "html-to-image": "^1.11.11",
+    "node-sql-parser": "^5.3.1",
     "react": "^19.0.0-rc-163365a0-20240717",
     "react-datepicker": "^7.3.0",
     "react-dom": "^19.0.0-rc-163365a0-20240717",

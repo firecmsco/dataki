@@ -1,7 +1,7 @@
 import express, { Request, Response } from "express";
 import { firebaseAuthorization } from "../middlewares";
 import DatakiException from "../types/exceptions";
-import { DateParams } from "../types/dashboards";
+import { DataSource, DateParams } from "../types/dashboards";
 import { runSQLQuery } from "../services/bigquery";
 import { getStoredServiceAccount } from "../services/projects";
 import { firestore } from "../firebase";
@@ -17,7 +17,11 @@ dataRouter.post("/query", firebaseAuthorization(), sqlRequestRoute);
 async function sqlRequestRoute(request: Request, response: Response) {
 
     const sql: string | undefined = request.body.sql;
-    const projectId: string | undefined = request.body.projectId;
+    const dataSources: DataSource[] | undefined = request.body.dataSources;
+    const projectId: string | undefined = request.body.projectId
+        ?? ((dataSources ?? []).length > 0
+            ? dataSources?.[0].projectId
+            : undefined);
 
     if (!sql) {
         throw new DatakiException(400, "Missing sql in the body", "Invalid request");

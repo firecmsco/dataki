@@ -41,7 +41,7 @@ export function DryChartConfigView({
                                        className
                                    }: {
     dryConfig: DryWidgetConfig | DashboardWidgetConfig,
-    params?: DateParams,
+    params: DateParams,
     onUpdated?: (newConfig: DryWidgetConfig | DashboardWidgetConfig) => void,
     onRemoveClick?: () => void,
     maxWidth?: number,
@@ -196,6 +196,7 @@ export function DryChartConfigView({
                 {dryConfig && <ConfigViewDialog open={configDialogOpen}
                                                 setOpen={setConfigDialogOpen}
                                                 dryConfig={dryConfig}
+                                                params={params}
                                                 onUpdate={onConfigUpdated}
                 />}
             </ErrorBoundary>

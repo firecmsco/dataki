@@ -1,12 +1,6 @@
-import React, { useEffect, useRef, useState } from "react";
-import equal from "react-fast-compare"
-
-import { makeSQLQuery } from "../../api";
-import { useDataki } from "../../DatakiProvider";
-import { DataRow, DateParams, DryWidgetConfig, WidgetConfig } from "../../types";
-import { DataTable } from "./DataTable";
+import React, { useEffect } from "react";
+import { DateParams, DryWidgetConfig, TableColumn, WidgetConfig } from "../../types";
 import { ErrorBoundary, useModeController } from "@firecms/core";
-import { format } from "sql-formatter";
 import {
     AddIcon,
     Button,
@@ -24,8 +18,10 @@ import { ConfigViewDialog } from "./ConfigViewDialog";
 import { AddToDashboardDialog } from "../dashboards/AddToDashboardDialog";
 import { toPng } from "html-to-image";
 import { downloadImage } from "../../utils/downloadImage";
-import { ExecutionErrorView } from "./ExecutionErrorView";
-import { getConfigWithoutSize } from "../utils/widget";
+import { format } from "sql-formatter";
+import { SQLDataView, useSQLTableConfig } from "../SQLDataView";
+import equal from "react-fast-compare";
+import { getDialectFromDataSources } from "../../utils/sql";
 
 export function DryTableConfigView({
                                        dryConfig,
@@ -40,7 +36,7 @@ export function DryTableConfigView({
                                        className
                                    }: {
     dryConfig: DryWidgetConfig,
-    params?: DateParams,
+    params: DateParams,
     onUpdated?: (newConfig: DryWidgetConfig) => void,
     onRemoveClick?: () => void,
     maxWidth?: number,
@@ -51,10 +47,7 @@ export function DryTableConfigView({
     className?: string
 }) {
 
-    const {
-        apiEndpoint,
-        getAuthToken
-    } = useDataki();
+    const dialect = getDialectFromDataSources(dryConfig.dataSources);
 
     const { mode } = useModeController();
 
@@ -62,78 +55,6 @@ export function DryTableConfigView({
     const [addToDashboardDialogOpen, setAddToDashboardDialogOpen] = React.useState(false);
 
     const config = dryConfig as WidgetConfig;
-    const [data, setData] = useState<DataRow[]>([]);
-    const [dataLoading, setDataLoading] = useState<boolean>(false);
-    const [dataLoadingError, setDataloadingError] = useState<Error | null>(null);
-
-    const viewRef = React.useRef<HTMLDivElement>(null);
-
-    const loadedConfig = React.useRef<{ dryConfig: DryWidgetConfig, params?: DateParams } | null>(null);
-    const limit = 100;
-
-    const desiredOffset = useRef<number>(0);
-    const currentOffset = useRef<number>(0);
-
-    useEffect(() => {
-        if (loadedConfig.current && equal(loadedConfig.current, {
-            dryConfig: getConfigWithoutSize(dryConfig),
-            params
-        })) {
-            return;
-        }
-
-        if (dryConfig) {
-            try {
-                setData([]);
-                loadedConfig.current = {
-                    dryConfig: getConfigWithoutSize(dryConfig),
-                    params
-                };
-                const formattedDrySQL = format(dryConfig.sql, { language: "bigquery" })
-                onUpdated?.({
-                    ...dryConfig,
-                    sql: formattedDrySQL
-                });
-                resetPagination();
-                makeHydrationRequest(dryConfig, 0);
-            } catch (e) {
-                console.error(dryConfig);
-                console.error("Error parsing dry config", e);
-            }
-        }
-    }, [dryConfig, params]);
-
-    const ongoingRequest = useRef(false);
-
-    const makeHydrationRequest = async (newDryConfig: DryWidgetConfig, offset: number) => {
-        if (ongoingRequest.current) {
-            return;
-        }
-        const firebaseToken = await getAuthToken();
-        if (!newDryConfig) {
-            throw Error("makeHydrationRequest: No code provided");
-        }
-        ongoingRequest.current = true;
-        setDataLoading(true);
-        setDataloadingError(null);
-        console.log("Fetching SQL data", offset, newDryConfig);
-        makeSQLQuery({
-            firebaseAccessToken: firebaseToken,
-            projectId: newDryConfig.projectId,
-            apiEndpoint,
-            sql: newDryConfig.sql,
-            params,
-            limit,
-            offset
-        })
-            .then((data) => {
-                currentOffset.current = offset;
-                ongoingRequest.current = false;
-                setData((existingData) => [...existingData, ...data]);
-            })
-            .catch(setDataloadingError)
-            .finally(() => setDataLoading(false));
-    };
 
     const downloadFile = () => {
         // TODO: download as CSV
@@ -144,17 +65,62 @@ export function DryTableConfigView({
         }).then((url) => downloadImage(url, "chart.png"));
     }
 
-    function resetPagination() {
-        desiredOffset.current = 0;
-        currentOffset.current = 0;
-    }
+    const columns = config?.table?.columns;
+    const sql = config?.sql;
+    const dataSources = config.dataSources;
+
+    const sqlTableConfig = useSQLTableConfig({
+        dataSources,
+        sql,
+        params,
+        columns
+    });
+
+    const {
+        viewRef,
+        setData,
+        dataLoading,
+        dataLoadingError,
+        refreshData,
+    } = sqlTableConfig;
 
     const onConfigUpdated = (newConfig: DryWidgetConfig) => {
         if (!newConfig) return;
-        resetPagination();
-        makeHydrationRequest(newConfig, 0);
+        refreshData();
         onUpdated?.(newConfig)
     };
+
+    const loadedConfig = React.useRef<{
+        sql: string,
+        columns?: TableColumn[],
+        params?: DateParams
+    } | null>(null);
+
+    useEffect(() => {
+        const currentConfig = {
+            sql,
+            columns,
+            params
+        };
+        if (loadedConfig.current && equal(loadedConfig.current, currentConfig)) {
+            return;
+        }
+
+        if (sql) {
+            setData([]);
+            loadedConfig.current = currentConfig;
+            try {
+                const formattedDrySQL = format(dryConfig.sql, { language: dialect })
+                onUpdated?.({
+                    ...dryConfig,
+                    sql: formattedDrySQL
+                });
+            } catch (e) {
+                console.error("Error formatting SQL", e);
+            }
+            refreshData();
+        }
+    }, [sql, columns, params]);
 
     return <>
 
@@ -178,9 +144,8 @@ export function DryTableConfigView({
                     </Tooltip>
                     <Tooltip title={"Refresh data"}>
                         <IconButton size={"small"} onClick={() => {
-                            resetPagination();
                             setData([]);
-                            makeHydrationRequest(dryConfig, 0);
+                            refreshData();
                         }}>
                             <RefreshIcon size={"small"}/>
                         </IconButton>
@@ -215,38 +180,17 @@ export function DryTableConfigView({
                 </div>
             </div>
 
-            {data && !dataLoadingError && <>
-                {config?.table && (
-                    <DataTable
-                        ref={viewRef}
-                        data={data}
-                        columns={config.table.columns}
-                        zoom={zoom}
-                        maxWidth={maxWidth}
-                        loading={dataLoading}
-                        onEndReached={() => {
-                            console.log("End reached", currentOffset.current, desiredOffset.current);
-                            if (currentOffset.current === desiredOffset.current) {
-                                desiredOffset.current = currentOffset.current + limit;
-                                makeHydrationRequest(dryConfig, desiredOffset.current);
-                            }
-                        }}/>
-                )}
-            </>}
-
-            {!dataLoading && dataLoadingError && (
-                <ExecutionErrorView executionError={dataLoadingError}/>
-            )}
+            {config?.table && (<SQLDataView sqlTableConfig={sqlTableConfig}/>)}
 
             <ErrorBoundary>
                 {dryConfig && <ConfigViewDialog open={configDialogOpen}
                                                 setOpen={setConfigDialogOpen}
                                                 dryConfig={dryConfig}
+                                                params={params}
                                                 onUpdate={onConfigUpdated}
                 />}
             </ErrorBoundary>
         </div>
-
 
         {largeAddToDashboardButton && config && <AddToDashboardDialog open={addToDashboardDialogOpen}
                                                                       setOpen={setAddToDashboardDialogOpen}

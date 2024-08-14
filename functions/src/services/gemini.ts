@@ -72,7 +72,7 @@ export async function makeGeminiRequest({
                                                 history: ChatMessage[],
                                                 credentials?: ServiceAccountKey,
                                                 initialWidgetConfig?: DryWidgetConfig,
-                                                sqlDialect: "bigquery" | "postgres" | "mysql"
+                                                sqlDialect: "bigquery" | "postgresql" | "mysql"
                                             }): Promise<string> {
 
     const geminiModel = await getGenerativeModel("gemini-1.5-pro");
@@ -163,6 +163,7 @@ or
 Do not leave dates as you find them, convert them to days at least, if they need to go in a chart.
 - Charts are based on Chart.js, so you can use the same properties as in Chart.js. Only be aware that the datasets are
 replaced with placeholders.
+- Never use place holders in backgroundColor, borderColor, or any other color property. Always use hex colors, or leave blank.
 
 ### Sample barchart with 2 datasets:
 

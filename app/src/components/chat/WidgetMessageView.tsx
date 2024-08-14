@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import JSON5 from "json5";
 import { Button, CircularProgress } from "@firecms/ui";
-import { DryWidgetConfig } from "../../types";
+import { DryWidgetConfig, SQLDialect } from "../../types";
 import { DEFAULT_WIDGET_SIZE } from "../../utils/widgets";
 import { DryChartConfigView } from "../widgets/DryChartConfigView";
 import { ErrorBoundary } from "@firecms/core";
@@ -14,13 +14,13 @@ export function WidgetMessageView({
                                       maxWidth,
                                       loading,
                                       onContentModified,
-                                      language
+                                      dialect
                                   }: {
     rawDryConfig?: string,
     loading?: boolean,
     maxWidth?: number,
     onContentModified?: (rawDryConfig: string) => void,
-    language: "bigquery"
+    dialect: SQLDialect
 }) {
 
     const {
@@ -39,8 +39,12 @@ export function WidgetMessageView({
                 console.log("Parsing dry config", rawDryConfig);
                 setParsingError(null);
                 const newDryConfig = JSON5.parse(rawDryConfig) as DryWidgetConfig;
-                if (!newDryConfig.projectId && projectId) {
-                    newDryConfig.sql = format(newDryConfig.sql, { language });
+                if (!newDryConfig.dataSources && dataSources && projectId) {
+                    try {
+                        newDryConfig.sql = format(newDryConfig.sql, { language: dialect });
+                    } catch (e) {
+                        console.error("Error formatting SQL", e);
+                    }
                     newDryConfig.projectId = projectId;
                     newDryConfig.dataSources = dataSources;
                     onChange(newDryConfig);

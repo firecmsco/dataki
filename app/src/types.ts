@@ -32,7 +32,7 @@ export type ChatMessage = {
 
 export type FunctionCall = {
     name: string;
-    params: { [key: string]: any };
+    params: { sql: string };
     response: any
 }
 
@@ -133,9 +133,11 @@ export type TableConfig = {
     columns: TableColumn[]
 };
 
-export type TableColumn = { key: string, name: string, dataType: DataType };
+export type TableColumn = { key: string, name: string, dataType?: DataType };
 
 export type DataType = "string" | "number" | "date" | "object" | "array";
+
+export type SQLDialect = "bigquery" | "postgresql" | "mysql";
 
 export type Dashboard = {
     id: string;

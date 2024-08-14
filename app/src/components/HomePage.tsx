@@ -41,7 +41,7 @@ export function HomePage() {
                                    title={"Start generating your views here!"}>
                     <Button
                         size={"xl"}
-                        className={"my-4 gap-4"}
+                        className={"my-4 gap-4 rounded-2xl"}
                         onClick={async () => {
                             const sessionId = await datakiConfig.createSessionId();
                             navigate(`/chat/${sessionId}`);

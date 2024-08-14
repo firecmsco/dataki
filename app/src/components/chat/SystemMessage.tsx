@@ -19,7 +19,7 @@ import {
     Tooltip,
     Typography
 } from "@firecms/ui";
-import { FeedbackSlug } from "../../types";
+import { FeedbackSlug, SQLDialect } from "../../types";
 import { WidgetMessageView } from "./WidgetMessageView";
 
 export function SystemMessage({
@@ -30,7 +30,7 @@ export function SystemMessage({
                                   canRegenerate,
                                   onFeedback,
                                   onUpdatedMessage,
-                                  language
+                                  dialect
                               }: {
     text?: string,
     loading?: boolean,
@@ -39,7 +39,7 @@ export function SystemMessage({
     canRegenerate?: boolean,
     onFeedback?: (reason?: FeedbackSlug, feedbackMessage?: string) => void,
     onUpdatedMessage?: (message: string) => void,
-    language: "bigquery"
+    dialect: SQLDialect
 }) {
 
     const [parsedElements, setParsedElements] = useState<MarkdownElement[] | null>();
@@ -76,7 +76,7 @@ export function SystemMessage({
                                           loading={loading}
                                           rawDryConfig={element.content}
                                           maxWidth={containerWidth ? containerWidth - 90 : undefined}
-                                          language={language}
+                                          dialect={dialect}
                                           onContentModified={(updatedContent) => {
                                               console.log("Updated content", updatedContent);
                                               if (equal(updatedContent, parsedElements[index].content)) {

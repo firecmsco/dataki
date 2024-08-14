@@ -1,30 +1,67 @@
-import { DryWidgetConfig } from "../../types";
+import { DateParams, DryWidgetConfig } from "../../types";
 import JSON5 from "json5";
 
-import React, { useMemo } from "react";
-import { Button, Container, DialogActions, Sheet, TextField, Typography } from "@firecms/ui";
-import { AutoHeightEditor } from "../AutoHeightEditor";
+import React, { useMemo, useState } from "react";
+import {
+    Button,
+    Container,
+    DialogActions,
+    DragHandleIcon,
+    IconButton,
+    OpenInFullIcon,
+    Sheet,
+    TextField,
+    Typography
+} from "@firecms/ui";
+import { CodeEditor } from "../CodeEditor";
 import { ErrorView, useSnackbarController } from "@firecms/core";
+import { SQLQueryView } from "../SQLQueryView";
+import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
+import { useConfirmationDialog } from "../../hooks/useConfirmationDialog";
+import { useCreateFormex } from "@firecms/formex";
 
 export function ConfigViewDialog({
                                      dryConfig: dryConfigProp,
                                      open,
                                      setOpen,
+                                     params,
                                      onUpdate: onUpdateProp
                                  }: {
     dryConfig: DryWidgetConfig
     open: boolean,
     setOpen: (open: boolean) => void,
+    params: DateParams,
     onUpdate?: (newConfig: DryWidgetConfig) => void
 }) {
 
     const snackbar = useSnackbarController();
 
-    const [title, setTitle] = React.useState<string>(dryConfigProp.title);
-    const [description, setDescription] = React.useState<string>(dryConfigProp.description);
-    const [projectId, setProjectId] = React.useState<string>(dryConfigProp.projectId);
-    const [sqlCode, setSqlCode] = React.useState<string>(dryConfigProp.sql);
+    const formex = useCreateFormex({
+        initialValues: dryConfigProp
+    });
+
     const [configError, setConfigError] = React.useState<Error | null>(null);
+
+    const [editorOpen, setEditorOpen] = useState(false);
+    const [editorDirty, setEditorDirty] = useState(false);
+
+    const sqlDialogEditorConfirmationDialog = useConfirmationDialog({
+        confirmMessage: "Are you sure you want to close the editor? You have unsaved changes.",
+        onAccept: () => {
+            setEditorOpen(false);
+            setEditorDirty(false);
+        }
+    });
+
+    const onChangeEditorOpen = (open: boolean) => {
+
+        if (editorDirty) {
+            sqlDialogEditorConfirmationDialog.open();
+        } else {
+            setEditorOpen(false);
+            setEditorDirty(false);
+        }
+    }
 
     const initialChartConfig: string = useMemo(() => {
         if (dryConfigProp.type === "chart")
@@ -45,9 +82,7 @@ export function ConfigViewDialog({
 
             let dryConfig = {
                 ...dryConfigProp,
-                title,
-                description,
-                sql: sqlCode,
+                ...formex.values
             };
 
             let parsedConfig: any;
@@ -89,14 +124,14 @@ export function ConfigViewDialog({
     };
 
     const onTitleChange = (event: React.ChangeEvent<any>) => {
-        setTitle(event.target.value);
+        formex.setFieldValue("title", event.target.value);
     }
 
     const onDescriptionChange = (event: React.ChangeEvent<any>) => {
-        setDescription(event.target.value);
+        formex.setFieldValue("description", event.target.value);
     }
     const onProjectIdChange = (event: React.ChangeEvent<any>) => {
-        setProjectId(event.target.value);
+        formex.setFieldValue("projectId", event.target.value);
     }
 
     return <Sheet
@@ -114,20 +149,20 @@ export function ConfigViewDialog({
             <Container
                 className="p-8 flex flex-col space-y-4 h-full"
                 maxWidth={"7xl"}>
-                <TextField value={title}
+                <TextField value={formex.values.title}
                            onChange={onTitleChange}
                            className={"text-lg font-semibold"}
                            placeholder={"Title of the widget"}/>
 
                 <div className={"flex flex-row gap-2"}>
 
-                    <TextField value={projectId}
+                    <TextField value={formex.values.projectId}
                                size={"small"}
                                className={"lg:min-w-80"}
                                label={"Project ID"}
                                onChange={onProjectIdChange}
                                placeholder={"Project ID"}/>
-                    <TextField value={description}
+                    <TextField value={formex.values.description}
                                className={"flex-grow"}
                                size={"small"}
                                label={"Description"}
@@ -135,38 +170,71 @@ export function ConfigViewDialog({
                                placeholder={"Description"}/>
                 </div>
 
-                <div className={"h-full flex-grow flex flex-col w-full gap-4"}>
-
-                    <div className={"flex flex-col flex-grow mt-4"}>
-                        <Typography gutterBottom variant={"label"}>
-                            SQL code
-                        </Typography>
-                        {sqlCode && <AutoHeightEditor value={sqlCode ?? ""}
-                                                      defaultLanguage={"sql"}
-                                                      onChange={(updatedSQL) => {
-                                                          setSqlCode(updatedSQL ?? "");
-                                                      }}/>}
-                    </div>
-                    <div className={"flex flex-col flex-grow mt-4"}>
-                        <Typography gutterBottom variant={"label"}>
-                            {dryConfigProp.type === "chart" ? "Chart config" : "Table config"}
-                        </Typography>
-                        <AutoHeightEditor value={chartOrTableConfig ?? ""}
-                                          defaultLanguage={"json"}
-                                          onChange={(value) => {
-                                              updateChartConfig(value ?? "");
-                                          }}/>
-                        {configError && <ErrorView error={configError}/>}
-                    </div>
-
-                </div>
+                <PanelGroup direction="horizontal" className={"flex-grow"}>
+                    <Panel maxSize={75}>
+                        <div className={"flex flex-col flex-grow mt-4"}>
+                            <div className={"flex flex-row gap-4 mb-2 items-center"}>
+                                <Typography className={"flex-grow "} variant={"label"}>
+                                    SQL
+                                </Typography>
+                                <IconButton onClick={() => setEditorOpen(true)} size={"small"}>
+                                    <OpenInFullIcon size={"smallest"}/>
+                                </IconButton>
+                            </div>
+                            {formex.values.sql && <CodeEditor value={formex.values.sql ?? ""}
+                                                              autoHeight={true}
+                                                              defaultLanguage={"sql"}
+                                                              onChange={(updatedSQL) => {
+                                                                  formex.setFieldValue("sql", updatedSQL);
+                                                              }}/>}
+                        </div>
+                    </Panel>
+                    <PanelResizeHandle className={"w-8 flex justify-center items-center"}>
+                        <DragHandleIcon size="small" color={"disabled"} className={"rotate-90"}/>
+                    </PanelResizeHandle>
+                    <Panel maxSize={75}>
+                        <div className={"flex flex-col flex-grow mt-6"}>
+                            <Typography gutterBottom variant={"label"}>
+                                {dryConfigProp.type === "chart" ? "Chart config" : "Table config"}
+                            </Typography>
+                            <CodeEditor value={chartOrTableConfig ?? ""}
+                                        autoHeight={true}
+                                        defaultLanguage={"json"}
+                                        onChange={(value) => {
+                                            updateChartConfig(value ?? "");
+                                        }}/>
+                            {configError && <ErrorView error={configError}/>}
+                        </div>
+                    </Panel>
+                </PanelGroup>
             </Container>
             <DialogActions>
                 <Button type={"submit"}
+                        disabled={formex.isSubmitting || !formex.dirty}
                         variant={"outlined"}>
                     Update
                 </Button>
             </DialogActions>
         </form>
-    </Sheet>
+        <Sheet
+            open={editorOpen}
+            onOpenChange={onChangeEditorOpen}
+            side={"bottom"}>
+            <div className={"h-[90vh]"}>
+                {editorOpen && <SQLQueryView
+                    initialSql={formex.values.sql}
+                    params={params}
+                    dataSources={dryConfigProp.dataSources}
+                    onDirtyChange={setEditorDirty}
+                    onSaved={async (sql) => {
+                        formex.setFieldValue("sql", sql ?? "");
+                    }}
+                />}
+            </div>
+
+        </Sheet>
+
+        {sqlDialogEditorConfirmationDialog.ConfirmationDialog}
+
+    </Sheet>;
 }

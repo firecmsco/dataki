@@ -1,7 +1,7 @@
 import React from "react";
 import { CellRendererParams, VirtualTable, VirtualTableColumn } from "@firecms/core";
 import { getIn } from "@firecms/formex";
-import { DataRow, DataType, TableColumn } from "../../types";
+import { DataRow, DataType, TableColumn } from "../types";
 
 export type DataTableProps = {
     columns: TableColumn[];
@@ -63,7 +63,7 @@ export function DataTable({
                     columns={tableColumns}
                     cellRenderer={cellRenderer}
                     onEndReached={onEndReached}
-                    endOffset={2000}
+                    endOffset={1600}
                 />
 
             </div>
@@ -73,7 +73,7 @@ export function DataTable({
 
 };
 
-function getColumnWidth(dataType: DataType) {
+function getColumnWidth(dataType?: DataType) {
     switch (dataType) {
         case "object":
             return 300;

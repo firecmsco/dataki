@@ -169,7 +169,7 @@ export interface SQLQueryRequest {
     firebaseAccessToken: string;
     apiEndpoint: string;
     sql: string;
-    projectId: string;
+    dataSources: DataSource[];
     orderBy?: [string, "asc" | "desc"][],
     filter?: [string, FilterOp, unknown] []
     params?: DateParams;
@@ -181,7 +181,7 @@ export function makeSQLQuery({
                                  firebaseAccessToken,
                                  apiEndpoint,
                                  sql,
-                                 projectId,
+                                 dataSources,
                                  orderBy,
                                  filter,
                                  params,
@@ -197,7 +197,7 @@ export function makeSQLQuery({
         },
         body: JSON.stringify({
             sql,
-            projectId,
+            dataSources,
             params,
             orderBy,
             filter,

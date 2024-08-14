@@ -3,7 +3,15 @@ import { ErrorBoundary, randomString, useAuthController, useSnackbarController }
 import { Button, cls, fieldBackgroundHoverMixin, SendIcon, TextareaAutosize, Typography } from "@firecms/ui";
 import { MessageView } from "./MessageView";
 import { getDatakiPromptSuggestions, streamDatakiCommand } from "../../api";
-import { ChatMessage, ChatSession, DataSource, DateParams, DryWidgetConfig, FeedbackSlug } from "../../types";
+import {
+    ChatMessage,
+    ChatSession,
+    DataSource,
+    DateParams,
+    DryWidgetConfig,
+    FeedbackSlug,
+    SQLDialect
+} from "../../types";
 import { PromptSuggestions } from "./PromptSuggestions";
 import { useDataki } from "../../DatakiProvider";
 import { DataSourcesSelection } from "../DataSourcesSelection";
@@ -13,6 +21,7 @@ import { getInitialDateRange } from "../utils/dates";
 import { DryChartConfigView } from "../widgets/DryChartConfigView";
 import { DryTableConfigView } from "../widgets/DryTableConfigView";
 import { DEFAULT_WIDGET_SIZE } from "../../utils/widgets";
+import { getDialectFromDataSources } from "../../utils/sql";
 
 export type ChatSessionState = {
     session: ChatSession,
@@ -103,7 +112,7 @@ export function DatakiChatSession({
 
     const [dateRange, setDateRange] = useState<[Date | null, Date | null]>(getInitialDateRange());
 
-    const language = getLanguageFromDataSources(dataSources);
+    const dialect = getDialectFromDataSources(dataSources);
 
     const params: DateParams = useMemo(() => ({
         dateStart: dateRange[0] ?? null,
@@ -492,7 +501,7 @@ export function DatakiChatSession({
                                                 onUpdatedMessage={(message) => {
                                                     updateMessage(message, index);
                                                 }}
-                                                language={language}
+                                                dialect={dialect}
                                                 message={message}
                                                 canRegenerate={index === messages.length - 1 && message.user === "SYSTEM"}
                                                 onRegenerate={() => onRegenerate(message, index)}/>;
@@ -575,9 +584,4 @@ function saveLastProjectLocally(uid: string, projectId: string) {
 
 function loadLastProjectLocally(uid: string): string | null {
     return localStorage.getItem("projectId:" + uid);
-}
-
-function getLanguageFromDataSources(dataSources: DataSource[]): "bigquery" {
-    // TODO
-    return "bigquery";
 }

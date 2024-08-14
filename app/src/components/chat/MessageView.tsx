@@ -1,21 +1,10 @@
-import {
-    AutoAwesomeIcon,
-    Avatar,
-    Button,
-    cls,
-    Menu,
-    MenuItem,
-    PersonIcon,
-    RunCircleIcon,
-    Sheet,
-    StorageIcon
-} from "@firecms/ui";
+import { AutoAwesomeIcon, Avatar, Button, cls, Menu, MenuItem, PersonIcon, Sheet, StorageIcon } from "@firecms/ui";
 import React, { useEffect, useRef, useState } from "react";
-import { ChatMessage, FeedbackSlug } from "../../types";
+import { ChatMessage, FeedbackSlug, FunctionCall, SQLDialect } from "../../types";
 import { SystemMessage } from "./SystemMessage";
 // @ts-ignore
 import MarkdownIt from "markdown-it";
-import { SQLEditor } from "../SQLEditor";
+import { SQLQueryView } from "../SQLQueryView";
 import { useChatSession } from "./DatakiChatSession";
 
 export function MessageView({
@@ -25,7 +14,7 @@ export function MessageView({
                                 canRegenerate,
                                 onFeedback,
                                 onUpdatedMessage,
-                                language
+                                dialect
                             }: {
     message?: ChatMessage,
     onRemove?: () => void,
@@ -33,7 +22,7 @@ export function MessageView({
     canRegenerate?: boolean,
     onFeedback?: (reason?: FeedbackSlug, feedbackMessage?: string) => void,
     onUpdatedMessage?: (message: ChatMessage) => void,
-    language: "bigquery"
+    dialect: SQLDialect
 }) {
 
     const ref = useRef<HTMLDivElement>(null);
@@ -43,6 +32,15 @@ export function MessageView({
         if (onUpdatedMessage) onUpdatedMessage({
             ...message,
             text: updatedText
+        });
+    }
+    const onUpdatedFunctionCall = (functionCall: FunctionCall) => {
+        console.log("onUpdatedFunctionCall", functionCall);
+        if (!message) return;
+        if (onUpdatedMessage) onUpdatedMessage({
+            ...message,
+            text: functionCall.params.sql,
+            function_call: functionCall
         });
     }
 
@@ -90,7 +88,10 @@ export function MessageView({
                 "flex-1 text-gray-700 dark:text-gray-200 self-center")}>
 
                 {message?.user === "USER" && <UserMessage text={message.text}/>}
-                {message?.user === "FUNCTION_CALL" && <FunctionCallMessage text={message.text}/>}
+                {message?.user === "FUNCTION_CALL" && message.function_call &&
+                    <FunctionCallMessage text={message.text}
+                                         functionCall={message.function_call}
+                                         onUpdatedFunctionCall={onUpdatedFunctionCall}/>}
                 {message?.user === "SYSTEM" && <SystemMessage text={message.text}
                                                               loading={message.loading}
                                                               canRegenerate={canRegenerate}
@@ -98,7 +99,7 @@ export function MessageView({
                                                               onRegenerate={onRegenerate}
                                                               onUpdatedMessage={onUpdatedMessageInternal}
                                                               onFeedback={onFeedback}
-                                                              language={language}/>}
+                                                              dialect={dialect}/>}
 
             </div>
         </div>
@@ -120,7 +121,15 @@ function UserMessage({ text }: { text: string }) {
     // return <>{text.split("\n").map((line, index) => <p key={index}>{line}</p>)}</>
 }
 
-function FunctionCallMessage({ text }: { text: string }) {
+function FunctionCallMessage({
+                                 text,
+                                 functionCall,
+                                 onUpdatedFunctionCall
+                             }: {
+    text: string,
+    functionCall: FunctionCall,
+    onUpdatedFunctionCall: (updatedFunctionCall: FunctionCall) => void
+}) {
 
     const chatSession = useChatSession();
     const [editorOpen, setEditorOpen] = useState(false);
@@ -134,11 +143,11 @@ function FunctionCallMessage({ text }: { text: string }) {
     return <>
         <div className={"flex flex-row gap-4"}>
             <code
-                className={"text-sm self-center max-w-full prose dark:prose-invert prose-headings:font-title text-gray-700 dark:text-gray-200 mb-3 flex-grow"}
+                className={"text-sm self-center max-w-full prose dark:prose-invert prose-headings:font-title text-gray-700 dark:text-gray-200 mb-1 flex-grow"}
                 dangerouslySetInnerHTML={{ __html: html }}/>
             <Button
                 variant={"text"} onClick={() => setEditorOpen(true)}>
-                <RunCircleIcon/>
+                Run
             </Button>
         </div>
 
@@ -147,7 +156,23 @@ function FunctionCallMessage({ text }: { text: string }) {
             onOpenChange={setEditorOpen}
             side={"bottom"}>
             <div className={"h-[90vh]"}>
-                {editorOpen && <SQLEditor initialSql={text} dataSources={chatSession.dataSources}/>}
+                {editorOpen && <SQLQueryView
+                    initialSql={text}
+                    params={chatSession.params}
+                    dataSources={chatSession.dataSources}
+                    onSaved={async (sql) => {
+                        if (sql) {
+                            const updatedFunctionCall = {
+                                ...functionCall,
+                                params: {
+                                    ...functionCall.params,
+                                    sql
+                                }
+                            };
+                            onUpdatedFunctionCall(updatedFunctionCall)
+                        }
+                    }}
+                />}
             </div>
 
         </Sheet>
