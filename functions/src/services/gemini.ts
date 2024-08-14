@@ -157,6 +157,8 @@ or
 - The scales object in the options is optional, but you should include it when it makes sense.
 - When generating time series, the x-axis should have a determined time unit, like days, months, or years, depending on the data. 
 Do not leave dates as you find them, convert them to days at least, if they need to go in a chart.
+- Charts are based on Chart.js, so you can use the same properties as in Chart.js. Only be aware that the datasets are
+replaced with placeholders.
 
 ### Sample barchart with 2 datasets:
 
@@ -246,10 +248,9 @@ a chart config like this.
   }
 }
 \`\`\`
-(when hydrated, this will generate a dataset for each product category, with the sales_date as labels)
+- When hydrated, this will generate a dataset for each product category, with the sales_date as labels.
 
 - This is the only valid response in this case, do not add any other fields
-
 
 
 ## Tables:

@@ -1,7 +1,1 @@
-There are **5** order statuses:
-
-*   **Shipped**: 37514 orders
-*   **Complete**: 31168 orders
-*   **Processing**: 25032 orders
-*   **Cancelled**: 19161 orders
-*   **Returned**: 12572 orders 
+This chart shows the average order value over time.  It does not show the number of orders placed.  You can use the date range filter to adjust the time period displayed. 

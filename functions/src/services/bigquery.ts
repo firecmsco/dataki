@@ -92,9 +92,7 @@ export async function runSQLQuery({
         const [rows] = await bigquery.query(query);
         console.log(`Total rows: ${rows.length}`);
 
-        const result = rows.map(convertBQValues);
-        console.log(result);
-        return result;
+        return rows.map(convertBQValues);
     } catch (e: any) {
         throw new DatakiException(e.code, e.message, "run-sql");
     }
