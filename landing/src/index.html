@@ -49,6 +49,25 @@
     </script>
 
     <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        .header {
+            transition: transform 0.3s ease;
+        }
+
+        .header-up {
+            transform: translateY(-100%);
+        }
+
+        .header-down {
+            transform: translateY(0);
+        }
+    </style>
+
+    <style>
         iframe {
             aspect-ratio: 800 / 450;
             width: 1000px;
@@ -78,16 +97,15 @@
 
         gtag("config", "G-GFH7K538SW");
     </script>
+    <script src="components/header.js"></script>
+
 </head>
 
 <body class="bg-primary relative">
 
-<div class="fixed top-0 p-4 bg-primary w-full border-0 border-b border-solid border-slate-900 border-opacity-10">
-    <a href="/" class="flex items-center">
-        <img src="img/dataki_logo.svg" class="mr-3 h-8" alt="DATAKI Logo"/>
-        <span class="self-center text-xl font-mono whitespace-nowrap text-white">DATAKI</span>
-    </a>
-</div>
+
+<custom-header></custom-header>
+
 <section class="bg-primary border-0 border-b border-solid border-gray-900 border-opacity-15">
 
     <div class=" pt-16 pb-8 px-4 mx-auto max-w-screen-xl text-center lg:pt-48 lg:pb-16 lg:px-12">
@@ -123,7 +141,6 @@
     </div>
 
 </section>
-
 
 <section class="px-8 py-16 flex flex-row w-full items-center gap-12 bg-gray-900 justify-center">
     <img src="img/bigquery.svg" class="w-48">
@@ -161,71 +178,6 @@
 </section>
 
 
-<script>
-    const emailInput = document.getElementById("email");
-    const checkbox = document.getElementById("policy-check");
-    const submitBtn = document.getElementById("subscribe-btn");
-
-    function validateEmail(email) {
-        const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return emailPattern.test(email);
-    }
-
-    function validateForm() {
-        const emailValid = validateEmail(emailInput.value);
-        console.log("emailValid", emailValid)
-        const checkboxChecked = checkbox.checked;
-        if (emailValid && checkboxChecked) {
-            submitBtn.removeAttribute("disabled");
-            submitBtn.classList.add("bg-blue-600");
-            submitBtn.classList.remove("bg-gray-800");
-        } else {
-            submitBtn.setAttribute("disabled", "true");
-            submitBtn.classList.add("bg-gray-800");
-            submitBtn.classList.remove("bg-blue-600");
-        }
-    }
-
-    const handleSubmit = (email, databases) => {
-        const url = "https://datakiapi-4mgflsd2ha-ey.a.run.app/notifications/newsletter";
-        return fetch(url, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                email_address: email,
-                source: "dataki-landing-page",
-                interested_in_databases: databases
-            })
-        }).then((res) => {
-            console.log("newsletter response", res);
-        });
-    }
-
-    function getSelectedDatabases() {
-        const databases = [];
-        if (document.getElementById("bigquery").checked) databases.push("BigQuery");
-        if (document.getElementById("postgresql").checked) databases.push("PostgreSQL");
-        if (document.getElementById("mysql").checked) databases.push("MySQL");
-        if (document.getElementById("other_db").checked) databases.push("Other");
-        return databases;
-    }
-
-    document.getElementById("subscribeForm").addEventListener("submit", function (event) {
-        event.preventDefault();
-        const emailInput = document.getElementById("email").value;
-        const selectedDatabases = getSelectedDatabases();
-        submitBtn.textContent = "Subscribing...";
-        return handleSubmit(emailInput, selectedDatabases)
-            .then(() => {
-                alert(`Thank you for subscribing with ${emailInput}!`);
-                submitBtn.textContent = "Sign up";
-            })
-            .catch((err) => {
-                alert(`An error occurred: ${err}`);
-                submitBtn.textContent = "Sign up";
-            });
-    });
-</script>
 
 <section class="bg-gray-100">
 
@@ -459,6 +411,73 @@
     </div>
 
 </footer>
+
+
+<script>
+    const emailInput = document.getElementById("email");
+    const checkbox = document.getElementById("policy-check");
+    const submitBtn = document.getElementById("subscribe-btn");
+
+    function validateEmail(email) {
+        const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailPattern.test(email);
+    }
+
+    function validateForm() {
+        const emailValid = validateEmail(emailInput.value);
+        console.log("emailValid", emailValid)
+        const checkboxChecked = checkbox.checked;
+        if (emailValid && checkboxChecked) {
+            submitBtn.removeAttribute("disabled");
+            submitBtn.classList.add("bg-blue-600");
+            submitBtn.classList.remove("bg-gray-800");
+        } else {
+            submitBtn.setAttribute("disabled", "true");
+            submitBtn.classList.add("bg-gray-800");
+            submitBtn.classList.remove("bg-blue-600");
+        }
+    }
+
+    const handleSubmit = (email, databases) => {
+        const url = "https://datakiapi-4mgflsd2ha-ey.a.run.app/notifications/newsletter";
+        return fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                email_address: email,
+                source: "dataki-landing-page",
+                interested_in_databases: databases
+            })
+        }).then((res) => {
+            console.log("newsletter response", res);
+        });
+    }
+
+    function getSelectedDatabases() {
+        const databases = [];
+        if (document.getElementById("bigquery").checked) databases.push("BigQuery");
+        if (document.getElementById("postgresql").checked) databases.push("PostgreSQL");
+        if (document.getElementById("mysql").checked) databases.push("MySQL");
+        if (document.getElementById("other_db").checked) databases.push("Other");
+        return databases;
+    }
+
+    document.getElementById("subscribeForm").addEventListener("submit", function (event) {
+        event.preventDefault();
+        const emailInput = document.getElementById("email").value;
+        const selectedDatabases = getSelectedDatabases();
+        submitBtn.textContent = "Subscribing...";
+        return handleSubmit(emailInput, selectedDatabases)
+            .then(() => {
+                alert(`Thank you for subscribing with ${emailInput}!`);
+                submitBtn.textContent = "Sign up";
+            })
+            .catch((err) => {
+                alert(`An error occurred: ${err}`);
+                submitBtn.textContent = "Sign up";
+            });
+    });
+</script>
 
 </body>
 </html>
