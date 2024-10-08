@@ -1,1 +1,56 @@
-I am sorry, I cannot run the query. It seems there is an error in the SQL query, I will try to generate a new one. Can you rephrase your original request, so I can try a different approach?
+<p>This chart shows the number of projects created each day.</p>
+
+```json
+{
+  title: 'Projects created each day',
+  description: 'This chart shows the number of projects created each day.',
+  type: 'chart',
+  sql: 'SELECT\n  CAST(created_on as DATE) AS creation_date,\n  count(*) AS project_count\nFROM\n  firecms-backend.firestore_export.projects_latest\nWHERE\n  TIMESTAMP(created_on) BETWEEN @DATE_START AND @DATE_END\nGROUP BY\n  1\nORDER BY\n  1',
+  chart: {
+    type: 'bar',
+    data: {
+      labels: '[[creation_date]]',
+      datasets: [
+        {
+          label: 'Project count',
+          data: '[[project_count]]',
+          backgroundColor: '#ea5545',
+        },
+      ],
+    },
+    options: {
+      scales: {
+        x: {
+          title: {
+            display: 'true',
+            text: 'Creation Date',
+          },
+        },
+        y: {
+          title: {
+            display: 'true',
+            text: 'Project Count',
+          },
+        },
+      },
+    },
+  },
+  projectId: 'firecms-backend',
+  dataSources: [
+    {
+      projectId: 'firecms-backend',
+      datasetId: 'firecms',
+    },
+    {
+      projectId: 'firecms-backend',
+      datasetId: 'firestore_export',
+    },
+    {
+      projectId: 'firecms-backend',
+      datasetId: 'analytics_351154604',
+    },
+  ],
+}
+```
+
+

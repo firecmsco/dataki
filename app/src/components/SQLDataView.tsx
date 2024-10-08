@@ -5,7 +5,6 @@ import { useDataki } from "../DatakiProvider";
 import { DataRow, DataSource, DataType, DateParams, TableColumn } from "../types";
 import { DataTable } from "./DataTable";
 import { ExecutionErrorView } from "./widgets/ExecutionErrorView";
-import { CircularProgressCenter } from "@firecms/core";
 
 export type SQLTableConfigParams = {
     dataSources: DataSource[];
@@ -61,10 +60,9 @@ export function useSQLTableConfig({
     }
 
     function updateColumns(newData: DataRow[]) {
-
-        if (usedColumns && usedColumns.length > 0) {
-            return;
-        }
+        // if (usedColumns && usedColumns.length > 0) {
+        //     return;
+        // }
         setUsedColumns(extractColumns(newData));
     }
 
@@ -87,6 +85,7 @@ export function useSQLTableConfig({
             offset
         })
             .then((newData) => {
+                console.debug("Data fetched", newData);
                 currentOffset.current = offset;
                 updateColumns(newData);
                 setData((existingData) => [...existingData, ...newData]);
@@ -107,7 +106,7 @@ export function useSQLTableConfig({
     };
 
     const refreshData = () => {
-        console.log("refresh data")
+        console.log("refresh data", sql);
         setData([]);
         resetPagination();
         fetchData(0);
@@ -145,8 +144,6 @@ export function SQLDataView({
     } = sqlTableConfig;
 
     return <>
-
-        {dataLoading && <CircularProgressCenter/>}
 
         {!dataLoading && dataLoadingError && (
             <ExecutionErrorView executionError={dataLoadingError}/>

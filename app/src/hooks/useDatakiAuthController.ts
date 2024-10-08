@@ -7,7 +7,6 @@ import {
     GoogleAuthProvider,
     onAuthStateChanged,
     signInWithCredential,
-    signInWithPopup,
     signOut,
     User as FirebaseUser,
     UserCredential
@@ -144,40 +143,6 @@ export const useDatakiAuthController = ({
             updateUser(authRef.current.currentUser, false);
         }
     }, [loading, updateUser]);
-
-    const googleLogin = useCallback(() => {
-        const provider = new GoogleAuthProvider();
-        provider.setCustomParameters({
-            access_type: "offline",
-            prompt: "consent"
-        });
-        provider.addScope("https://www.googleapis.com/auth/cloud-platform");
-        const auth = getAuth(firebaseApp);
-        return signInWithPopup(auth, provider)
-            .then(async credential => {
-                console.log("credential", credential);
-                // @ts-ignore
-                const userInfo = JSON.parse(credential._tokenResponse.rawUserInfo);
-                const grantedScopes = userInfo.granted_scopes.split(" ");
-                console.log("userInfo", userInfo);
-                console.log("grantedScopes", grantedScopes);
-                if (!grantedScopes.includes("https://www.googleapis.com/auth/cloud-platform")) {
-                    setPermissionsNotGrantedError(true);
-                } else {
-                    const credentialFromResult = GoogleAuthProvider.credentialFromResult(credential);
-                    console.log("credentialFromResult", credentialFromResult);
-                    const firebaseToken = await credential.user.getIdToken();
-                    // @ts-ignore
-                    await postUserCredentials(credential._tokenResponse, firebaseToken, apiEndpoint);
-                    setPermissionsNotGrantedError(false);
-                }
-                return credential.user;
-            })
-            .catch((e) => {
-                // setAuthProviderError(e);
-                return null;
-            });
-    }, [firebaseApp]);
 
     const getAuthToken = useCallback(async (): Promise<string> => {
         if (!loggedUser)

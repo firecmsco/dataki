@@ -26,6 +26,7 @@ export type CodeEditorProps = {
     loading?: boolean;
     defaultLanguage: string;
     sqlDialect?: string;
+    onTextSelection?: (text: string) => void;
 };
 
 export function CodeEditor({
@@ -36,6 +37,7 @@ export function CodeEditor({
                                loading,
                                defaultLanguage,
                                sqlDialect,
+                               onTextSelection,
                                ...props
                            }: CodeEditorProps) {
     const editorRef = useRef<any>(null);

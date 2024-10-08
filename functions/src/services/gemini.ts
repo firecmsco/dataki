@@ -12,7 +12,7 @@ import {
     GenerativeModel,
     GoogleGenerativeAI,
     Part,
-    Tool
+    Tool,
 } from "@google/generative-ai";
 
 const PREFERRED_COLORS = ["#ea5545", "#f46a9b", "#ef9b20", "#edbf33", "#ede15b", "#bdcf32", "#87bc45", "#27aeef", "#b33dc6"];
@@ -23,7 +23,9 @@ export const getGenerativeModel = async (model:string): Promise<GenerativeModel>
         throw new Error("GOOGLE_GEN_API_KEY not set");
 
     }
+
     const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEN_API_KEY as string);
+
     return genAI.getGenerativeModel({
         model,
         generationConfig: {
@@ -75,7 +77,7 @@ export async function makeGeminiRequest({
                                                 sqlDialect: "bigquery" | "postgresql" | "mysql"
                                             }): Promise<string> {
 
-    const geminiModel = await getGenerativeModel("gemini-1.5-pro");
+    const geminiModel = await getGenerativeModel("gemini-1.5-pro-exp-0827");
 
     const functions = {
         makeSQLQuery: async ({ sql }: { sql: string }) => {
@@ -321,6 +323,7 @@ directly or including it in the JSON config of charts and tables.
     - Be very careful to not mix dates and timestamps.
 - When generating charts with a timeline, make sure the X axis is correctly ordered.
 - NEVER generate SQL with triple ticks """
+- When asked to generate a chart by day, you should round the date to the day at 00:00, and group by that date.
 
 ---
 ## Hydration:
@@ -379,6 +382,11 @@ the generated SQL first to guarantee its correctness. Only then, return the JSON
 - You do NOT need to include the used SQL in the responses.
 - You should make this check only once, and return only one chart, table or natural language response. If you have 
 checked the SQL previously, you do not need to check it again.
+- If you run a SQL statement and it does not return what you expect. Stop and think about what you are doing.
+You can try again, up to 3 times. Especially if you get empty results, check if the 
+- DO NOT HALLUCINATE.
+- When a user asks for a specific value, for example: "give me all products in the category books", you should do
+a distinct select query with \`makeSQLQuery\` to get the possible values of the column category, so you can use it in your generated SQL.
     `;
 
     const geminiHistory = history.map((message) => {

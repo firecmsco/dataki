@@ -37,7 +37,10 @@ export function SQLQueryView({
     onDirtyChange?: (dirty: boolean) => void
 }) {
 
+    const editorRef = useRef<any>(null);
     const dialect = getDialectFromDataSources(dataSources);
+
+    const [selectedText, setSelectedText] = useState<string | undefined>();
 
     const initialFormatted = useRef(initialSql ? formatSQL(initialSql, dialect) : undefined);
     const [dateRange, setDateRange] = useState<[Date | null, Date | null]>(params ? [params.dateStart ?? null, params.dateEnd ?? null] : [null, null]);
@@ -82,7 +85,7 @@ export function SQLQueryView({
 
     const sqlTableConfig = useSQLTableConfig({
         dataSources,
-        sql: sql ?? "",
+        sql: selectedText ?? sql ?? "",
         params
     });
 
@@ -99,6 +102,7 @@ export function SQLQueryView({
                 SQL Editor
             </Typography>
 
+            <DatePickerWithRange dateRange={dateRange} setDateRange={setDateRange}/>
             <Button variant={"text"}
                     className={"text-text-secondary dark:text-text-secondary-dark"}
                     onClick={() => {
@@ -116,7 +120,6 @@ export function SQLQueryView({
                     {saved ? <CheckIcon/> : <SaveIcon/>}
                 </IconButton>
             </Tooltip>
-            <DatePickerWithRange dateRange={dateRange} setDateRange={setDateRange}/>
             <Button variant={"outlined"} onClick={sqlTableConfig.refreshData}>
                 Run
             </Button>
@@ -129,6 +132,19 @@ export function SQLQueryView({
                     value={sql}
                     onChange={updateSql}
                     sqlDialect={dialect}
+                    onMount={(editor) => {
+                        editorRef.current = editor;
+                        editor.onDidChangeCursorSelection((e: any) => {
+                            try {
+                                const model = editor.getModel();
+                                const selection = editor.getSelection();
+                                const text = (model.getValueInRange(selection)).trim();
+                                setSelectedText(text ?? undefined);
+                            } catch (error) {
+                                setSelectedText(undefined);
+                            }
+                        });
+                    }}
                 />
             </Panel>
             <PanelResizeHandle className={"h-4 flex justify-center items-center"}>

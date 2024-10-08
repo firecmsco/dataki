@@ -54,6 +54,15 @@
             padding: 0;
         }
 
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .no-scrollbar {
+            -ms-overflow-style: none; /* IE and Edge */
+            scrollbar-width: none; /* Firefox */
+        }
+
         .header {
             transition: transform 0.3s ease;
         }
@@ -112,7 +121,7 @@
         <a href="#waitlist"
            class="inline-flex justify-between items-center py-1 px-1 pr-4 mb-7 text-sm rounded-full bg-gray-800 text-white hover:bg-gray-700"
            role="alert">
-            <span class="text-xs bg-primary-600 rounded-full text-white px-4 py-1.5 mr-3">New</span> <span
+            <span class="mt-4 text-xs bg-primary-600 rounded-full text-white px-4 py-1.5 mr-3">New</span> <span
                 class="text-sm font-medium">Join the waitlist for <b>free early access!</b></span>
             <svg class="ml-2 w-5 h-5" fill="currentColor" viewBox="0 0 20 20"
                  xmlns="http://www.w3.org/2000/svg">
@@ -124,7 +133,7 @@
         <h1 class="mb-4 text-4xl font-extrabold tracking-tight leading-none md:text-5xl lg:text-6xl text-white">
             Build amazing analytic dashboards with AI</h1>
         <p class="mb-8 text-lg font-normal lg:text-xl sm:px-16 xl:px-48 text-gray-900">
-            Link <span class="font-mono">DATAKI</span> to your <b>data sources</b>  and let
+            Link <span class="font-mono">DATAKI</span> to your <b>data sources</b> and let
             it do the heavy lifting. Analyze your data and create <b>beautiful dashboards</b> to share with your team.
         </p>
 
@@ -142,11 +151,13 @@
 
 </section>
 
-<section class="px-8 py-16 flex flex-row w-full items-center gap-12 bg-gray-900 justify-center">
-    <img src="img/bigquery.svg" class="w-48">
-    <img src="img/Postgresql_elephant.svg" class="h-20">
-    <img src="img/mysql.png" class="h-16">
-    <img src="img/gemini_logo.png" class="w-32 mb-4">
+<section class="w-full flex justify-center bg-gray-900 overflow-auto no-scrollbar">
+    <div class="px-8 py-16 flex flex-row gap-12 w-max">
+        <img src="img/bigquery.svg" class="min-w-48 w-48 aspect-auto">
+        <img src="img/Postgresql_elephant.svg" class="h-24">
+        <img src="img/mysql.png" class="h-20">
+        <img src="img/gemini_logo.png" class="h-16 mb-4">
+    </div>
 </section>
 
 <section
@@ -178,7 +189,6 @@
 </section>
 
 
-
 <section class="bg-gray-100">
 
     <div class="gap-8 items-center py-8 px-4 mx-auto max-w-screen-xl xl:gap-16 md:grid md:grid-cols-2 sm:py-16 lg:px-6">
@@ -187,9 +197,9 @@
             <source src="./img/videos/gen_chart.webm" type="video/webm">
             Your browser does not support the video tag.
         </video>
-<!--        <img class="w-full block rounded-2xl"-->
-<!--             src="./img/chart.webp"-->
-<!--             alt="dashboard image"/>-->
+        <!--        <img class="w-full block rounded-2xl"-->
+        <!--             src="./img/chart.webp"-->
+        <!--             alt="dashboard image"/>-->
         <div class="mt-4 md:mt-0">
             <h2 class="mb-4 text-4xl tracking-tight font-mono uppercase text-gray-900">
                 <!--            <h2 class="mb-4 text-4xl tracking-tight font-extrabold text-gray-900">-->
@@ -266,19 +276,16 @@
 
 <section class="w-full max-w-full overflow-x-scroll scrollbar-hide flex justify-center" style="background: #18181c">
     <div class="flex gap-4 p-8 items-center">
-        <img class=" block rounded-2xl border border-gray-800"
-             style="height: 360px;"
+        <img class=" block rounded-2xl border border-gray-800 aspect-auto h-72"
              src="./img/charts/bar_chart.png"
              alt="Bar chart"/>
-        <img class="block rounded-2xl border border-gray-800"
-             style="height: 360px;"
+        <img class="block rounded-2xl border border-gray-800 aspect-auto h-72"
              src="./img/charts/pie_chart.png"
              alt="Pie chart"/>
-        <img class="block rounded-2xl border border-gray-800"
-             style="height: 360px;"
+        <img class="block rounded-2xl border border-gray-800 aspect-auto h-72"
              src="./img/charts/line_chart.png"
              alt="Line chart"/>
-        <img class="block rounded-2xl border border-gray-800"
+        <img class="block rounded-2xl border border-gray-800 aspect-auto h-72"
              style="height: 360px;"
              src="./img/charts/funnel_chart.png"
              alt="Funnel chart"/>

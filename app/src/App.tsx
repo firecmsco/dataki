@@ -126,6 +126,7 @@ export function App() {
             <DatakiProvider
                 config={datakiConfig}>
                 <FireCMS
+                    apiKey={"fcms_iww2unaw292bglc0dkk8q2y6ubn2oyli15izb7oq4u9"}
                     navigationController={navigationController}
                     authController={authController}
                     userConfigPersistence={userConfigPersistence}
